@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="เลือกสีที่ชอบจากด้านล่าง 👇"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:gravity="center"
+            android:paddingBottom="16dp" />
+
+        <GridLayout
+            android:id="@+id/color_grid_custom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="5"
+            android:rowCount="6"
+            android:alignmentMode="alignBounds"
+            android:columnOrderPreserved="false" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingTop="16dp">
+
+            <Button
+                android:id="@+id/button_random_color"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎲 สุ่มสี"
+                android:background="@drawable/round_button_small"
+                android:layout_margin="8dp" />
+
+            <Button
+                android:id="@+id/button_gradient"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌈 กราเดียนต์"
+                android:background="@drawable/round_button_small"
+                android:layout_margin="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

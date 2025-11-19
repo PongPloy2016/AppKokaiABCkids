@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Settings -->
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/ic_setting"
+        android:title="Settings"
+        app:showAsAction="ifRoom" />
+
+    <!-- Help -->
+    <item
+        android:id="@+id/action_help"
+        android:icon="@drawable/heart"
+        android:title="Help"
+        app:showAsAction="ifRoom" />
+
+    <!-- More options (will show in overflow) -->
+    <item
+        android:id="@+id/action_about"
+        android:title="About"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_feedback"
+        android:title="Feedback"
+        app:showAsAction="never" />
+
+
+    <item
+        android:id="@+id/action_ads_info"
+        android:title="ad"
+        app:showAsAction="never" />
+
+
+
+</menu>

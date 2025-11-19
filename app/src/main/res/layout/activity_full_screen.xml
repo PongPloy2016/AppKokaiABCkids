@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_view"
+    android:orientation="vertical"
+    >
+
+    <!-- Header Section -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@drawable/header_gradient"
+        android:padding="8dp">
+
+        <ImageView
+            android:id="@+id/imgBackButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_centerVertical="true"
+            android:background="@drawable/btn_circle_bg"
+            android:onClick="onClickBack"
+            android:padding="10dp"
+            android:src="@drawable/btn_back_150" />
+
+        <TextView
+            android:id="@+id/tvCategoryTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Learning Fun!"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/imgSoundToggle"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/btn_circle_bg"
+            android:onClick="onClickSoundToggle"
+            android:padding="8dp"
+            android:src="@drawable/ic_sound_on" />
+
+    </RelativeLayout>
+
+    <!-- Main Content Area -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <!-- Item Name with Fun Background -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/speech_bubble"
+            android:gravity="center"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:id="@+id/tvItemName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="A for Apple"
+                android:textColor="@color/black"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- ViewPager Container -->
+        <FrameLayout
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/image_frame">
+
+            <com.pongploydev.priyankvex.paintapp.utils.NonSwipeAbleViewPager
+                android:id="@+id/viewPager"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="15dp" />
+
+            <!-- Progress Indicator -->
+            <LinearLayout
+                android:id="@+id/dotsLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_gravity="bottom|center"
+                android:orientation="horizontal" />
+
+        </FrameLayout>
+
+        <!-- Navigation Buttons -->
+        <ImageView
+            android:id="@+id/imgBtnPrev"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/btn_nav_bg"
+            android:onClick="onClickPrev"
+            android:padding="12dp"
+            android:src="@drawable/btn_prev_150" />
+
+        <ImageView
+            android:id="@+id/imgBtnNext"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/btn_nav_bg"
+            android:onClick="onClickNext"
+            android:padding="12dp"
+            android:src="@drawable/btn_next_150" />
+
+        <!-- Fun Action Buttons -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnRepeat"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/btn_fun_bg"
+                android:onClick="onClickRepeat"
+                android:padding="10dp"
+                android:src="@drawable/ic_repeat" />
+
+            <ImageButton
+                android:id="@+id/btnStar"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/btn_fun_bg"
+                android:onClick="onClickStar"
+                android:padding="10dp"
+                android:src="@drawable/ic_star_outline" />
+
+            <ImageButton
+                android:id="@+id/btnQuiz"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/btn_fun_bg"
+                android:onClick="onClickQuiz"
+                android:padding="10dp"
+                android:src="@drawable/ic_quiz" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <!-- Footer with Progress -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:background="@drawable/footer_gradient"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Progress Text -->
+        <TextView
+            android:id="@+id/tvProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="1/26"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="15dp"
+            android:layout_marginTop="8dp"
+            android:progressDrawable="@drawable/progress_bar" />
+
+        <!-- Ad Sections -->
+        <RelativeLayout
+            android:id="@+id/llAdView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/llAdViewFacebook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible" />
+
+    </LinearLayout>
+
+</LinearLayout>

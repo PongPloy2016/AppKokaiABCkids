@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Background Circle -->
+
+
+    <!-- Eraser -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,14l12,8 -4,4 -12,-8z"/>
+    <path
+        android:fillColor="#FF9E6D"
+        android:pathData="M10,14l12,8 -2,2 -12,-8z"/>
+</vector>

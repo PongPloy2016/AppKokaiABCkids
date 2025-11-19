@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.thailetters.ThaiLettersActivity"
+    android:orientation="vertical"
+    android:background="@drawable/bg_view">
+
+    <!-- Main Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Progress and Score Section -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <!-- Score -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="คะแนน"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray_dark" />
+
+                    <TextView
+                        android:id="@+id/textScore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/green" />
+                </LinearLayout>
+
+                <!-- Progress -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ความคืบหน้า"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray_dark" />
+
+                    <TextView
+                        android:id="@+id/textProgress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0%"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/blue" />
+                </LinearLayout>
+
+                <!-- Stars -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ดาว"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray_dark" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/star1"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/star"
+                            android:layout_margin="2dp" />
+
+                        <ImageView
+                            android:id="@+id/star2"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/star"
+                            android:layout_margin="2dp" />
+
+                        <ImageView
+                            android:id="@+id/star3"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/star"
+                            android:layout_margin="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Toolbar Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="8dp">
+
+                <!-- Navigation Buttons -->
+                <ImageButton
+                    android:id="@+id/button_black"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:scaleType="centerInside"
+                    android:padding="8dp"
+                    android:src="@drawable/iconbackicon" />
+
+                <!-- Tools Group -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <ImageButton
+                        android:id="@+id/buttonNew"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        android:adjustViewBounds="true"
+                        android:padding="8dp"
+                        android:src="@drawable/new_pic" />
+
+                    <ImageButton
+                        android:id="@+id/buttonBrush"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="centerInside"
+                        android:padding="8dp"
+                        android:src="@drawable/brushpaint" />
+
+                    <ImageButton
+                        android:id="@+id/buttonErase"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="centerInside"
+                        android:padding="8dp"
+                        android:src="@drawable/erasericon" />
+
+                    <!-- ปุ่มตรวจสอบการลากเส้น -->
+                    <ImageButton
+                        android:id="@+id/buttonCheck"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="centerInside"
+                        android:padding="8dp"
+                        android:src="@drawable/check_icon"
+                        android:contentDescription="ตรวจสอบการลากเส้น" />
+
+                    <ImageButton
+                        android:id="@+id/buttonSave"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="centerInside"
+                        android:padding="8dp"
+                        android:src="@drawable/saveicon" />
+                </LinearLayout>
+
+                <!-- Media Buttons -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <ImageButton
+                        android:id="@+id/buttonsound"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="centerInside"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_launchermedia" />
+
+                    <ImageButton
+                        android:id="@+id/buttonVDO"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_margin="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="centerInside"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_launchervdo" />
+
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/button_next"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:scaleType="centerInside"
+                    android:padding="8dp"
+                    android:src="@drawable/iconnext" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Drawing Area -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.pongploydev.priyankvex.paintapp.drawingView.DrawingView
+                    android:id="@+id/drawing"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/white" />
+
+                <!-- Lottie Animation สำหรับแสดงผลสำเร็จ -->
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/animationSuccess"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="false"
+                    app:lottie_rawRes="@raw/success_animation" />
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/animationTryAgain"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="false"
+                    app:lottie_rawRes="@raw/try_again_animation" />
+
+            </FrameLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+    <!-- Letter Selection Section -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:cardUseCompatPadding="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="เลือกรูปแบบตัวอักษร"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="8dp" />
+
+            <!-- ตัวแสดงตัวอักษรปัจจุบัน -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnPrevLetter"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/iconbackicon"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="ตัวอักษรก่อนหน้า" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:layout_marginHorizontal="16dp">
+
+                    <TextView
+                        android:id="@+id/textCurrentLetter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ก"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/purple" />
+
+                    <TextView
+                        android:id="@+id/textLetterName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ก ไก่"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray_dark" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnNextLetter"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/iconnext"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="ตัวอักษรถัดไป" />
+
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:id="@+id/lettersScrollView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/letter_selection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center" />
+
+            </HorizontalScrollView>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Color Palette Section -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:cardUseCompatPadding="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="เลือกสี"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:id="@+id/paint_colors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/skin"
+                        android:contentDescription="สีผิว"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet_selected"
+                        android:tag="@color/skin" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/black"
+                        android:contentDescription="สีดำ"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/black" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/red"
+                        android:contentDescription="สีแดง"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/red" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/green"
+                        android:contentDescription="สีเขียว"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/green" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/blue"
+                        android:contentDescription="สีน้ำเงิน"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/blue" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/yellow"
+                        android:contentDescription="สีเหลือง"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/yellow" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- เพิ่มสีพิเศษ -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/purple"
+                        android:contentDescription="สีม่วง"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/purple" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/Orange"
+                        android:contentDescription="สีส้ม"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/Orange" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="@color/gray_light"
+                    app:strokeWidth="1dp">
+
+                    <ImageButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/Pink"
+                        android:contentDescription="สีชมพู"
+                        android:onClick="paintClicked"
+                        android:scaleType="center"
+                        android:src="@drawable/pallet"
+                        android:tag="@color/Pink" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>

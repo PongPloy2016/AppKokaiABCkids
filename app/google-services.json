@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "424696681721",
+    "project_id": "paint-app-kai-abc-android",
+    "storage_bucket": "paint-app-kai-abc-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:424696681721:android:9a3bdd9332ce668276fe28",
+        "android_client_info": {
+          "package_name": "com.pongploydev.priyankvex.paintapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6GNVtBLTtwUa5Rp74ypVHqHC7qzJyQh4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

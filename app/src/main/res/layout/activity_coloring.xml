@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@drawable/gradient_background_landscape"
+    android:padding="12dp">
+
+    <!-- Left Panel - Tools and Colors with Scroll -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.35"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/header_background"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🎨 ระบายสี"
+                    android:textSize="20sp"
+                    android:textColor="@color/white"
+                    android:gravity="center"
+                    android:textStyle="bold"
+                    android:padding="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <ImageButton
+                        android:id="@+id/button_back"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_back_kids"
+                        android:background="@drawable/round_button_small"
+                        android:contentDescription="กลับ"
+                        android:layout_margin="4dp" />
+
+                    <ImageButton
+                        android:id="@+id/button_help"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_help"
+                        android:background="@drawable/round_button_small"
+                        android:contentDescription="ช่วยเหลือ"
+                        android:layout_margin="4dp" />
+
+<!--                    <ImageButton-->
+<!--                        android:id="@+id/button_save"-->
+<!--                        android:layout_width="40dp"-->
+<!--                        android:layout_height="40dp"-->
+<!--                        android:src="@drawable/ic_save"-->
+<!--                        android:background="@drawable/round_button_small"-->
+<!--                        android:contentDescription="บันทึก"-->
+<!--                        android:layout_margin="4dp" />-->
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Stats -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/stats_background"
+                android:padding="8dp"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/text_score"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ คะแนน: 0"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:gravity="center"
+                    android:padding="4dp" />
+
+                <TextView
+                    android:id="@+id/text_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⏱️ เวลา: 0s"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:gravity="center"
+                    android:padding="4dp" />
+
+            </LinearLayout>
+
+            <!-- Tools Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/tools_background"
+                android:padding="8dp"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🛠️ เครื่องมือ"
+                    android:textSize="16sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:paddingBottom="8dp" />
+
+                <!-- ในส่วน Tools Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_new"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        android:text="ภาพใหม่"
+                        app:iconSize="40dp"
+                        app:icon="@drawable/ic_color_picker"
+                        app:iconGravity="top" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/toggle_button_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true"
+                    app:checkedButton="@id/button_brush">
+
+                    <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_brush"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="แปรง"
+                    app:icon="@drawable/ic_brush"
+                    app:iconSize="30dp"
+                    app:iconGravity="top" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_erase"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ยางลบ"
+                        app:icon="@drawable/ic_erase"
+                        app:iconSize="30dp"
+                        app:iconGravity="top" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button_color_picker"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="4dp"
+                            app:iconSize="20dp"
+                            android:text="เลือกสี"
+                            app:icon="@drawable/ic_color_picker"
+                            app:iconGravity="start" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button_save"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="4dp"
+                            app:iconSize="20dp"
+                            android:text="บันทึกรูป"
+                            app:icon="@drawable/ic_color_picker"
+                            app:iconGravity="start" />
+                    </LinearLayout>
+
+
+
+
+                </LinearLayout>
+
+                <!-- Brush Size -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/text_brush_size"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="✏️ ขนาด: กลาง"
+                        android:textSize="12sp"
+                        android:textColor="@color/white"
+                        android:gravity="center" />
+
+                    <SeekBar
+                        android:id="@+id/seekbar_brush"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="100"
+                        android:progress="50"
+                        android:progressTint="@color/white"
+                        android:thumbTint="@color/color_yellow"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Color Palette -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/palette_background"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🎨 สีสัน"
+                    android:textSize="16sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:paddingBottom="8dp" />
+
+                <!-- Color Grid 3x4 -->
+                <GridLayout
+                    android:id="@+id/color_grid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3"
+                    android:rowCount="4"
+                    android:alignmentMode="alignBounds"
+                    android:columnOrderPreserved="false">
+
+                    <!-- Row 1 -->
+                    <ImageButton
+                        android:id="@+id/color_red"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_red"
+                        android:tag="#FF6B6B"
+                        android:contentDescription="สีแดง"
+                        android:layout_margin="2dp" />
+
+                    <ImageButton
+                        android:id="@+id/color_orange"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_orange"
+                        android:tag="#FF9E6D"
+                        android:contentDescription="สีส้ม"
+                        android:layout_margin="2dp" />
+
+                    <ImageButton
+                        android:id="@+id/color_yellow"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_yellow"
+                        android:tag="#FFD166"
+                        android:contentDescription="สีเหลือง"
+                        android:layout_margin="2dp" />
+
+                    <!-- Row 2 -->
+                    <ImageButton
+                        android:id="@+id/color_green"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_green"
+                        android:tag="#06D6A0"
+                        android:contentDescription="สีเขียว"
+                        android:layout_margin="2dp" />
+
+                    <ImageButton
+                        android:id="@+id/color_blue"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_blue"
+                        android:tag="#4ECDC4"
+                        android:contentDescription="สีฟ้า"
+                        android:layout_margin="2dp" />
+
+                    <ImageButton
+                        android:id="@+id/color_purple"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_purple"
+                        android:tag="#7209B7"
+                        android:contentDescription="สีม่วง"
+                        android:layout_margin="2dp" />
+
+                    <!-- Row 3 -->
+                    <ImageButton
+                        android:id="@+id/color_pink"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_pink"
+                        android:tag="#F15BB5"
+                        android:contentDescription="สีชมพู"
+                        android:layout_margin="2dp" />
+
+                    <ImageButton
+                        android:id="@+id/color_brown"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_brown"
+                        android:tag="#964B00"
+                        android:contentDescription="สีน้ำตาล"
+                        android:layout_margin="2dp" />
+
+                    <ImageButton
+                        android:id="@+id/color_black"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_black"
+                        android:tag="#000000"
+                        android:contentDescription="สีดำ"
+                        android:layout_margin="2dp" />
+
+                    <!-- Row 4 -->
+                    <ImageButton
+                        android:id="@+id/color_white"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@color/color_white"
+                        android:tag="#FFFFFF"
+                        android:contentDescription="สีขาว"
+                        android:layout_margin="2dp" />
+
+                    <!-- Empty spaces for grid alignment -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@android:color/transparent" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_columnWeight="1"
+                        android:background="@android:color/transparent" />
+
+                </GridLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Right Panel - Drawing Area -->
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.65"
+        android:background="@drawable/drawing_frame_landscape"
+        android:padding="12dp"
+        android:layout_marginStart="8dp">
+
+        <com.pongploydev.priyankvex.paintapp.drawingView.DrawingView
+            android:id="@+id/drawing"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white" />
+
+        <!-- Guide Image Overlay -->
+        <ImageView
+            android:id="@+id/guide_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:alpha="0.2"
+            android:scaleType="fitCenter"
+            android:contentDescription="ภาพตัวอย่าง" />
+
+        <!-- Drawing Tips Overlay -->
+        <TextView
+            android:id="@+id/text_tips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎨 วาดภาพให้สวยงาม!\nใช้สีต่างๆ ระบายให้เต็มภาพ"
+            android:textSize="16sp"
+            android:textColor="#60000000"
+            android:background="#80FFFFFF"
+            android:padding="12dp"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+</LinearLayout>
