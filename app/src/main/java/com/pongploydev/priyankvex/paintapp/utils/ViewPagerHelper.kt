@@ -13,11 +13,12 @@ import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.MainActivity
 import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.MainGridFragment
+import com.pongploydev.videowatchfeature.VideoListFragment
 
 
 class ViewPagerHelper(var activity: AppCompatActivity) {
     var prevMenuItem: MenuItem? = null
-    var pagerNumber: Int = 1
+    var pagerNumber: Int = 2
 
     fun setupViewPagerDefault(
         viewPager: ViewPager,
@@ -35,10 +36,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     return@setOnItemSelectedListener true
                 }
 
-//                R.id.navigation_video -> {
-//                    viewPager.currentItem = 1
-//                    return@setOnItemSelectedListener true
-//                }
+                R.id.navigation_video -> {
+                    viewPager.currentItem = 1
+                    return@setOnItemSelectedListener true
+                }
 
 
             }
@@ -66,10 +67,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     titleToolbar.text = activity.resources.getString(R.string.app_name)
                     //(activity as MainActivity).showSortMenu(true)
                 }
-//                else if (viewPager.currentItem == 1) {
-//                    titleToolbar.text = activity.resources.getString(R.string.title_nav_video)
-//                    //(activity as MainActivity).showSortMenu(false)
-//                }
+                else if (viewPager.currentItem == 1) {
+                    titleToolbar.text = activity.resources.getString(R.string.title_nav_video)
+                    //(activity as MainActivity).showSortMenu(false)
+                }
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -92,10 +93,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     return@setOnItemSelectedListener true
                 }
 
-//                R.id.navigation_video -> {
-//                    viewPager.currentItem = 1
-//                    return@setOnItemSelectedListener true
-//                }
+                R.id.navigation_video -> {
+                    viewPager.currentItem = 1
+                    return@setOnItemSelectedListener true
+                }
 
             }
             false
@@ -123,10 +124,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                         titleToolbar.text = activity.resources.getString(R.string.app_name)
                         //(activity as MainActivity).showSortMenu(false)
                     }
-//                    1 -> {
-//                        titleToolbar.text = activity.resources.getString(R.string.title_nav_video)
-//                       // (activity as MainActivity).showSortMenu(true)
-//                    }
+                    1 -> {
+                        titleToolbar.text = activity.resources.getString(R.string.title_nav_video)
+                       // (activity as MainActivity).showSortMenu(true)
+                    }
 
                 }
             }
@@ -255,6 +256,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
             when (position) {
 //                0 -> return MainGridFragment()
                 0-> return ComposeFragment()
+                1-> return VideoListFragment()
 
               // 4 -> return KidsItemFragment()
             }
@@ -272,8 +274,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
         override fun getItem(position: Int): Fragment {
             when (position) {
                 0 -> return MainGridFragment()
-//                1 -> return ComposeFragment()
-
+                1-> return VideoListFragment()
             }
             return ComposeFragment()
         }

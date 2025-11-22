@@ -1,0 +1,50 @@
+<resources>
+
+    <!-- Base application theme. -->
+
+    <style name="AppTheme" parent="Theme.Material3.Light">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent_color</item>
+    </style>
+
+    <!-- Icon Button Style -->
+    <style name="IconButtonStyle" parent="Widget.Material3.Button.IconButton">
+        <item name="backgroundTint">@color/tabTransparent</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="iconSize">24dp</item>
+        <item name="iconPadding">0dp</item>
+    </style>
+
+    <style name="ToolbarFontStyle" parent="@style/Base.TextAppearance.AppCompat.Title">
+        <!--        <item name="android:fontFamily">@font/custom_font</item>-->
+    </style>
+
+    <style name="BottomNavigationView.TextAppearance.Active" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <!--        <item name="fontFamily">@font/custom_font</item>-->
+    </style>
+
+
+    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+<!--        <item name="android:windowAnimationStyle">@style/DialogAnimation</item>-->
+    </style>
+
+<!--    <style name="DialogAnimation">-->
+<!--        <item name="android:windowEnterAnimation">@anim/slide_in_bottom</item>-->
+<!--        <item name="android:windowExitAnimation">@anim/slide_out_bottom</item>-->
+<!--    </style>-->
+
+    <style name="ShapeAppearance.Image.Rounded" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/corner_radius</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+</resources>
