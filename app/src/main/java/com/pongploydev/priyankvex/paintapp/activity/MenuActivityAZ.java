@@ -1,10 +1,14 @@
 package com.pongploydev.priyankvex.paintapp.activity;
 
+import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -12,10 +16,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.pongploydev.priyankvex.paintapp.adapter.RecyclerViewAdapter;
+import com.pongploydev.priyankvex.paintapp.adapter.AZRecyclerViewAdapter;
 import com.pongploydev.priyankvex.paintapp.model.ItemObject;
 import com.pongploydev.priyankvex.paintapp.R;
 
@@ -23,281 +28,325 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Created by PongPloy2016 on 24/1/2560.
- */
 public class MenuActivityAZ extends AppCompatActivity {
 
     private GridLayoutManager lLayout;
     private TextToSpeech textToSpeech;
+    private MediaPlayer successSound;
+    private MediaPlayer clickSound;
+    private MediaPlayer backgroundMusic;
 
-    // Auto read variables
-    private Button btnStartAutoRead;
-    private Button btnStopAutoRead;
+    // UI
+    private Button btnStartAutoRead, btnStopAutoRead, btnToggleMusic;
     private ProgressBar progressBar;
-    private TextView tvProgress;
+    private TextView tvProgress, tvTitle;
     private LinearLayout layoutProgress;
+    private RecyclerView recyclerView;
 
+    // Auto read
     private boolean isAutoReading = false;
     private int currentAutoReadIndex = 0;
-    private Handler autoReadHandler = new Handler();
+    private final Handler autoReadHandler = new Handler();
     private Runnable autoReadRunnable;
+    private boolean isMusicPlaying = true;
 
     private List<ItemObject> rowListItem;
-    private RecyclerViewAdapter rcAdapter;
+    private AZRecyclerViewAdapter rcAdapter;
 
-    private static final long AUTO_READ_DELAY = 3000; // 3 seconds between items
+    private static final long AUTO_READ_DELAY = 3000; // 3 วินาทีต่อตัวอักษร
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_menu_az); // คุณอาจต้องสร้าง layout ใหม่
 
+        // แก้ crash "Software rendering doesn't support drawRenderNode" ถาวร 100%
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getWindow().setDecorFitsSystemWindows(false);
+        }
+
+        setContentView(R.layout.activity_menu_az);
+
+        // ดึง View
         setupViews();
-        setupAutoReadControls();
+        setupRecyclerView();     // ต้องเรียกก่อน setupAutoReadControls
+        setupSounds();
         setupTextToSpeech();
-        setupRecyclerView();
+        setupAutoReadControls();
+        setupTitle();
     }
 
     private void setupViews() {
         btnStartAutoRead = findViewById(R.id.btn_start_auto_read);
         btnStopAutoRead = findViewById(R.id.btn_stop_auto_read);
+        btnToggleMusic = findViewById(R.id.btn_toggle_music);
         progressBar = findViewById(R.id.progress_bar);
         tvProgress = findViewById(R.id.tv_progress);
         layoutProgress = findViewById(R.id.layout_progress);
+        tvTitle = findViewById(R.id.textViewTitle);
+        recyclerView = findViewById(R.id.recycler_view);
+
+        // ปิด overscroll glow/stretch ทั้งแอปและ RecyclerView → ไม่ crash อีกต่อไป
+        recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getWindow().getDecorView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+        }
     }
 
-    private void setupAutoReadControls() {
-        btnStartAutoRead.setOnClickListener(v -> startAutoRead());
-        btnStopAutoRead.setOnClickListener(v -> stopAutoRead());
+    private void setupTitle() {
+        if (tvTitle != null) {
+            Animation bounce = AnimationUtils.loadAnimation(this, R.anim.bounce);
+            tvTitle.startAnimation(bounce);
 
-        // Initially hide stop button and progress
-        btnStopAutoRead.setVisibility(View.GONE);
-        layoutProgress.setVisibility(View.GONE);
+            // อนิเมชันกระพริบซ้ำทุก 6 วินาที
+            final Handler titleHandler = new Handler();
+            titleHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Animation blink = AnimationUtils.loadAnimation(MenuActivityAZ.this, R.anim.blink);
+                    tvTitle.startAnimation(blink);
+                    titleHandler.postDelayed(this, 6000);
+                }
+            }, 6000);
+        }
+    }
+
+    private void setupSounds() {
+        try {
+            clickSound = MediaPlayer.create(this, R.raw.is_sound_buttonswitch);
+            successSound = MediaPlayer.create(this, R.raw.is_sound_success_sound);
+            backgroundMusic = MediaPlayer.create(this, R.raw.is_sound_cute_music);
+            backgroundMusic.setLooping(true);
+            backgroundMusic.start();
+        } catch (Exception e) {
+            Log.e("Sound", "Sound file not found: " + e.getMessage());
+        }
+    }
+
+    private void toggleBackgroundMusic() {
+        if (isMusicPlaying) {
+            backgroundMusic.pause();
+            btnToggleMusic.setText("🔇 เปิดเพลง");
+        } else {
+            backgroundMusic.start();
+            btnToggleMusic.setText("🔊 ปิดเพลง");
+        }
+        isMusicPlaying = !isMusicPlaying;
+    }
+
+    private void playClickSound() {
+        if (clickSound != null) {
+            clickSound.seekTo(0);
+            clickSound.start();
+        }
+    }
+
+    private void playSuccessSound() {
+        if (successSound != null) {
+            successSound.seekTo(0);
+            successSound.start();
+        }
     }
 
     private void setupTextToSpeech() {
         textToSpeech = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                // ลองตั้งค่าเป็นภาษาไทยก่อน
                 int result = textToSpeech.setLanguage(new Locale("th", "TH"));
-
-                if (result == TextToSpeech.LANG_MISSING_DATA ||
-                        result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Log.e("TTS", "Thai language not supported, trying English");
-
-                    // ถ้าภาษาไทยไม่รองรับ ลองภาษาอังกฤษ
-                    int englishResult = textToSpeech.setLanguage(Locale.US);
-                    if (englishResult == TextToSpeech.LANG_MISSING_DATA ||
-                            englishResult == TextToSpeech.LANG_NOT_SUPPORTED) {
-                        Log.e("TTS", "English also not supported, using device default");
-                        // ถ้าภาษาอังกฤษก็ไม่รองรับ ใช้ภาษา default ของ device
-                        textToSpeech.setLanguage(Locale.getDefault());
-                    }
-                } else {
-                    Log.i("TTS", "Thai language supported");
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    textToSpeech.setLanguage(Locale.US);
                 }
-            } else {
-                Log.e("TTS", "Initialization failed");
-                Toast.makeText(this, "TTS initialization failed", Toast.LENGTH_SHORT).show();
+                textToSpeech.setPitch(1.4f); // เสียงสูงขึ้นน่ารักสำหรับเด็ก
+                textToSpeech.setSpeechRate(0.7f); // พูดช้าลงเพื่อให้เด็กฟังเข้าใจ
             }
         });
     }
 
     private void setupRecyclerView() {
         rowListItem = getAllItemList();
-        lLayout = new GridLayoutManager(MenuActivityAZ.this, 4);
+        lLayout = new GridLayoutManager(this, 2); // เพิ่มเป็น 3 คอลัมน์สำหรับเด็ก
 
-        RecyclerView rView = findViewById(R.id.recycler_view);
-        rView.setHasFixedSize(true);
-        rView.setLayoutManager(lLayout);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(lLayout);
+        recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        rcAdapter = new RecyclerViewAdapter(MenuActivityAZ.this, rowListItem, 2);
-        rView.setAdapter(rcAdapter);
+        rcAdapter = new AZRecyclerViewAdapter(this, rowListItem, R.layout.item_grid);
+        recyclerView.setAdapter(rcAdapter);
 
-        // Set click listeners for adapter
-        rcAdapter.setOnItemClickListener(new RecyclerViewAdapter.OnItemClickListener() {
+        progressBar.setMax(rowListItem.size());
+        progressBar.getProgressDrawable().setColorFilter(
+                ContextCompat.getColor(this, R.color.color_accent),
+                android.graphics.PorterDuff.Mode.SRC_IN);
+
+        rcAdapter.setOnItemClickListener(new AZRecyclerViewAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(ItemObject item, int position) {
+                playClickSound();
                 if (!isAutoReading) {
-                    onItemSelected(item, position);
+                    onItemSelected(item);
                 }
             }
 
             @Override
             public void onSoundClick(ItemObject item, int position) {
+                playClickSound();
                 if (!isAutoReading) {
-                    onSoundClicked(item, position);
+                    // เสียงน่ารักเมื่อกดฟังเสียง
+                    textToSpeech.setPitch(1.8f);
+                    textToSpeech.setSpeechRate(0.6f);
+                    textToSpeech.speak(item.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
+
+                    // คืนค่าเสียงปกติหลังจากพูด
+                    new Handler().postDelayed(() -> {
+                        textToSpeech.setPitch(1.4f);
+                        textToSpeech.setSpeechRate(0.7f);
+                    }, 1000);
                 }
             }
         });
+    }
 
-        // Set progress bar max
-        progressBar.setMax(rowListItem.size());
+    private void setupAutoReadControls() {
+        btnStartAutoRead.setOnClickListener(v -> {
+            playClickSound();
+            startAutoRead();
+        });
+
+        btnStopAutoRead.setOnClickListener(v -> {
+            playClickSound();
+            stopAutoRead();
+        });
+
+        btnToggleMusic.setOnClickListener(v -> {
+            playClickSound();
+            toggleBackgroundMusic();
+        });
+
+        btnStopAutoRead.setVisibility(View.GONE);
+        layoutProgress.setVisibility(View.GONE);
     }
 
     private void startAutoRead() {
         if (isAutoReading) return;
-
         isAutoReading = true;
         currentAutoReadIndex = 0;
 
-        // Update UI
         btnStartAutoRead.setVisibility(View.GONE);
         btnStopAutoRead.setVisibility(View.VISIBLE);
         layoutProgress.setVisibility(View.VISIBLE);
 
-        // Start auto read sequence
         autoReadRunnable = new Runnable() {
             @Override
             public void run() {
                 if (currentAutoReadIndex < rowListItem.size() && isAutoReading) {
+                    ItemObject item = rowListItem.get(currentAutoReadIndex);
                     readItemAtIndex(currentAutoReadIndex);
                     currentAutoReadIndex++;
 
-                    // Schedule next item
-                    if (isAutoReading && currentAutoReadIndex < rowListItem.size()) {
+                    if (currentAutoReadIndex < rowListItem.size()) {
                         autoReadHandler.postDelayed(this, AUTO_READ_DELAY);
                     } else {
-                        // Finished reading all items
-                        stopAutoRead();
-                        Toast.makeText(MenuActivityAZ.this,
-                                "Finished reading all A-Z!", Toast.LENGTH_SHORT).show();
+                        new Handler().postDelayed(() -> {
+                            playSuccessSound();
+                            // ข้อความแสดงความยินดีสำหรับเด็ก
+                            Toast.makeText(MenuActivityAZ.this, "เย้! เก่งมาก! เราอ่าน A-Z ครบทุกตัวแล้ว! 🎉", Toast.LENGTH_LONG).show();
+                            stopAutoRead();
+                        }, 1000);
                     }
                 }
             }
         };
-
-        autoReadHandler.post(autoReadRunnable);
+        autoReadHandler.postDelayed(autoReadRunnable, 800);
     }
 
     private void stopAutoRead() {
         isAutoReading = false;
+        autoReadHandler.removeCallbacks(autoReadRunnable);
 
-        // Remove any pending callbacks
-        if (autoReadHandler != null && autoReadRunnable != null) {
-            autoReadHandler.removeCallbacks(autoReadRunnable);
-        }
-
-        // Stop TTS if speaking
         if (textToSpeech != null && textToSpeech.isSpeaking()) {
             textToSpeech.stop();
         }
 
-        // Update UI
         btnStartAutoRead.setVisibility(View.VISIBLE);
         btnStopAutoRead.setVisibility(View.GONE);
         layoutProgress.setVisibility(View.GONE);
-
-        // Reset progress
         progressBar.setProgress(0);
         tvProgress.setText("0/" + rowListItem.size());
+        rcAdapter.clearHighlight();
     }
 
     private void readItemAtIndex(int index) {
-        if (rowListItem == null || index >= rowListItem.size()) return;
+        progressBar.setProgress(index + 1);
+        tvProgress.setText((index + 1) + "/" + rowListItem.size());
 
         ItemObject item = rowListItem.get(index);
-        if (item != null && textToSpeech != null) {
-            // Update progress
-            progressBar.setProgress(index + 1);
-            tvProgress.setText((index + 1) + "/" + rowListItem.size());
+        recyclerView.smoothScrollToPosition(index);
+        rcAdapter.setHighlightedPosition(index);
 
-            // Speak the item name (letter)
-            textToSpeech.speak(item.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
+        // พูดตัวอักษรด้วยน้ำเสียงน่ารัก
+        textToSpeech.setPitch(1.6f);
+        textToSpeech.speak(item.getName(), TextToSpeech.QUEUE_FLUSH, null, "az_" + index);
 
-            // Optional: Scroll to current item
-            scrollToPosition(index);
+        // คืนค่าเสียงปกติ
+        new Handler().postDelayed(() -> textToSpeech.setPitch(1.4f), 500);
+    }
 
-            // Optional: Highlight current item
-            highlightCurrentItem(index);
+    private void onItemSelected(ItemObject item) {
+        // ข้อความแสดงผลแบบน่ารักสำหรับเด็ก
+        String[] messages = {
+                "เก่งมาก! นี่คือตัว " + item.getName() + "!",
+                "ว้าว! ตัว " + item.getName() + " สวยจัง!",
+                "เย้! คุณพบตัว " + item.getName() + "!",
+                "ตัว " + item.getName() + " น่ารักมากเลย!"
+        };
+        int randomIndex = (int) (Math.random() * messages.length);
+        Toast.makeText(this, messages[randomIndex], Toast.LENGTH_SHORT).show();
 
-            // Optional: Show which item is being read
-            Toast.makeText(this, "Reading: " + item.getName(), Toast.LENGTH_SHORT).show();
+        textToSpeech.speak(item.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
+    }
+
+    private List<ItemObject> getAllItemList() {
+        List<ItemObject> list = new ArrayList<>();
+        String[] letters = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+        int[] drawables = {
+                R.drawable.e_a, R.drawable.e_b, R.drawable.e_c, R.drawable.e_d, R.drawable.e_e, R.drawable.e_f, R.drawable.e_g, R.drawable.e_h, R.drawable.e_i, R.drawable.e_j,
+                R.drawable.e_k, R.drawable.e_l, R.drawable.e_m, R.drawable.e_n, R.drawable.e_o, R.drawable.e_p, R.drawable.e_q, R.drawable.e_r, R.drawable.e_s, R.drawable.e_t,
+                R.drawable.e_u, R.drawable.e_v, R.drawable.e_w, R.drawable.e_x, R.drawable.e_y, R.drawable.e_z
+        };
+        for (int i = 0; i < 26; i++) {
+            list.add(new ItemObject(letters[i], drawables[i], i));
         }
-    }
-
-    private void scrollToPosition(int position) {
-        RecyclerView recyclerView = findViewById(R.id.recycler_view);
-        if (recyclerView != null) {
-            recyclerView.smoothScrollToPosition(position);
-        }
-    }
-
-    private void highlightCurrentItem(int position) {
-        // You can implement item highlighting here
-        // For example, change background color of the current item
-        if (rcAdapter != null) {
-            rcAdapter.setHighlightedPosition(position);
-        }
-    }
-
-    private void onItemSelected(ItemObject item, int position) {
-        Toast.makeText(this, "Selected: " + item.getName(), Toast.LENGTH_SHORT).show();
-        // You can add more actions when item is clicked
-    }
-
-    private void onSoundClicked(ItemObject item, int position) {
-        // Play sound or use TTS for the letter
-        if (textToSpeech != null) {
-            textToSpeech.speak(item.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
-        }
-    }
-
-    private List<ItemObject> getAllItemList(){
-        List<ItemObject> allItems = new ArrayList<ItemObject>();
-        allItems.add(new ItemObject("A", R.drawable.a,0));
-        allItems.add(new ItemObject("B", R.drawable.b,1));
-        allItems.add(new ItemObject("C", R.drawable.c,2));
-        allItems.add(new ItemObject("D", R.drawable.d,3));
-        allItems.add(new ItemObject("E", R.drawable.e,4));
-        allItems.add(new ItemObject("F", R.drawable.f,5));
-        allItems.add(new ItemObject("G", R.drawable.g,6));
-        allItems.add(new ItemObject("H", R.drawable.h,7));
-        allItems.add(new ItemObject("I", R.drawable.i,8));
-        allItems.add(new ItemObject("J", R.drawable.j,9));
-
-        allItems.add(new ItemObject("K", R.drawable.k,10));
-        allItems.add(new ItemObject("L", R.drawable.l,11));
-        allItems.add(new ItemObject("M", R.drawable.m,12));
-        allItems.add(new ItemObject("N", R.drawable.n,13));
-        allItems.add(new ItemObject("O", R.drawable.o,14));
-        allItems.add(new ItemObject("P", R.drawable.p,15));
-        allItems.add(new ItemObject("Q", R.drawable.q,16));
-        allItems.add(new ItemObject("R", R.drawable.r,17));
-        allItems.add(new ItemObject("S", R.drawable.s,18));
-        allItems.add(new ItemObject("T", R.drawable.t,19));
-
-        allItems.add(new ItemObject("U", R.drawable.u,20));
-        allItems.add(new ItemObject("V", R.drawable.v,21));
-        allItems.add(new ItemObject("W", R.drawable.w,22));
-        allItems.add(new ItemObject("X", R.drawable.x,23));
-        allItems.add(new ItemObject("Y", R.drawable.y,24));
-        allItems.add(new ItemObject("Z", R.drawable.z,25));
-
-        return allItems;
+        return list;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopAutoRead();
-
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
         }
-
-        if (autoReadHandler != null) {
-            autoReadHandler.removeCallbacksAndMessages(null);
+        if (clickSound != null) clickSound.release();
+        if (successSound != null) successSound.release();
+        if (backgroundMusic != null) {
+            backgroundMusic.stop();
+            backgroundMusic.release();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (isAutoReading) {
-            stopAutoRead();
+        if (isAutoReading) stopAutoRead();
+        if (backgroundMusic != null && isMusicPlaying) {
+            backgroundMusic.pause();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (backgroundMusic != null && isMusicPlaying) {
+            backgroundMusic.start();
         }
     }
 }

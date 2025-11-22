@@ -4,12 +4,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.OverscrollConfiguration
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import com.pongploydev.priyankvex.paintapp.compose.MainComposeScreen
 
 class ComposeFragment : Fragment() {
 
+    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -17,7 +24,15 @@ class ComposeFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                MainComposeScreen()
+                CompositionLocalProvider(
+                    LocalOverscrollConfiguration provides OverscrollConfiguration(
+                         // ปิด effect ที่ crash
+                        drawPadding = PaddingValues(0.dp)  // ไม่มี padding เพิ่ม
+                    )
+                ) {
+                    // UI ทั้งหมดของคุณ เช่น Surface, NavHost, หรือ Screen หลัก
+                    MainComposeScreen()
+                }
             }
         }
     }

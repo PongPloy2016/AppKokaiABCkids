@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- พื้นหลังสีฟ้าอ่อน -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#B3E5FC"
+                android:endColor="#E1F5FE"
+                android:angle="135" />
+        </shape>
+    </item>
+
+    <!-- ลูกบอลลูน -->
+    <item android:top="50dp" android:left="40dp">
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#FF5252"
+                android:endColor="#FF8A80"
+                android:type="radial"
+                android:gradientRadius="20dp" />
+            <size android:width="30dp" android:height="30dp" />
+        </shape>
+    </item>
+
+    <!-- หัวใจ -->
+    <item android:top="120dp" android:right="60dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#E91E63" />
+            <size android:width="25dp" android:height="25dp" />
+            <rotate android:fromDegrees="45" />
+        </shape>
+    </item>
+
+    <!-- ตัวการ์ตูนง่ายๆ -->
+    <item android:bottom="80dp" android:left="80dp">
+        <!-- ตัวหมา -->
+        <shape android:shape="oval">
+            <solid android:color="#FFCCBC" />
+            <size android:width="30dp" android:height="30dp" />
+        </shape>
+    </item>
+
+    <!-- หูหมา -->
+    <item android:bottom="95dp" android:left="75dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFAB91" />
+            <size android:width="12dp" android:height="12dp" />
+        </shape>
+    </item>
+
+    <item android:bottom="95dp" android:left="93dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFAB91" />
+            <size android:width="12dp" android:height="12dp" />
+        </shape>
+    </item>
+
+    <!-- ตัวแมว -->
+    <item android:bottom="80dp" android:right="70dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFE0B2" />
+            <size android:width="28dp" android:height="28dp" />
+        </shape>
+    </item>
+
+    <!-- หูแมว -->
+    <item android:bottom="92dp" android:right="80dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFB74D" />
+            <size android:width="8dp" android:height="8dp" />
+            <rotate android:fromDegrees="45" />
+        </shape>
+    </item>
+
+    <item android:bottom="92dp" android:right="65dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFB74D" />
+            <size android:width="8dp" android:height="8dp" />
+            <rotate android:fromDegrees="-45" />
+        </shape>
+    </item>
+
+    <!-- พื้นหญ้าล่าง -->
+    <item android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#A5D6A7"
+                android:endColor="#66BB6A"
+                android:angle="0" />
+            <size android:height="50dp" />
+        </shape>
+    </item>
+
+</layer-list>

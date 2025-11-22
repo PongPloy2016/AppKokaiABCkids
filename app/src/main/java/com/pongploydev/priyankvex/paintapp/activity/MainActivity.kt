@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.animation.TranslateAnimation
@@ -33,9 +35,11 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.pongploydev.priyankvex.paintapp.R
+import com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger
 import com.pongploydev.priyankvex.paintapp.utils.AppUpdateCustomsManager
 import com.pongploydev.priyankvex.paintapp.utils.RtlViewPager
 import com.pongploydev.priyankvex.paintapp.utils.ViewPagerHelper
+import com.google.firebase.analytics.FirebaseAnalytics
 
 class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
@@ -44,28 +48,36 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         private const val REQUEST_CODE_UPDATE = 1001
     }
 
-    private lateinit var appUpdateManager: AppUpdateCustomsManager
-    private lateinit var playCoreAppUpdateManager: com.google.android.play.core.appupdate.AppUpdateManager
+    // เปลี่ยนเป็น nullable variables
+    private var appUpdateManager: AppUpdateCustomsManager? = null
+    private var playCoreAppUpdateManager: com.google.android.play.core.appupdate.AppUpdateManager? = null
+
     private lateinit var coordinator: CoordinatorLayout
     private var btnSort: ImageButton? = null
     private var exitTime = 0L
     private lateinit var adView: AdView
 
     // ตัวแปรสำหรับจัดการโฆษณาสำหรับเด็ก
-    private var isChildDirectedApp = true // ตั้งค่าเป็น true สำหรับแอปเด็ก
-    private var isGdprApplicable = true // ตั้งค่าเป็น true ถ้าใช้งานใน EU
+    private var isChildDirectedApp = true
+    private var isGdprApplicable = true
 
     // สำหรับติดตามสถานะการอัพเดต
     private var isUpdateInProgress = false
     private var currentUpdateType = AppUpdateType.FLEXIBLE
 
-
+    // สร้าง Instance ของ Firebase Analytics
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+    private var analyticsLogger: AnalyticsLogger? = null
 
     val IMMEDIATE: Int = AppUpdateType.IMMEDIATE
 
     // Listener สำหรับการอัพเดตสถานะการติดตั้ง
     private val installStateListener = InstallStateUpdatedListener { state ->
-        handleInstallStateUpdate(state)
+        if (isPlayCoreAppUpdateManagerAvailable()) {
+            handleInstallStateUpdate(state)
+        } else {
+            Log.w(TAG, "AppUpdateManager not available - ignoring install state update")
+        }
     }
 
     // Activity Result Launcher สำหรับการอัพเดต
@@ -79,26 +91,46 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         super<AppCompatActivity>.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // ตั้งค่า AdMob สำหรับแอปเด็ก
-        initializeAdMobForChildren()
+        // 1. Initialize UI components ก่อน
+        initializeUiComponents()
 
+        // 2. Initialize Firebase Analytics
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
+
+        // 3. Initialize AdView ก่อน
         adView = findViewById(R.id.adView)
 
-        // coordinator = findViewById(R.id.coordinatorLayout)
+        // 4. ตั้งค่า AdMob (จะเลือกใช้ real หรือ test อัตโนมัติ)
+        initializeAdMobForChildren()
 
-        // ตั้งค่า AppUpdateManager
+        // 5. ตั้งค่า AppUpdateManager
         initializeAppUpdateManager()
 
         setupToolbarAndNav()
         setupViewPager()
-        setupAdMob()
 
-        // ตรวจสอบอัพเดตเมื่อแอปเริ่มต้น
-        checkForAppUpdates()
+        // 6. ตรวจสอบอัพเดตเมื่อแอปเริ่มต้น (เฉพาะถ้าเปิดใช้งาน)
+        if (shouldEnableInAppUpdates()) {
+            checkForAppUpdates()
+        }
+
+        // 7. ตั้งค่า Back Press Handler
+        handleOnBackPressed()
+    }
+
+    private fun initializeUiComponents() {
+        //coordinator = findViewById(R.id.coordinatorLayout)
+       // btnSort = findViewById(R.id.btn_sort)
     }
 
     private fun initializeAppUpdateManager() {
         try {
+            // ตรวจสอบว่าเป็น release build และติดตั้งจาก Play Store
+//            if (!shouldEnableInAppUpdates()) {
+//                Log.w(TAG, "In-app updates disabled for current installation")
+//                return
+//            }
+
             // Initialize Play Core AppUpdateManager
             playCoreAppUpdateManager = AppUpdateManagerFactory.create(this)
 
@@ -106,7 +138,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
             appUpdateManager = AppUpdateCustomsManager(this)
 
             // Register install state listener
-            playCoreAppUpdateManager.registerListener(installStateListener)
+            playCoreAppUpdateManager?.registerListener(installStateListener)
 
             Log.d(TAG, "AppUpdateManager initialized successfully")
 
@@ -115,38 +147,91 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         }
     }
 
+    private fun shouldEnableInAppUpdates(): Boolean {
+        // ปิดใน debug build
+//        if (BuildConfig.DEBUG) {
+//            Log.d(TAG, "In-app updates disabled: Debug build")
+//            return false
+//        }
+
+        // ตรวจสอบว่าติดตั้งจาก Play Store
+        if (!isAppInstalledFromPlayStore()) {
+            Log.w(TAG, "In-app updates disabled: Not installed from Play Store")
+            return false
+        }
+
+        return true
+    }
+
+    private fun isAppInstalledFromPlayStore(): Boolean {
+        return try {
+            val installer = packageManager.getInstallerPackageName(packageName)
+            val isFromPlayStore = installer == "com.android.vending"
+
+            if (!isFromPlayStore) {
+                Log.w(TAG, "App installed from: $installer (expected: com.android.vending)")
+            }
+
+            isFromPlayStore
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking install source", e)
+            false
+        }
+    }
+
+    private fun isAppUpdateManagerAvailable(): Boolean {
+        return playCoreAppUpdateManager != null && appUpdateManager != null
+    }
+
+    private fun isPlayCoreAppUpdateManagerAvailable(): Boolean {
+        return playCoreAppUpdateManager != null
+    }
+
+    private fun isCustomAppUpdateManagerAvailable(): Boolean {
+        return appUpdateManager != null
+    }
+
     private fun checkForAppUpdates() {
+//        if (!isCustomAppUpdateManagerAvailable()) {
+//            Log.w(TAG, "AppUpdateManager not available - skipping update check")
+//            return
+//        }
+
         Log.d(TAG, "Checking for app updates...")
 
-        // ตรวจสอบอัพเดตแบบ Flexible (สามารถดาวน์โหลดในพื้นหลังได้)
-        appUpdateManager.checkForUpdate(currentUpdateType,
+        appUpdateManager?.checkForUpdate(currentUpdateType,
             object : AppUpdateCustomsManager.OnUpdateCheckListener {
                 override fun onUpdateAvailable(updateInfo: AppUpdateInfo) {
                     Log.d(TAG, "Update available - priority: ${updateInfo.updatePriority()}")
-                    showUpdateAvailableDialog(updateInfo)
+                   // showUpdateAvailableDialog(updateInfo)
                 }
 
                 override fun onUpdateNotAvailable() {
                     Log.d(TAG, "App is up to date")
-                    // สามารถตรวจสอบอัพเดตแบบ Immediate เป็นแผนสำรองได้
                     checkForImmediateUpdate()
                 }
 
                 override fun onUpdateCheckFailed(error: String) {
                     Log.e(TAG, "Update check failed: $error")
-                    // แสดงข้อความ error หรือลองใหม่ในภายหลัง
-                    showUpdateCheckError(error)
+                    if (error.contains("APP_NOT_OWNED", ignoreCase = true)) {
+                        Log.w(TAG, "App not owned error - in-app updates not available")
+                    } else {
+                        showUpdateCheckError(error)
+                    }
                 }
             })
     }
 
     private fun checkForImmediateUpdate() {
-        // ตรวจสอบอัพเดตแบบ Immediate เป็นแผนสำรอง
-        appUpdateManager.checkForUpdate(IMMEDIATE,
+        if (!isCustomAppUpdateManagerAvailable()) {
+            Log.w(TAG, "AppUpdateManager not available - skipping immediate update check")
+            return
+        }
+
+        appUpdateManager?.checkForUpdate(IMMEDIATE,
             object : AppUpdateCustomsManager.OnUpdateCheckListener {
                 override fun onUpdateAvailable(updateInfo: AppUpdateInfo) {
                     Log.d(TAG, "Immediate update available")
-                    // สำหรับ Immediate update สามารถเริ่มได้ทันที
                     startImmediateUpdate(updateInfo)
                 }
 
@@ -160,34 +245,17 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
             })
     }
 
-    private fun showUpdateAvailableDialog(updateInfo: AppUpdateInfo) {
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("อัพเดตใหม่มีให้ดาวน์โหลด")
-            .setMessage("มีเวอร์ชันใหม่ของแอปพลิเคชัน คุณต้องการอัพเดตตอนนี้หรือไม่?\n\nเวอร์ชันใหม่จะมีประสิทธิภาพที่ดีขึ้นและแก้ไขข้อบกพร่องต่างๆ")
-            .setPositiveButton("อัพเดตตอนนี้") { dialog, which ->
-                startFlexibleUpdate(updateInfo)
-            }
-            .setNegativeButton("ภายหลัง") { dialog, which ->
-                Toast.makeText(this, "คุณสามารถอัพเดตได้ภายหลังจากการตั้งค่า", Toast.LENGTH_SHORT).show()
-                // บันทึกว่าผู้ใช้ปฏิเสธอัพเดต
-                setUpdatePostponed()
-            }
-            .setNeutralButton("อัพเดตโดยไม่ถามอีก") { dialog, which ->
-                startFlexibleUpdate(updateInfo)
-                setAutoUpdateEnabled(true)
-            }
-            .setCancelable(false)
-            .create()
-
-        dialog.show()
-    }
-
     private fun startFlexibleUpdate(updateInfo: AppUpdateInfo) {
+        val manager = playCoreAppUpdateManager ?: run {
+            Log.e(TAG, "AppUpdateManager is null - cannot start flexible update")
+            return
+        }
+
         try {
             isUpdateInProgress = true
             currentUpdateType = AppUpdateType.FLEXIBLE
 
-            playCoreAppUpdateManager.startUpdateFlowForResult(
+            manager.startUpdateFlowForResult(
                 updateInfo,
                 AppUpdateType.FLEXIBLE,
                 this,
@@ -205,11 +273,16 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun startImmediateUpdate(updateInfo: AppUpdateInfo) {
+        val manager = playCoreAppUpdateManager ?: run {
+            Log.e(TAG, "AppUpdateManager is null - cannot start immediate update")
+            return
+        }
+
         try {
             isUpdateInProgress = true
             currentUpdateType = AppUpdateType.IMMEDIATE
 
-            playCoreAppUpdateManager.startUpdateFlowForResult(
+            manager.startUpdateFlowForResult(
                 updateInfo,
                 AppUpdateType.IMMEDIATE,
                 this,
@@ -234,8 +307,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         dialog.show()
 
-        // ปิด dialog หลังจาก 3 วินาที (ผู้ใช้สามารถปิดได้ด้วยตนเอง)
-        android.os.Handler().postDelayed({
+        Handler(Looper.getMainLooper()).postDelayed({
             if (dialog.isShowing) {
                 dialog.dismiss()
             }
@@ -251,8 +323,6 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                 val totalBytesToDownload = state.totalBytesToDownload()
                 val progress = (bytesDownloaded * 100 / totalBytesToDownload).toInt()
                 Log.d(TAG, "Download progress: $progress%")
-
-                // สามารถอัพเดต progress bar ได้ที่นี่
                 updateDownloadProgress(progress)
             }
 
@@ -265,9 +335,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                 Log.d(TAG, "Update installed successfully")
                 isUpdateInProgress = false
                 Toast.makeText(this, "อัพเดตสำเร็จเรียบร้อย!", Toast.LENGTH_SHORT).show()
-
-                // Unregister listener หลังจากติดตั้งเสร็จ
-                playCoreAppUpdateManager.unregisterListener(installStateListener)
+                playCoreAppUpdateManager?.unregisterListener(installStateListener)
             }
 
             InstallStatus.FAILED -> {
@@ -288,12 +356,8 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun updateDownloadProgress(progress: Int) {
-        // อัพเดต UI เพื่อแสดงความคืบหน้า (ถ้ามี)
-        // เช่น อัพเดต ProgressBar, TextView
         runOnUiThread {
             // อัพเดต UI ตรงนี้
-            // progressBar.progress = progress
-            // tvProgress.text = "$progress%"
         }
     }
 
@@ -314,8 +378,13 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun completeUpdate() {
+        val manager = playCoreAppUpdateManager ?: run {
+            Log.e(TAG, "AppUpdateManager is null - cannot complete update")
+            return
+        }
+
         try {
-            playCoreAppUpdateManager.completeUpdate()
+            manager.completeUpdate()
             Log.d(TAG, "Completing update installation")
         } catch (e: Exception) {
             Log.e(TAG, "Error completing update", e)
@@ -328,7 +397,6 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
             RESULT_OK -> {
                 Log.d(TAG, "Update flow completed successfully")
                 if (currentUpdateType == AppUpdateType.IMMEDIATE) {
-                    // สำหรับ Immediate update, แอปอาจจะต้องรีสตาร์ท
                     Toast.makeText(this, "กำลังอัพเดตแอปพลิเคชัน...", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -356,7 +424,6 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun setUpdatePostponed() {
-        // บันทึกว่าผู้ใช้ปฏิเสธอัพเดต
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         sharedPref.edit().putLong("last_update_postponed", System.currentTimeMillis()).apply()
     }
@@ -367,11 +434,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun checkForUpdateInProgress() {
-        playCoreAppUpdateManager.appUpdateInfo
+        val manager = playCoreAppUpdateManager ?: return
+
+        manager.appUpdateInfo
             .addOnSuccessListener { appUpdateInfo ->
                 if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
                     Log.d(TAG, "Resuming update in progress")
-                    // ดำเนินการอัพเดตต่อ
                     if (appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
                         startImmediateUpdate(appUpdateInfo)
                     } else if (appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
@@ -379,25 +447,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                     }
                 }
             }
-    }
-
-    // เมธอดสำหรับเปิด Play Store สำหรับการอัพเดตแบบ manual
-    private fun openPlayStoreForUpdate() {
-        try {
-            val appPackageName = packageName
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("market://details?id=$appPackageName")
-                setPackage("com.android.vending")
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to get app update info", e)
             }
-            startActivity(intent)
-        } catch (e: Exception) {
-            // Fallback to web browser
-            val appPackageName = packageName
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("https://play.google.com/store/apps/details?id=$appPackageName")
-            }
-            startActivity(intent)
-        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -411,13 +463,11 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     override fun onResume() {
         super<AppCompatActivity>.onResume()
 
-        // รีโหลดโฆษณาเมื่อแอปกลับมาทำงานอีกครั้ง
         if (::adView.isInitialized && isChildDirectedApp) {
             adView.resume()
         }
 
-        // ตรวจสอบว่ามีอัพเดตที่กำลังดำเนินการอยู่หรือไม่
-        if (::playCoreAppUpdateManager.isInitialized) {
+        if (isPlayCoreAppUpdateManagerAvailable() && shouldEnableInAppUpdates()) {
             checkForUpdateInProgress()
         }
     }
@@ -425,24 +475,19 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     override fun onDestroy() {
         super<AppCompatActivity>.onDestroy()
 
-        // ล้างทรัพยากร
         if (::adView.isInitialized) {
             adView.destroy()
         }
 
-        if (::playCoreAppUpdateManager.isInitialized ) {
-            playCoreAppUpdateManager.unregisterListener(installStateListener)
-        }
-
-        if (::appUpdateManager.isInitialized) {
-            appUpdateManager.cleanup()
-        }
+        playCoreAppUpdateManager?.unregisterListener(installStateListener)
+        appUpdateManager?.cleanup()
     }
 
-    // ส่วนที่เหลือของโค้ดเดิม (AdMob, UI setup, etc.)
+    // ส่วนของการจัดการ AdMob (คงเดิม)
     private fun initializeAdMobForChildren() {
         try {
-            // ตั้งค่า RequestConfiguration สำหรับแอปเด็ก
+            Log.d(TAG, "🚀 Initializing AdMob for children...")
+
             val configuration = RequestConfiguration.Builder()
                 .setTagForChildDirectedTreatment(
                     if (isChildDirectedApp) {
@@ -451,24 +496,142 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                         RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE
                     }
                 )
-                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G) // ระดับ G เท่านั้น
+                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
                 .build()
 
             MobileAds.setRequestConfiguration(configuration)
 
-            // ตั้งค่าสำหรับ GDPR (ถ้าจำเป็น)
             if (isGdprApplicable) {
                 val consentStatus = getConsentStatus()
                 updateAdMobConsent(consentStatus)
             }
 
-            // Initialize Mobile Ads SDK
-            MobileAds.initialize(this) {
-                Log.d(TAG, "AdMob initialized for child-directed app")
+            MobileAds.initialize(this) { initializationStatus ->
+                Log.d(TAG, "✅ AdMob Initialization Status: ${initializationStatus.adapterStatusMap}")
+
+                runOnUiThread {
+                    setupAdMobReal()
+                }
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing AdMob for children", e)
+            Log.e(TAG, "❌ Error initializing AdMob", e)
+            runOnUiThread {
+                setupAdMobTest()
+            }
+        }
+    }
+
+    private fun setupAdMobReal() {
+        if (!::adView.isInitialized) {
+            Log.e(TAG, "AdView not initialized")
+            return
+        }
+
+        try {
+            adView.adUnitId = "ca-app-pub-3279793802315716/3499377447"
+
+            val adRequest = AdRequest.Builder().build()
+
+            adView.adListener = object : AdListener() {
+                override fun onAdLoaded() {
+                    Log.d(TAG, "🎉 REAL AD LOADED SUCCESSFULLY!")
+                    if (::adView.isInitialized) {
+                        adView.visibility = View.VISIBLE
+                    }
+                }
+
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Log.e(TAG, "❌ REAL AD FAILED: ${adError.message}")
+                    Log.e(TAG, "Error Code: ${adError.code}")
+
+                    if (adError.code == 3 || adError.message?.contains("403") == true) {
+                        Log.w(TAG, "🔄 Falling back to TEST ads due to error")
+                        setupAdMobTest()
+                    } else {
+                        if (::adView.isInitialized) {
+                            adView.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onAdOpened() {
+                    Log.d(TAG, "Ad opened")
+                }
+
+                override fun onAdClicked() {
+                    Log.d(TAG, "Ad clicked")
+                }
+
+                override fun onAdClosed() {
+                    Log.d(TAG, "Ad closed")
+                    if (::adView.isInitialized) {
+                        adView.loadAd(AdRequest.Builder().build())
+                    }
+                }
+
+                override fun onAdImpression() {
+                    Log.d(TAG, "Ad impression recorded")
+                }
+            }
+
+            Log.d(TAG, "🔄 Loading REAL ad...")
+            adView.loadAd(adRequest)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error setting up real ad", e)
+            setupAdMobTest()
+        }
+    }
+
+    private fun setupAdMobTest() {
+        if (!::adView.isInitialized) return
+
+        try {
+            Log.d(TAG, "🧪 Setting up TEST ads")
+            adView.adUnitId = "ca-app-pub-3940256099942544/6300978111"
+
+            val adRequest = AdRequest.Builder().build()
+
+            adView.adListener = object : AdListener() {
+                override fun onAdLoaded() {
+                    Log.d(TAG, "✅ TEST AD LOADED")
+                    if (::adView.isInitialized) {
+                        adView.visibility = View.VISIBLE
+                    }
+                }
+
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Log.e(TAG, "❌ TEST AD FAILED: ${adError.message}")
+                    if (::adView.isInitialized) {
+                        adView.visibility = View.GONE
+                    }
+                }
+
+                override fun onAdOpened() {
+                    Log.d(TAG, "Test ad opened")
+                }
+
+                override fun onAdClicked() {
+                    Log.d(TAG, "Test ad clicked")
+                }
+
+                override fun onAdClosed() {
+                    Log.d(TAG, "Test ad closed")
+                    if (::adView.isInitialized) {
+                        adView.loadAd(AdRequest.Builder().build())
+                    }
+                }
+
+                override fun onAdImpression() {
+                    Log.d(TAG, "Test ad impression recorded")
+                }
+            }
+
+            adView.loadAd(adRequest)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error setting up test ad", e)
         }
     }
 
@@ -482,84 +645,58 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun updateAdMobConsent(consentStatus: ConsentStatus) {
+        val childDirectedTag = RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
+        val adContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_G
+
+        var isNonPersonalized = false
+
         when (consentStatus) {
             ConsentStatus.PERSONALIZED -> {
-                MobileAds.setRequestConfiguration(
-                    RequestConfiguration.Builder()
-                        .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
-                        .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
-                        .build()
-                )
+                isNonPersonalized = false
             }
             ConsentStatus.NON_PERSONALIZED -> {
-                MobileAds.setRequestConfiguration(
-                    RequestConfiguration.Builder()
-                        .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
-                        .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
-                        .build()
-                )
+                isNonPersonalized = true
             }
             ConsentStatus.UNKNOWN -> {
                 handleUnknownConsent()
+                return
             }
+        }
+
+        val configurationBuilder = RequestConfiguration.Builder()
+            .setTagForChildDirectedTreatment(childDirectedTag)
+            .setMaxAdContentRating(adContentRating)
+
+        MobileAds.setRequestConfiguration(configurationBuilder.build())
+
+        if (::adView.isInitialized) {
+            loadAdWithRetry(true)
         }
     }
 
     private fun handleUnknownConsent() {
-        adView.visibility = View.GONE
+        if (::adView.isInitialized) {
+            adView.visibility = View.GONE
+        }
         Log.w(TAG, "Consent status unknown - ads are hidden")
     }
 
-    private fun setupAdMob() {
-        if (!::adView.isInitialized) {
-            Log.e(TAG, "AdView is not initialized")
-            return
-        }
+    private fun loadAdWithRetry(isRealAd: Boolean = true, retryCount: Int = 0) {
+        if (!::adView.isInitialized) return
 
-        if (!isChildDirectedApp) {
-            Log.w(TAG, "App is not marked as child-directed. Please review COPPA compliance.")
-        }
+        val maxRetries = 2
+        val retryDelay = 10000L
 
-        val adRequest = if (isGdprApplicable && getConsentStatus() == ConsentStatus.NON_PERSONALIZED) {
-            AdRequest.Builder()
-                .build()
+        if (isRealAd) {
+            setupAdMobReal()
         } else {
-            AdRequest.Builder()
-                .build()
+            setupAdMobTest()
         }
 
-        adView.loadAd(adRequest)
-
-        adView.adListener = object : AdListener() {
-            override fun onAdLoaded() {
-                Log.d(TAG, "Child-friendly ad loaded successfully")
-                adView.visibility = View.VISIBLE
-            }
-
-            override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.e(TAG, "Ad failed to load: ${adError.message}")
-                adView.visibility = View.GONE
-            }
-
-            override fun onAdOpened() {
-                Log.d(TAG, "Child-friendly ad opened")
-            }
-
-            override fun onAdClicked() {
-                Log.d(TAG, "Ad clicked - monitoring for child safety")
-            }
-
-            override fun onAdClosed() {
-                Log.d(TAG, "Ad closed")
-                if (isChildDirectedApp) {
-                    val newAdRequest = AdRequest.Builder().build()
-                    adView.loadAd(newAdRequest)
-                }
-            }
-
-            override fun onAdImpression() {
-                Log.d(TAG, "Child-friendly ad impression recorded")
-            }
+        if (retryCount < maxRetries) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                loadAdWithRetry(isRealAd, retryCount + 1)
+            }, retryDelay)
         }
     }
 
@@ -645,16 +782,20 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun slideUp(view: View) {
-        view.visibility = View.VISIBLE
-        val anim = TranslateAnimation(0f, 0f, view.height.toFloat(), 0f)
-        anim.duration = 300; anim.fillAfter = true
-        view.startAnimation(anim)
+        if (view != null) {
+            view.visibility = View.VISIBLE
+            val anim = TranslateAnimation(0f, 0f, view.height.toFloat(), 0f)
+            anim.duration = 300; anim.fillAfter = true
+            view.startAnimation(anim)
+        }
     }
 
     private fun slideDown(view: View) {
-        val anim = TranslateAnimation(0f, 0f, 0f, view.height.toFloat())
-        anim.duration = 300; anim.fillAfter = true
-        view.startAnimation(anim)
+        if (view != null) {
+            val anim = TranslateAnimation(0f, 0f, 0f, view.height.toFloat())
+            anim.duration = 300; anim.fillAfter = true
+            view.startAnimation(anim)
+        }
     }
 
     override fun onStart(owner: LifecycleOwner) {

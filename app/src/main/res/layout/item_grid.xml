@@ -8,43 +8,70 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?android:selectableItemBackground"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:cardUseCompatPadding="true">
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp"
+    app:cardUseCompatPadding="true"
+    app:cardBackgroundColor="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp"
+        android:background="@drawable/card_gradient_background">
 
-        <ImageView
-            android:id="@+id/item_image"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+        <!-- วงกลมพื้นหลังรูปภาพ -->
+        <FrameLayout
+            android:layout_width="76dp"
+            android:layout_height="76dp"
             android:layout_gravity="center"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_grid_view" />
+            android:background="@drawable/circle_gradient_bg"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/item_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_grid_view" />
+
+        </FrameLayout>
 
         <TextView
             android:id="@+id/item_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
-            android:text="Item Name"
-            android:textSize="18sp"
+            android:text="A"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="@color/black" />
+            android:textColor="#2E7D32"
+            android:shadowColor="#80FFFFFF"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
 
+        <!-- ปุ่มเสียงแบบการ์ตูน -->
         <Button
             android:id="@+id/btn_sound"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
             android:text="🔊"
-            android:background="@android:color/transparent"
-            android:textSize="20sp" />
+            android:textSize="24sp"
+            android:background="@drawable/sound_button_cartoon"
+            android:padding="0dp"
+            android:stateListAnimator="@null" />
+
+        <!-- เอฟเฟกต์เงาใต้ชื่อ -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/text_shadow" />
 
     </LinearLayout>
 

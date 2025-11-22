@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.pongploydev.priyankvex.paintapp.adapter.RecyclerViewAdapter;
+import com.pongploydev.priyankvex.paintapp.adapter.AZRecyclerViewAdapter;
 import com.pongploydev.priyankvex.paintapp.model.ItemObject;
 import com.pongploydev.priyankvex.paintapp.R;
 
@@ -30,7 +30,7 @@ public class MenuActivityTwo extends AppCompatActivity {
         rView.setHasFixedSize(true);
         rView.setLayoutManager(lLayout);
 
-        RecyclerViewAdapter rcAdapter = new RecyclerViewAdapter(MenuActivityTwo.this, rowListItem,1);
+        AZRecyclerViewAdapter rcAdapter = new AZRecyclerViewAdapter(MenuActivityTwo.this, rowListItem,1);
         rView.setAdapter(rcAdapter);
     }
 
