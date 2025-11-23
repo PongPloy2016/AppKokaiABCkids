@@ -89,15 +89,15 @@ public class Tools {
 //        this.dbHandler =  new DbHandler(activity);
     }
 
-//    public static void getTheme(Context context) {
-//        SharedPref sharedPref = new SharedPref(context);
-//        if (sharedPref.getIsDarkTheme()) {
-//            //context.setTheme(R.style.AppDarkTheme);
-//        } else {
-//            context.setTheme(R.style.AppTheme);
-//        }
-//        EdgeToEdge.enable((ComponentActivity) context);
-//    }
+    public static void getTheme(Context context) {
+        SharedPref sharedPref = new SharedPref(context);
+        if (sharedPref.getIsDarkTheme()) {
+            //context.setTheme(R.style.AppDarkTheme);
+        } else {
+            context.setTheme(R.style.AppTheme);
+        }
+        EdgeToEdge.enable((ComponentActivity) context);
+    }
 
 //    public static void setNavigation(Activity activity) {
 //        ViewCompat.setOnApplyWindowInsetsListener(activity.findViewById(R.id.root_view), (v, insets) -> {

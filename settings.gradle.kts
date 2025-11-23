@@ -20,3 +20,5 @@ dependencyResolutionManagement {
 rootProject.name = "PaintApp"
 include(":app")
 include(":videowatchfeature")
+include(":core")
+include(":custom-ui")

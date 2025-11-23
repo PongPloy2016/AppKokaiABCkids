@@ -46,6 +46,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     private companion object {
         const val TAG = "MainActivity"
         private const val REQUEST_CODE_UPDATE = 1001
+        private const val AD_STATE_NOT_INITIALIZED = 0
+        private const val AD_STATE_INITIALIZED = 1
+        private const val AD_STATE_UNIT_ID_SET = 2
     }
 
     // เปลี่ยนเป็น nullable variables
@@ -55,7 +58,10 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     private lateinit var coordinator: CoordinatorLayout
     private var btnSort: ImageButton? = null
     private var exitTime = 0L
-    private lateinit var adView: AdView
+    private var adView: AdView? = null
+    private var adViewState = AD_STATE_NOT_INITIALIZED
+    private var isAdViewInitialized = false
+    private var currentAdUnitId: String? = null
 
     // ตัวแปรสำหรับจัดการโฆษณาสำหรับเด็ก
     private var isChildDirectedApp = true
@@ -97,8 +103,13 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         // 2. Initialize Firebase Analytics
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
-        // 3. Initialize AdView ก่อน
-        adView = findViewById(R.id.adView)
+        // 3. Initialize AdView ก่อน (เพียงครั้งเดียว)
+        if (!isAdViewInitialized) {
+            adView = findViewById(R.id.adView)
+            isAdViewInitialized = true
+            adViewState = AD_STATE_INITIALIZED
+            Log.d(TAG, "AdView initialized")
+        }
 
         // 4. ตั้งค่า AdMob (จะเลือกใช้ real หรือ test อัตโนมัติ)
         initializeAdMobForChildren()
@@ -120,17 +131,11 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
     private fun initializeUiComponents() {
         //coordinator = findViewById(R.id.coordinatorLayout)
-       // btnSort = findViewById(R.id.btn_sort)
+        // btnSort = findViewById(R.id.btn_sort)
     }
 
     private fun initializeAppUpdateManager() {
         try {
-            // ตรวจสอบว่าเป็น release build และติดตั้งจาก Play Store
-//            if (!shouldEnableInAppUpdates()) {
-//                Log.w(TAG, "In-app updates disabled for current installation")
-//                return
-//            }
-
             // Initialize Play Core AppUpdateManager
             playCoreAppUpdateManager = AppUpdateManagerFactory.create(this)
 
@@ -148,12 +153,6 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun shouldEnableInAppUpdates(): Boolean {
-        // ปิดใน debug build
-//        if (BuildConfig.DEBUG) {
-//            Log.d(TAG, "In-app updates disabled: Debug build")
-//            return false
-//        }
-
         // ตรวจสอบว่าติดตั้งจาก Play Store
         if (!isAppInstalledFromPlayStore()) {
             Log.w(TAG, "In-app updates disabled: Not installed from Play Store")
@@ -179,10 +178,6 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         }
     }
 
-    private fun isAppUpdateManagerAvailable(): Boolean {
-        return playCoreAppUpdateManager != null && appUpdateManager != null
-    }
-
     private fun isPlayCoreAppUpdateManagerAvailable(): Boolean {
         return playCoreAppUpdateManager != null
     }
@@ -192,18 +187,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun checkForAppUpdates() {
-//        if (!isCustomAppUpdateManagerAvailable()) {
-//            Log.w(TAG, "AppUpdateManager not available - skipping update check")
-//            return
-//        }
-
         Log.d(TAG, "Checking for app updates...")
 
         appUpdateManager?.checkForUpdate(currentUpdateType,
             object : AppUpdateCustomsManager.OnUpdateCheckListener {
                 override fun onUpdateAvailable(updateInfo: AppUpdateInfo) {
                     Log.d(TAG, "Update available - priority: ${updateInfo.updatePriority()}")
-                   // showUpdateAvailableDialog(updateInfo)
                 }
 
                 override fun onUpdateNotAvailable() {
@@ -423,16 +412,6 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         Toast.makeText(this, "$errorMessage กรุณาลองอีกครั้งในภายหลัง", Toast.LENGTH_LONG).show()
     }
 
-    private fun setUpdatePostponed() {
-        val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        sharedPref.edit().putLong("last_update_postponed", System.currentTimeMillis()).apply()
-    }
-
-    private fun setAutoUpdateEnabled(enabled: Boolean) {
-        val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        sharedPref.edit().putBoolean("auto_update_enabled", enabled).apply()
-    }
-
     private fun checkForUpdateInProgress() {
         val manager = playCoreAppUpdateManager ?: return
 
@@ -463,9 +442,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     override fun onResume() {
         super<AppCompatActivity>.onResume()
 
-        if (::adView.isInitialized && isChildDirectedApp) {
-            adView.resume()
-        }
+        adView?.resume()
 
         if (isPlayCoreAppUpdateManagerAvailable() && shouldEnableInAppUpdates()) {
             checkForUpdateInProgress()
@@ -475,15 +452,13 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     override fun onDestroy() {
         super<AppCompatActivity>.onDestroy()
 
-        if (::adView.isInitialized) {
-            adView.destroy()
-        }
+        adView?.destroy()
 
         playCoreAppUpdateManager?.unregisterListener(installStateListener)
         appUpdateManager?.cleanup()
     }
 
-    // ส่วนของการจัดการ AdMob (คงเดิม)
+    // ส่วนของการจัดการ AdMob (แก้ไขแล้ว)
     private fun initializeAdMobForChildren() {
         try {
             Log.d(TAG, "🚀 Initializing AdMob for children...")
@@ -510,128 +485,139 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                 Log.d(TAG, "✅ AdMob Initialization Status: ${initializationStatus.adapterStatusMap}")
 
                 runOnUiThread {
-                    setupAdMobReal()
+                    // เรียก setupAdMobReal() เท่านั้นครั้งเดียว
+                    if (adViewState < AD_STATE_UNIT_ID_SET) {
+                        setupAdMobReal()
+                    } else {
+                        Log.d(TAG, "AdUnitId already set, loading ad directly")
+                        loadAdWithExistingAdUnitId()
+                    }
                 }
             }
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error initializing AdMob", e)
             runOnUiThread {
-                setupAdMobTest()
+                // เรียก setupAdMobTest() เท่านั้นครั้งเดียว
+                if (adViewState < AD_STATE_UNIT_ID_SET) {
+                    setupAdMobTest()
+                } else {
+                    Log.d(TAG, "AdUnitId already set, loading ad directly")
+                    loadAdWithExistingAdUnitId()
+                }
             }
         }
     }
 
     private fun setupAdMobReal() {
-        if (!::adView.isInitialized) {
-            Log.e(TAG, "AdView not initialized")
+        val currentAdView = adView ?: return
+
+        if (adViewState >= AD_STATE_UNIT_ID_SET) {
+            Log.d(TAG, "AdUnitId already set, skipping real ad setup")
+            loadAdWithExistingAdUnitId()
             return
         }
 
         try {
-            adView.adUnitId = "ca-app-pub-3279793802315716/3499377447"
+            val realAdUnitId = resources.getString(R.string.banner_ad_unit_id)
+            Log.d(TAG, "🔄 Setting REAL AdUnitId: $realAdUnitId")
 
-            val adRequest = AdRequest.Builder().build()
+            currentAdView.adUnitId = realAdUnitId
+            currentAdUnitId = realAdUnitId
+            adViewState = AD_STATE_UNIT_ID_SET
 
-            adView.adListener = object : AdListener() {
-                override fun onAdLoaded() {
-                    Log.d(TAG, "🎉 REAL AD LOADED SUCCESSFULLY!")
-                    if (::adView.isInitialized) {
-                        adView.visibility = View.VISIBLE
-                    }
-                }
-
-                override fun onAdFailedToLoad(adError: LoadAdError) {
-                    Log.e(TAG, "❌ REAL AD FAILED: ${adError.message}")
-                    Log.e(TAG, "Error Code: ${adError.code}")
-
-                    if (adError.code == 3 || adError.message?.contains("403") == true) {
-                        Log.w(TAG, "🔄 Falling back to TEST ads due to error")
-                        setupAdMobTest()
-                    } else {
-                        if (::adView.isInitialized) {
-                            adView.visibility = View.GONE
-                        }
-                    }
-                }
-
-                override fun onAdOpened() {
-                    Log.d(TAG, "Ad opened")
-                }
-
-                override fun onAdClicked() {
-                    Log.d(TAG, "Ad clicked")
-                }
-
-                override fun onAdClosed() {
-                    Log.d(TAG, "Ad closed")
-                    if (::adView.isInitialized) {
-                        adView.loadAd(AdRequest.Builder().build())
-                    }
-                }
-
-                override fun onAdImpression() {
-                    Log.d(TAG, "Ad impression recorded")
-                }
-            }
-
-            Log.d(TAG, "🔄 Loading REAL ad...")
-            adView.loadAd(adRequest)
+            setupAdListener(true)
+            loadAdWithExistingAdUnitId()
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error setting up real ad", e)
-            setupAdMobTest()
+            // ไม่เรียก setupAdMobTest() อัตโนมัติที่นี่เพื่อป้องกัน loop
         }
     }
 
     private fun setupAdMobTest() {
-        if (!::adView.isInitialized) return
+        val currentAdView = adView ?: return
+
+        if (adViewState >= AD_STATE_UNIT_ID_SET) {
+            Log.d(TAG, "AdUnitId already set, skipping test ad setup")
+            loadAdWithExistingAdUnitId()
+            return
+        }
 
         try {
-            Log.d(TAG, "🧪 Setting up TEST ads")
-            adView.adUnitId = "ca-app-pub-3940256099942544/6300978111"
+            val testAdUnitId = "ca-app-pub-3940256099942544/6300978111"
+            Log.d(TAG, "🧪 Setting TEST AdUnitId: $testAdUnitId")
 
-            val adRequest = AdRequest.Builder().build()
+            currentAdView.adUnitId = testAdUnitId
+            currentAdUnitId = testAdUnitId
+            adViewState = AD_STATE_UNIT_ID_SET
 
-            adView.adListener = object : AdListener() {
-                override fun onAdLoaded() {
-                    Log.d(TAG, "✅ TEST AD LOADED")
-                    if (::adView.isInitialized) {
-                        adView.visibility = View.VISIBLE
-                    }
-                }
-
-                override fun onAdFailedToLoad(adError: LoadAdError) {
-                    Log.e(TAG, "❌ TEST AD FAILED: ${adError.message}")
-                    if (::adView.isInitialized) {
-                        adView.visibility = View.GONE
-                    }
-                }
-
-                override fun onAdOpened() {
-                    Log.d(TAG, "Test ad opened")
-                }
-
-                override fun onAdClicked() {
-                    Log.d(TAG, "Test ad clicked")
-                }
-
-                override fun onAdClosed() {
-                    Log.d(TAG, "Test ad closed")
-                    if (::adView.isInitialized) {
-                        adView.loadAd(AdRequest.Builder().build())
-                    }
-                }
-
-                override fun onAdImpression() {
-                    Log.d(TAG, "Test ad impression recorded")
-                }
-            }
-
-            adView.loadAd(adRequest)
+            setupAdListener(false)
+            loadAdWithExistingAdUnitId()
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error setting up test ad", e)
+        }
+    }
+
+    private fun setupAdListener(isRealAd: Boolean) {
+        val currentAdView = adView ?: return
+
+        currentAdView.adListener = object : AdListener() {
+            override fun onAdLoaded() {
+                Log.d(TAG, if (isRealAd) "🎉 REAL AD LOADED SUCCESSFULLY!" else "✅ TEST AD LOADED")
+                currentAdView.visibility = View.VISIBLE
+            }
+
+            override fun onAdFailedToLoad(adError: LoadAdError) {
+                Log.e(TAG, if (isRealAd) "❌ REAL AD FAILED: ${adError.message}" else "❌ TEST AD FAILED: ${adError.message}")
+                Log.e(TAG, "Error Code: ${adError.code}")
+
+                if (isRealAd) {
+                    // สำหรับ real ad ที่ fail ให้ลองใช้ test ad (เฉพาะถ้ายังไม่ได้ตั้งค่า)
+                    if (adViewState < AD_STATE_UNIT_ID_SET) {
+                        Log.w(TAG, "🔄 Falling back to TEST ads due to error")
+                        setupAdMobTest()
+                    } else {
+                        currentAdView.visibility = View.GONE
+                    }
+                } else {
+                    currentAdView.visibility = View.GONE
+                }
+            }
+
+            override fun onAdOpened() {
+                Log.d(TAG, "Ad opened")
+            }
+
+            override fun onAdClicked() {
+                Log.d(TAG, "Ad clicked")
+            }
+
+            override fun onAdClosed() {
+                Log.d(TAG, "Ad closed")
+                // โหลด ad ใหม่เมื่อปิด ad
+                Handler(Looper.getMainLooper()).postDelayed({
+                    loadAdWithExistingAdUnitId()
+                }, 1000)
+            }
+
+            override fun onAdImpression() {
+                Log.d(TAG, "Ad impression recorded")
+            }
+        }
+    }
+
+    // โหลด ad ด้วย adUnitId ที่มีอยู่แล้ว
+    private fun loadAdWithExistingAdUnitId() {
+        val currentAdView = adView ?: return
+
+        try {
+            val adRequest = AdRequest.Builder().build()
+            currentAdView.loadAd(adRequest)
+            Log.d(TAG, "🔄 Loading ad with existing AdUnitId: $currentAdUnitId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading ad with existing AdUnitId", e)
         }
     }
 
@@ -648,14 +634,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         val childDirectedTag = RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
         val adContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_G
 
-        var isNonPersonalized = false
-
         when (consentStatus) {
             ConsentStatus.PERSONALIZED -> {
-                isNonPersonalized = false
+                // ไม่ต้องทำอะไรพิเศษ
             }
             ConsentStatus.NON_PERSONALIZED -> {
-                isNonPersonalized = true
+                // ไม่ต้องทำอะไรพิเศษ
             }
             ConsentStatus.UNKNOWN -> {
                 handleUnknownConsent()
@@ -669,35 +653,13 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         MobileAds.setRequestConfiguration(configurationBuilder.build())
 
-        if (::adView.isInitialized) {
-            loadAdWithRetry(true)
-        }
+        // โหลด ad ใหม่เมื่อ consent เปลี่ยน
+        loadAdWithExistingAdUnitId()
     }
 
     private fun handleUnknownConsent() {
-        if (::adView.isInitialized) {
-            adView.visibility = View.GONE
-        }
+        adView?.visibility = View.GONE
         Log.w(TAG, "Consent status unknown - ads are hidden")
-    }
-
-    private fun loadAdWithRetry(isRealAd: Boolean = true, retryCount: Int = 0) {
-        if (!::adView.isInitialized) return
-
-        val maxRetries = 2
-        val retryDelay = 10000L
-
-        if (isRealAd) {
-            setupAdMobReal()
-        } else {
-            setupAdMobTest()
-        }
-
-        if (retryCount < maxRetries) {
-            Handler(Looper.getMainLooper()).postDelayed({
-                loadAdWithRetry(isRealAd, retryCount + 1)
-            }, retryDelay)
-        }
     }
 
     fun setChildDirectedTreatment(isChildDirected: Boolean) {
@@ -722,9 +684,8 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         MobileAds.setRequestConfiguration(configuration)
 
-        if (::adView.isInitialized) {
-            adView.loadAd(AdRequest.Builder().build())
-        }
+        // โหลด ad ใหม่เมื่อการตั้งค่าเปลี่ยน
+        loadAdWithExistingAdUnitId()
     }
 
     fun updateGdprConsent(consentGiven: Boolean) {
@@ -804,9 +765,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
     override fun onPause() {
         super<AppCompatActivity>.onPause()
-        if (::adView.isInitialized) {
-            adView.pause()
-        }
+        adView?.pause()
     }
 
     // Enum สำหรับจัดการ consent status

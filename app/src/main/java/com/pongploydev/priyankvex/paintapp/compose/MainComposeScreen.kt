@@ -43,7 +43,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -140,22 +139,19 @@ fun MainComposeScreen(navController: NavController? = null) {
 
     // State สำหรับ tracking
     var isAdLoading by remember { mutableStateOf(false) }
-    var showAdDialog by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf<MenuItem?>(null) }
     var adLoadAttempt by remember { mutableStateOf(0) }
 
-    // State สำหรับนับรอบ (ใช้แค่ใน memory)
+    // State สำหรับนับรอบ
     var visitCount by remember { mutableStateOf(0) }
-    val VISITS_BEFORE_FORCE_AD = 3 // บังคับดูโฆษณาทุก 3 รอบ
+    val VISITS_BEFORE_AD = 3 // แสดงโฆษณาทุก 3 รอบ
 
-    // โหลดโฆษณาเมื่อเริ่มต้น
-    LaunchedEffect(Unit) {
-       // loadInterstitialAd(interstitialAdManager)
-    }
+    // State สำหรับ Banner Ad
+    var isBannerAdLoaded by remember { mutableStateOf(false) }
+    var bannerAdError by remember { mutableStateOf<String?>(null) }
 
     // ฟังก์ชันโหลดโฆษณา
-    fun loadInterstitialAd(manager: InterstitialAdManager) {
-        if (!isAdLoading && adLoadAttempt < 3) { // ลองโหลดสูงสุด 3 ครั้ง
+    val loadInterstitialAd: (InterstitialAdManager) -> Unit = { manager ->
+        if (!isAdLoading && adLoadAttempt < 3) {
             isAdLoading = true
             adLoadAttempt++
             manager.loadInterstitialAd(
@@ -167,19 +163,13 @@ fun MainComposeScreen(navController: NavController? = null) {
                 onAdFailed = {
                     isAdLoading = false
                     println("❌ Failed to load interstitial ad (attempt $adLoadAttempt)")
-                    // ลองโหลดใหม่ใน 5 วินาที ถ้ายังไม่เกิน 3 ครั้ง
-                    if (adLoadAttempt < 3) {
-                        LaunchedEffect(Unit) {
-                            delay(5000)
-                            loadInterstitialAd(manager)
-                        }
-                    }
                 }
             )
         }
     }
 
-    fun showInterstitialAd(item: MenuItem) {
+    // ฟังก์ชันแสดงโฆษณา
+    val showInterstitialAd: (MenuItem) -> Unit = { item ->
         val activity = context as? Activity
         if (activity != null) {
             interstitialAdManager.showInterstitialAd(
@@ -200,50 +190,38 @@ fun MainComposeScreen(navController: NavController? = null) {
         }
     }
 
-    // ฟังก์ชันจัดการการคลิก
-    fun handleItemClick(item: MenuItem) {
-        selectedItem = item
-
+    // ฟังก์ชันจัดการการคลิก - ใช้การนับ count แทนการแสดง dialog
+    val handleItemClick: (MenuItem) -> Unit = { item ->
         // เพิ่มจำนวนรอบ
         visitCount++
 
-        // ตรวจสอบว่าถึงรอบที่ต้องบังคับดูโฆษณาหรือยัง
-        if (visitCount >= VISITS_BEFORE_FORCE_AD && interstitialAdManager.isAdLoaded()) {
-            // บังคับแสดงโฆษณาเลย
+        // ตรวจสอบว่าถึงรอบที่ต้องแสดงโฆษณาหรือยัง
+        val shouldShowAd = visitCount >= VISITS_BEFORE_AD && interstitialAdManager.isAdLoaded()
+
+        if (shouldShowAd) {
+            // แสดงโฆษณาและรีเซ็ตนับรอบ
             showInterstitialAd(item)
-            // รีเซ็ตนับรอบ
             visitCount = 0
-        } else if (interstitialAdManager.isAdLoaded()) {
-            // แสดง dialog ถามก่อน (รอบปกติ)
-            showAdDialog = true
         } else {
-            // ถ้าโฆษณายังไม่พร้อม ให้เปิดหน้าปกติ
+            // เปิดหน้าปกติ
             handleItemClickDirectly(context, item, navController)
+
+            // ถ้ายังไม่ถึงรอบแสดงโฆษณา แต่โฆษณาพร้อมอยู่แล้ว ให้โหลดใหม่เพื่อรอบถัดไป
+            if (interstitialAdManager.isAdLoaded()) {
+                loadInterstitialAd(interstitialAdManager)
+            }
+        }
+
+        // พยายามโหลดโฆษณาใหม่ถ้ายังไม่พร้อม
+        if (!interstitialAdManager.isAdLoaded()) {
             loadInterstitialAd(interstitialAdManager)
         }
     }
 
-    // ฟังก์ชันแสดงโฆษณา
-//    fun showInterstitialAd(item: MenuItem) {
-//        val activity = context as? Activity
-//        if (activity != null) {
-//            interstitialAdManager.showInterstitialAd(
-//                activity = activity,
-//                onAdDismissed = {
-//                    // โฆษณาปิดแล้ว - เปิด Activity ปลายทาง
-//                    showAdSuccessMessage(context)
-//                    handleItemClickDirectly(context, item, navController)
-//                },
-//                onAdFailed = {
-//                    // โฆษณาแสดงไม่สำเร็จ - เปิด Activity ปลายทาง
-//                    showAdFailedMessage(context)
-//                    handleItemClickDirectly(context, item, navController)
-//                }
-//            )
-//        } else {
-//            handleItemClickDirectly(context, item, navController)
-//        }
-  //  }
+    // โหลดโฆษณาเมื่อเริ่มต้น
+    LaunchedEffect(Unit) {
+        loadInterstitialAd(interstitialAdManager)
+    }
 
     Scaffold(
         topBar = {
@@ -294,6 +272,13 @@ fun MainComposeScreen(navController: NavController? = null) {
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
+                    // แสดงจำนวนรอบจนกว่าจะถึงโฆษณา
+                    VisitCounter(
+                        currentCount = visitCount,
+                        maxCount = VISITS_BEFORE_AD,
+                        isAdLoaded = interstitialAdManager.isAdLoaded()
+                    )
+
                     ViewModeSelector(
                         currentMode = viewMode.value,
                         onModeSelected = { mode ->
@@ -322,6 +307,16 @@ fun MainComposeScreen(navController: NavController? = null) {
                         }
                     }
 
+                    // แสดง Banner Ad
+                    BannerAdSection(
+                        isLoaded = isBannerAdLoaded,
+                        error = bannerAdError,
+                        onRetry = {
+                            isBannerAdLoaded = false
+                            bannerAdError = null
+                        }
+                    )
+
                     // แสดงสถานะการโหลดโฆษณา
                     AdLoadingStatus(
                         isAdLoading = isAdLoading,
@@ -329,27 +324,148 @@ fun MainComposeScreen(navController: NavController? = null) {
                         adLoadAttempt = adLoadAttempt
                     )
                 }
-
-                // Interstitial Ad Confirmation Dialog
-//                if (showAdDialog) {
-//                    AdConfirmationDialog(
-//                        onConfirm = {
-//                            showAdDialog = false
-//                            selectedItem?.let { item ->
-//                                showInterstitialAd(item)
-//                            }
-//                        },
-//                        onDismiss = {
-//                            showAdDialog = false
-                            selectedItem?.let { item ->
-                                handleItemClickDirectly(context, item, navController)
-                            }
-//                        }
-//                    )
-//                }
             }
         }
     )
+}
+
+@Composable
+fun VisitCounter(
+    currentCount: Int,
+    maxCount: Int,
+    isAdLoaded: Boolean
+) {
+    val remaining = maxCount - currentCount
+    val progress = currentCount.toFloat() / maxCount.toFloat()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Progress Text
+        Text(
+            text = when {
+                currentCount >= maxCount && isAdLoaded -> "🎉 พร้อมแสดงโฆษณา!"
+                currentCount >= maxCount -> "⏳ รอโฆษณาโหลด..."
+                else -> "📊 อีก $remaining ครั้งจะแสดงโฆษณา"
+            },
+            color = when {
+                currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
+                currentCount >= maxCount -> Color(0xFFFF6B6B)
+                else -> Color(0xFF666666)
+            },
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium
+        )
+
+        // Progress Bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(
+                    color = Color(0xFFE0E0E0),
+                    shape = RoundedCornerShape(2.dp)
+                )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+                    .height(4.dp)
+                    .background(
+                        color = when {
+                            currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
+                            currentCount >= maxCount -> Color(0xFFFF6B6B)
+                            else -> Color(0xFF4ECDC4)
+                        },
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+        }
+
+        // Support Message
+        Text(
+            text = "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏",
+            color = Color(0xFF888888),
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun BannerAdSection(
+    isLoaded: Boolean,
+    error: String?,
+    onRetry: () -> Unit
+) {
+    val context = LocalContext.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Banner Ad Container
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .background(
+                    color = Color(0xFFF5F5F5),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            when {
+                isLoaded -> {
+                    Text(
+                        text = "✅ โฆษณากำลังแสดง",
+                        color = Color(0xFF06D6A0),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                error != null -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "❌ ไม่สามารถโหลดโฆษณาได้",
+                            color = Color(0xFFFF6B6B),
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "แตะเพื่อลองใหม่",
+                            color = Color(0xFF666666),
+                            fontSize = 10.sp,
+                            modifier = Modifier.clickable { onRetry() }
+                        )
+                    }
+                }
+                else -> {
+                    Text(
+                        text = "🔄 กำลังโหลดโฆษณา...",
+                        color = Color(0xFF666666),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        // Support Message
+        Text(
+            text = "📱 การสนับสนุนจากโฆษณาช่วยให้เราพัฒนาแอปฯ ต่อไปได้",
+            color = Color(0xFF666666),
+            fontSize = 10.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
 }
 
 @Composable
@@ -366,17 +482,17 @@ fun AdLoadingStatus(
     ) {
         when {
             isAdLoading -> Text(
-                text = "🔄 กำลังโหลดโฆษณา... (ครั้งที่ $adLoadAttempt)",
+                text = "🔄 กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
                 color = Color(0xFF666666),
                 fontSize = 12.sp
             )
             isAdLoaded -> Text(
-                text = "✅ โฆษณาพร้อมแสดง",
+                text = "✅ โฆษณาเต็มจอพร้อมแสดง",
                 color = Color(0xFF06D6A0),
                 fontSize = 12.sp
             )
             else -> Text(
-                text = "❌ โฆษณายังไม่พร้อม",
+                text = "❌ โฆษณาเต็มจอยังไม่พร้อม",
                 color = Color(0xFFFF6B6B),
                 fontSize = 12.sp
             )
@@ -384,54 +500,7 @@ fun AdLoadingStatus(
     }
 }
 
-@Composable
-fun AdConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "📱 ขอแสดงโฆษณา",
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3047)
-            )
-        },
-        text = {
-            Column {
-                Text(
-                    "ดูโฆษณาสั้นๆ เพื่อสนับสนุนนักพัฒนา\n",
-                    color = Color(0xFF4A4A4A)
-                )
-                Text(
-                    "🎯 ขอบคุณที่ช่วยสนับสนุนการพัฒนาแอปพลิเคชัน!",
-                    color = Color(0xFF7209B7),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4ECDC4)
-                ),
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
-                Text("✅ ดูโฆษณา", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text("❌ ข้ามไป", color = Color(0xFF6B6B6B))
-            }
-        }
-    )
-}
+// ... (ส่วนที่เหลือของโค้ด保持不变)
 
 @Composable
 fun AnimatedIconButton(
@@ -511,7 +580,6 @@ fun ViewModeSelector(currentMode: ViewMode, onModeSelected: (ViewMode) -> Unit) 
             Row(
                 horizontalArrangement = Arrangement.Center
             ) {
-                // Animated Grid View Button
                 AnimatedSelectorButton(
                     text = "แบบตาราง",
                     isSelected = currentMode == ViewMode.GRID,
@@ -522,7 +590,6 @@ fun ViewModeSelector(currentMode: ViewMode, onModeSelected: (ViewMode) -> Unit) 
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Animated List View Button
                 AnimatedSelectorButton(
                     text = "แบบรายการ",
                     isSelected = currentMode == ViewMode.LIST,
@@ -610,7 +677,6 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
     var isHovered by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
 
-    // เลือกสีตาม ID ของเมนู
     val cardColor = when (item.targetActivity) {
         4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
         else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
@@ -622,7 +688,6 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
     )
 
-    // Scale animation when hovered
     val scale by animateFloatAsState(
         targetValue = when {
             isClicked -> 0.95f
@@ -636,7 +701,6 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         label = "grid item scale"
     )
 
-    // Infinite floating animation
     val infiniteTransition = rememberInfiniteTransition(label = "infinite transition")
     val floatAnimation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -648,10 +712,8 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         label = "float animation"
     )
 
-    // Calculate vertical offset for floating effect
-    val floatOffset = (floatAnimation - 0.5f) * 8f // ±4dp movement
+    val floatOffset = (floatAnimation - 0.5f) * 8f
 
-    // Click animation - bounce effect
     val bounceScale = remember { Animatable(1f) }
 
     LaunchedEffect(isClicked) {
@@ -697,7 +759,6 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            // Animated Image with pulse effect
             PulsingImage(
                 painter = painterResource(id = item.iconRes),
                 contentDescription = item.title,
@@ -728,7 +789,6 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
     var isHovered by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
 
-    // เลือกสีตาม ID ของเมนู
     val cardColor = when (item.targetActivity) {
         4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
         else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
@@ -740,7 +800,6 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
         blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
     )
 
-    // Scale animation
     val scale by animateFloatAsState(
         targetValue = when {
             isClicked -> 0.98f
@@ -754,10 +813,8 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
         label = "list item scale"
     )
 
-    // Slide in animation for list items
     val slideOffset = remember { Animatable(100f) }
 
-    // Click animation - press effect
     val pressOffset = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
@@ -806,7 +863,6 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Fade in image animation
             FadeInImage(
                 painter = painterResource(id = item.iconRes),
                 contentDescription = item.title,
@@ -918,7 +974,6 @@ fun FadeInImage(
     }
 }
 
-// Extension function for clickable without ripple
 fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = this.then(
     Modifier.clickable(
         interactionSource = MutableInteractionSource(),
@@ -926,7 +981,6 @@ fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = this.then(
     ) { onClick() }
 )
 
-// Data classes and enums
 data class MenuItem(
     val id: Int,
     val title: String,
@@ -938,7 +992,6 @@ enum class ViewMode {
     GRID, LIST
 }
 
-// Helper functions
 private fun getMenuItems(): List<MenuItem> {
     return listOf(
         MenuItem(1, "ฝึกอ่าน", R.drawable.doing_learn_01, 0),
@@ -949,7 +1002,6 @@ private fun getMenuItems(): List<MenuItem> {
     )
 }
 
-// เปิด Activity แบบปกติ
 private fun handleItemClickDirectly(
     context: Context,
     item: MenuItem,
@@ -977,7 +1029,6 @@ private fun handleItemClickDirectly(
     }
 }
 
-// แสดงข้อความเมื่อโฆษณาแสดงสำเร็จ
 private fun showAdSuccessMessage(context: Context) {
     Toast.makeText(
         context,
@@ -986,7 +1037,6 @@ private fun showAdSuccessMessage(context: Context) {
     ).show()
 }
 
-// แสดงข้อความเมื่อโฆษณาแสดงไม่สำเร็จ
 private fun showAdFailedMessage(context: Context) {
     Toast.makeText(
         context,
@@ -1051,12 +1101,12 @@ private fun startColoringActivity(context: Context) {
 
 private fun getRandomColor(): Int {
     val colors = listOf(
-        android.graphics.Color.parseColor("#FF6B6B"), // สีแดง
-        android.graphics.Color.parseColor("#4ECDC4"), // สีฟ้าอมเขียว
-        android.graphics.Color.parseColor("#FFD166"), // สีเหลือง
-        android.graphics.Color.parseColor("#06D6A0"), // สีเขียว
-        android.graphics.Color.parseColor("#118AB2"), // สีน้ำเงิน
-        android.graphics.Color.parseColor("#7209B7")  // สีม่วง
+        android.graphics.Color.parseColor("#FF6B6B"),
+        android.graphics.Color.parseColor("#4ECDC4"),
+        android.graphics.Color.parseColor("#FFD166"),
+        android.graphics.Color.parseColor("#06D6A0"),
+        android.graphics.Color.parseColor("#118AB2"),
+        android.graphics.Color.parseColor("#7209B7")
     )
     return colors.random()
 }

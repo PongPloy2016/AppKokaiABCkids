@@ -18,8 +18,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.2.9"
+        versionCode = 17
+        versionName = "1.3.0"
     }
 
     buildTypes {
@@ -49,6 +49,8 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(project(":videowatchfeature"))
+//    implementation(project(":core"))
+//    implementation(project(":custom-ui"))
 
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
@@ -99,7 +101,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.1")
 
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2023.10.01")
+    val composeBom = platform("androidx.compose:compose-bom:2025.10.01")
     implementation(composeBom)
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.compose.ui:ui")

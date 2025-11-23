@@ -109,7 +109,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //Tools.getTheme(this)
+       // Tools.getTheme(this)
         setContentView(R.layout.activity_video_auto_detail)
 
         video = intent.getParcelableExtra(Constant.EXTRA_OBJC)!!
@@ -182,7 +182,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             requestAction()
         }
 
-        initToolbar()
+        //initToolbar()
         handleOnBackPressed()
 
         // เริ่มต้น YouTube Player

@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.pongploydev.videowatchfeature"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21
@@ -39,6 +39,10 @@ android {
 
 dependencies {
     // Core Android
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    implementation(project(":core"))
+    implementation(project(":custom-ui"))
+
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
@@ -72,8 +76,8 @@ dependencies {
     implementation("org.imaginativeworld.oopsnointernet:oopsnointernet:2.0.0")
 
     // YouTube Player
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:custom-ui:12.1.0")
+    //implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2")
+   // implementation("com.pierfrancescosoffritti.androidyoutubeplayer:custom-ui:12.1.2")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
