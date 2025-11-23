@@ -84,7 +84,6 @@ import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
-import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
 import com.pongploydev.priyankvex.paintapp.ads.InterstitialAdManager
 import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
 import kotlinx.coroutines.delay
@@ -1046,8 +1045,8 @@ private fun showKidsActivitiesDialog(context: Context) {
 }
 
 private fun startColoringActivity(context: Context) {
-    val intent = Intent(context, ColoringGameActivity::class.java)
-    context.startActivity(intent)
+//    val intent = Intent(context, ColoringGameActivity::class.java)
+//    context.startActivity(intent)
 }
 
 private fun getRandomColor(): Int {
