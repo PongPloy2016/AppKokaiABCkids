@@ -11,6 +11,7 @@ public class Constant implements Serializable {
     public static int newCommentCount = 0;
     public static boolean isCommentMadeFinal = false;
     public static final int defaultTabs = 2;
+    public static final int HIDE_THRESHOLD = 20 ;
 
 
     //global variables

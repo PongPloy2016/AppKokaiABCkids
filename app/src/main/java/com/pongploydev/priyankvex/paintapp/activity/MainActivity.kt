@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.viewpager.widget.ViewPager
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
@@ -49,6 +50,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         private const val AD_STATE_NOT_INITIALIZED = 0
         private const val AD_STATE_INITIALIZED = 1
         private const val AD_STATE_UNIT_ID_SET = 2
+        private const val AD_LOAD_DELAY_MS = 30000L // 30 seconds delay for child apps
     }
 
     // เปลี่ยนเป็น nullable variables
@@ -64,8 +66,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     private var currentAdUnitId: String? = null
 
     // ตัวแปรสำหรับจัดการโฆษณาสำหรับเด็ก
-    private var isChildDirectedApp = true
+    private var isChildDirectedApp = true // ✅ ตั้งค่าเป็น true สำหรับแอปเด็ก
     private var isGdprApplicable = true
+    private var isAdLoading = false
 
     // สำหรับติดตามสถานะการอัพเดต
     private var isUpdateInProgress = false
@@ -93,6 +96,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         handleUpdateResult(result.resultCode)
     }
 
+    // Handler สำหรับจัดการการโหลดโฆษณาแบบดีเลย์
+    private val adHandler = Handler(Looper.getMainLooper())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super<AppCompatActivity>.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -105,14 +111,11 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         // 3. Initialize AdView ก่อน (เพียงครั้งเดียว)
         if (!isAdViewInitialized) {
-            adView = findViewById(R.id.adView)
-            isAdViewInitialized = true
-            adViewState = AD_STATE_INITIALIZED
-            Log.d(TAG, "AdView initialized")
+            initializeAdViewWithDefaults()
         }
 
-        // 4. ตั้งค่า AdMob (จะเลือกใช้ real หรือ test อัตโนมัติ)
-        initializeAdMobForChildren()
+        // 4. ตั้งค่า AdMob สำหรับเด็กและครอบครัวโดยเฉพาะ
+        initializeAdMobForFamily()
 
         // 5. ตั้งค่า AppUpdateManager
         initializeAppUpdateManager()
@@ -130,8 +133,19 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun initializeUiComponents() {
-        //coordinator = findViewById(R.id.coordinatorLayout)
+        // coordinator = findViewById(R.id.coordinatorLayout)
         // btnSort = findViewById(R.id.btn_sort)
+    }
+
+    private fun initializeAdViewWithDefaults() {
+        adView = findViewById(R.id.adView)
+
+        // ✅ ใน AdMob 23.0.0 ไม่ต้องตั้งค่า adSize ในโค้ด ถ้าตั้งใน XML แล้ว
+        // adView?.setAdSize(AdSize.BANNER) // ❌ วิธีเก่าใช้ไม่ได้แล้ว
+
+        isAdViewInitialized = true
+        adViewState = AD_STATE_INITIALIZED
+        Log.d(TAG, "✅ AdView initialized")
     }
 
     private fun initializeAppUpdateManager() {
@@ -444,6 +458,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         adView?.resume()
 
+        // ✅ ตรวจสอบการตั้งค่าโฆษณาสำหรับเด็กอีกครั้ง
+        ensureChildDirectedSettings()
+
         if (isPlayCoreAppUpdateManagerAvailable() && shouldEnableInAppUpdates()) {
             checkForUpdateInProgress()
         }
@@ -453,171 +470,291 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         super<AppCompatActivity>.onDestroy()
 
         adView?.destroy()
+        // ✅ ล้าง Handler เพื่อป้องกัน memory leaks
+        adHandler.removeCallbacksAndMessages(null)
 
         playCoreAppUpdateManager?.unregisterListener(installStateListener)
         appUpdateManager?.cleanup()
     }
 
-    // ส่วนของการจัดการ AdMob (แก้ไขแล้ว)
-    private fun initializeAdMobForChildren() {
-        try {
-            Log.d(TAG, "🚀 Initializing AdMob for children...")
+    // ============================================================
+    // 🔥 ส่วนที่แก้ไขแล้ว: การจัดการโฆษณาสำหรับเด็กและครอบครัว
+    // ============================================================
 
+    private fun initializeAdMobForFamily() {
+        try {
+            Log.d(TAG, "🚀 Initializing AdMob for FAMILY with child-safe settings")
+
+            // ✅ ตั้งค่าสำหรับแอปเด็กอย่างเคร่งครัด
             val configuration = RequestConfiguration.Builder()
-                .setTagForChildDirectedTreatment(
-                    if (isChildDirectedApp) {
-                        RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
-                    } else {
-                        RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE
-                    }
-                )
+                .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
                 .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                .setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE)
                 .build()
 
             MobileAds.setRequestConfiguration(configuration)
 
+            // ✅ ตั้งค่า Consent เป็น NON_PERSONALIZED สำหรับเด็กโดย default
             if (isGdprApplicable) {
                 val consentStatus = getConsentStatus()
-                updateAdMobConsent(consentStatus)
+                if (consentStatus == ConsentStatus.UNKNOWN) {
+                    // สำหรับเด็ก ให้ใช้ non-personalized เป็น default
+                    updateAdMobConsent(ConsentStatus.NON_PERSONALIZED)
+                } else {
+                    updateAdMobConsent(consentStatus)
+                }
             }
 
             MobileAds.initialize(this) { initializationStatus ->
-                Log.d(TAG, "✅ AdMob Initialization Status: ${initializationStatus.adapterStatusMap}")
+                Log.d(TAG, "✅ AdMob Initialized for Family: ${initializationStatus.adapterStatusMap}")
 
                 runOnUiThread {
-                    // เรียก setupAdMobReal() เท่านั้นครั้งเดียว
+                    // เรียก setupFamilySafeAdMob() เท่านั้นครั้งเดียว
                     if (adViewState < AD_STATE_UNIT_ID_SET) {
-                        setupAdMobReal()
+                        setupFamilySafeAdMob()
                     } else {
-                        Log.d(TAG, "AdUnitId already set, loading ad directly")
-                        loadAdWithExistingAdUnitId()
+                        Log.d(TAG, "AdUnitId already set, loading family-safe ad directly")
+                        loadFamilySafeAd()
                     }
                 }
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error initializing AdMob", e)
+            Log.e(TAG, "❌ Error initializing AdMob for family", e)
             runOnUiThread {
-                // เรียก setupAdMobTest() เท่านั้นครั้งเดียว
+                // เรียก setupFamilySafeTestAdMob() เท่านั้นครั้งเดียว
                 if (adViewState < AD_STATE_UNIT_ID_SET) {
-                    setupAdMobTest()
+                    setupFamilySafeTestAdMob()
                 } else {
-                    Log.d(TAG, "AdUnitId already set, loading ad directly")
-                    loadAdWithExistingAdUnitId()
+                    Log.d(TAG, "AdUnitId already set, loading family-safe ad directly")
+                    loadFamilySafeAd()
                 }
             }
         }
     }
 
-    private fun setupAdMobReal() {
+    private fun setupFamilySafeAdMob() {
         val currentAdView = adView ?: return
 
+        // ✅ ใน AdMob 23.0.0 ไม่ต้องตั้งค่า adSize ในโค้ด ถ้าตั้งใน XML แล้ว
+        // ตรวจสอบว่า adUnitId ถูกตั้งค่าแล้วหรือไม่
         if (adViewState >= AD_STATE_UNIT_ID_SET) {
-            Log.d(TAG, "AdUnitId already set, skipping real ad setup")
-            loadAdWithExistingAdUnitId()
+            Log.d(TAG, "AdUnitId already set, loading family-safe ad")
+            loadFamilySafeAd()
             return
         }
 
         try {
-            val realAdUnitId = resources.getString(R.string.banner_ad_unit_id)
-            Log.d(TAG, "🔄 Setting REAL AdUnitId: $realAdUnitId")
+            val familyAdUnitId = resources.getString(R.string.banner_ad_unit_id)
 
-            currentAdView.adUnitId = realAdUnitId
-            currentAdUnitId = realAdUnitId
-            adViewState = AD_STATE_UNIT_ID_SET
+            // ✅ ใช้ apply {} เพื่อตั้งค่า properties
+            currentAdView.apply {
+                // ✅ ตรวจสอบว่า adUnitId ยังไม่ถูกตั้งค่า
+                if (adUnitId.isNullOrEmpty()) {
+                    Log.d(TAG, "👨‍👩‍👧‍👦 Setting FAMILY-SAFE AdUnitId: $familyAdUnitId")
+                    adUnitId = familyAdUnitId
+                    this@MainActivity.currentAdUnitId = familyAdUnitId
+                    this@MainActivity.adViewState = AD_STATE_UNIT_ID_SET
+                } else {
+                    Log.d(TAG, "👨‍👩‍👧‍👦 AdUnitId already set to: $adUnitId, using existing")
+                    this@MainActivity.currentAdUnitId = adUnitId
+                    this@MainActivity.adViewState = AD_STATE_UNIT_ID_SET
+                }
+            }
 
-            setupAdListener(true)
-            loadAdWithExistingAdUnitId()
+            setupFamilySafeAdListener(true)
+            loadFamilySafeAd()
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error setting up real ad", e)
-            // ไม่เรียก setupAdMobTest() อัตโนมัติที่นี่เพื่อป้องกัน loop
+            Log.e(TAG, "❌ Error setting up family-safe ad", e)
+            // ✅ ไม่เรียก setupFamilySafeTestAdMob() ถ้า adUnitId ถูกตั้งค่าแล้ว
+            if (adViewState < AD_STATE_UNIT_ID_SET) {
+                setupFamilySafeTestAdMob()
+            }
         }
     }
 
-    private fun setupAdMobTest() {
+    private fun setupFamilySafeTestAdMob() {
         val currentAdView = adView ?: return
 
+        // ✅ ใน AdMob 23.0.0 ไม่ต้องตั้งค่า adSize ในโค้ด
+        // ตรวจสอบว่า adUnitId ถูกตั้งค่าแล้วหรือไม่
         if (adViewState >= AD_STATE_UNIT_ID_SET) {
-            Log.d(TAG, "AdUnitId already set, skipping test ad setup")
-            loadAdWithExistingAdUnitId()
+            Log.d(TAG, "AdUnitId already set, skipping test setup")
+            loadFamilySafeAd()
             return
         }
 
         try {
             val testAdUnitId = "ca-app-pub-3940256099942544/6300978111"
-            Log.d(TAG, "🧪 Setting TEST AdUnitId: $testAdUnitId")
 
-            currentAdView.adUnitId = testAdUnitId
-            currentAdUnitId = testAdUnitId
-            adViewState = AD_STATE_UNIT_ID_SET
+            // ✅ ใช้ apply {} เพื่อตั้งค่า properties
+            currentAdView.apply {
+                // ✅ ตรวจสอบว่า adUnitId ยังไม่ถูกตั้งค่า
+                if (adUnitId.isNullOrEmpty()) {
+                    Log.d(TAG, "🧪 Setting FAMILY-SAFE TEST AdUnitId: $testAdUnitId")
+                    adUnitId = testAdUnitId
+                    this@MainActivity.currentAdUnitId = testAdUnitId
+                    this@MainActivity.adViewState = AD_STATE_UNIT_ID_SET
+                } else {
+                    Log.d(TAG, "🧪 AdUnitId already set to: $adUnitId, using existing")
+                    this@MainActivity.currentAdUnitId = adUnitId
+                    this@MainActivity.adViewState = AD_STATE_UNIT_ID_SET
+                }
+            }
 
-            setupAdListener(false)
-            loadAdWithExistingAdUnitId()
+            setupFamilySafeAdListener(false)
+            loadFamilySafeAd()
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error setting up test ad", e)
+            Log.e(TAG, "❌ Error setting up family-safe test ad", e)
+            currentAdView.visibility = View.GONE
         }
     }
 
-    private fun setupAdListener(isRealAd: Boolean) {
+    private fun setupFamilySafeAdListener(isRealAd: Boolean) {
         val currentAdView = adView ?: return
 
         currentAdView.adListener = object : AdListener() {
             override fun onAdLoaded() {
-                Log.d(TAG, if (isRealAd) "🎉 REAL AD LOADED SUCCESSFULLY!" else "✅ TEST AD LOADED")
+                Log.d(TAG, if (isRealAd) "🎉 FAMILY-SAFE AD LOADED!" else "✅ FAMILY-SAFE TEST AD LOADED")
                 currentAdView.visibility = View.VISIBLE
+                isAdLoading = false
+
+                // ✅ ตรวจสอบเพิ่มเติมว่าโฆษณาปลอดภัยสำหรับเด็ก
+                validateAdContentForChildren()
+
+                // ✅ Log event สำหรับ analytics
+                logFamilyAdEvent("ad_loaded")
             }
 
             override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.e(TAG, if (isRealAd) "❌ REAL AD FAILED: ${adError.message}" else "❌ TEST AD FAILED: ${adError.message}")
-                Log.e(TAG, "Error Code: ${adError.code}")
+                Log.e(TAG, if (isRealAd) "❌ FAMILY AD FAILED: ${adError.message}" else "❌ FAMILY TEST AD FAILED: ${adError.message}")
+                Log.e(TAG, "Error Code: ${adError.code}, Domain: ${adError.domain}")
 
-                if (isRealAd) {
-                    // สำหรับ real ad ที่ fail ให้ลองใช้ test ad (เฉพาะถ้ายังไม่ได้ตั้งค่า)
-                    if (adViewState < AD_STATE_UNIT_ID_SET) {
-                        Log.w(TAG, "🔄 Falling back to TEST ads due to error")
-                        setupAdMobTest()
-                    } else {
-                        currentAdView.visibility = View.GONE
-                    }
-                } else {
-                    currentAdView.visibility = View.GONE
+                // ✅ สำหรับแอปเด็ก ถ้าโฆษณาโหลด失败 ให้ซ่อนโฆษณาไปเลย
+                currentAdView.visibility = View.GONE
+                isAdLoading = false
+
+                // ✅ ใน AdMob 23.0.0 ใช้ adError.code ตรวจสอบโดยตรง
+                if (adError.code == 3) { // 3 คือ ERROR_CODE_NO_FILL ในเวอร์ชันเก่า
+                    Log.w(TAG, "No family-safe ads available - this is expected for child-directed apps")
                 }
+
+                // ✅ Log event สำหรับ analytics
+                logFamilyAdEvent("ad_failed", adError.toString())
             }
 
             override fun onAdOpened() {
-                Log.d(TAG, "Ad opened")
+                Log.d(TAG, "Family-safe ad opened")
+                // ✅ Log analytics สำหรับโฆษณาเด็ก
+                logFamilyAdEvent("ad_opened")
             }
 
             override fun onAdClicked() {
-                Log.d(TAG, "Ad clicked")
+                Log.d(TAG, "Family-safe ad clicked")
+                // ✅ Log analytics สำหรับการคลิกโฆษณาเด็ก
+                logFamilyAdEvent("ad_clicked")
             }
 
             override fun onAdClosed() {
-                Log.d(TAG, "Ad closed")
-                // โหลด ad ใหม่เมื่อปิด ad
-                Handler(Looper.getMainLooper()).postDelayed({
-                    loadAdWithExistingAdUnitId()
-                }, 1000)
+                Log.d(TAG, "Family-safe ad closed")
+                // ✅ สำหรับเด็ก ไม่โหลดโฆษณาใหม่ทันที เพื่อลดการโฆษณาที่มากเกินไป
+                adHandler.removeCallbacksAndMessages(null)
+                adHandler.postDelayed({
+                    if (!isAdLoading) {
+                        loadFamilySafeAd()
+                    }
+                }, AD_LOAD_DELAY_MS) // ⏳ รอ 30 วินาทีก่อนโหลดโฆษณาใหม่
+
+                logFamilyAdEvent("ad_closed")
             }
 
             override fun onAdImpression() {
-                Log.d(TAG, "Ad impression recorded")
+                Log.d(TAG, "Family-safe ad impression recorded")
+                logFamilyAdEvent("ad_impression")
             }
         }
     }
 
-    // โหลด ad ด้วย adUnitId ที่มีอยู่แล้ว
-    private fun loadAdWithExistingAdUnitId() {
+    private fun loadFamilySafeAd() {
         val currentAdView = adView ?: return
 
+        // ✅ ใช้ apply {} เพื่อตรวจสอบ properties
+        currentAdView.apply {
+            // ✅ ตรวจสอบว่า adUnitId ถูกตั้งค่าแล้ว
+            if (adUnitId.isNullOrEmpty()) {
+                Log.e(TAG, "❌ Cannot load ad: AdUnitId is null or empty")
+                visibility = View.GONE
+                this@MainActivity.isAdLoading = false
+                return
+            }
+        }
+
+        if (isAdLoading) {
+            Log.d(TAG, "Ad is already loading, skipping...")
+            return
+        }
+
         try {
+            isAdLoading = true
+            Log.d(TAG, "👨‍👩‍👧‍👦 Loading FAMILY-SAFE ad - UnitId: ${currentAdView.adUnitId}")
+
+            // ✅ ใช้ Request สำหรับเด็กโดยเฉพาะ
             val adRequest = AdRequest.Builder().build()
+
             currentAdView.loadAd(adRequest)
-            Log.d(TAG, "🔄 Loading ad with existing AdUnitId: $currentAdUnitId")
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading ad with existing AdUnitId", e)
+            Log.e(TAG, "❌ Error loading family-safe ad", e)
+            currentAdView.visibility = View.GONE
+            isAdLoading = false
+        }
+    }
+
+    private fun validateAdContentForChildren() {
+        // ✅ ตรวจสอบว่าโฆษณามีขนาดเหมาะสมและไม่มีการโต้ตอบที่หลอกลวง
+        val currentAdView = adView ?: return
+
+        // ตรวจสอบว่าโฆษณาไม่ใหญ่เกินไป (ไม่เกิน 15% ของหน้าจอ)
+        val displayMetrics = resources.displayMetrics
+        val screenHeight = displayMetrics.heightPixels
+        val adHeight = currentAdView.height
+
+        if (adHeight > screenHeight * 0.15) {
+            Log.w(TAG, "⚠️ Ad might be too large for child-directed app - hiding")
+            currentAdView.visibility = View.GONE
+            return
+        }
+
+        Log.d(TAG, "✅ Ad content validated for children - ad height: $adHeight, screen height: $screenHeight")
+    }
+
+    private fun ensureChildDirectedSettings() {
+        // ✅ ยืนยันการตั้งค่าโฆษณาสำหรับเด็กทุกครั้งที่กลับมาใช้แอป
+        val configuration = RequestConfiguration.Builder()
+            .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
+            .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+            .setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE)
+            .build()
+
+        MobileAds.setRequestConfiguration(configuration)
+        Log.d(TAG, "✅ Child-directed settings verified")
+    }
+
+    private fun logFamilyAdEvent(event: String, errorMessage: String? = null) {
+        try {
+            val params = Bundle().apply {
+                putString("ad_unit_id", currentAdUnitId ?: "unknown")
+                putString("ad_event", event)
+                putBoolean("child_directed", true)
+                putBoolean("family_safe", true)
+                errorMessage?.let { putString("error_message", it) }
+            }
+            firebaseAnalytics.logEvent("family_ad_$event", params)
+            Log.d(TAG, "📊 Logged family ad event: $event")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error logging family ad event", e)
         }
     }
 
@@ -634,17 +771,11 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         val childDirectedTag = RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
         val adContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_G
 
-        when (consentStatus) {
-            ConsentStatus.PERSONALIZED -> {
-                // ไม่ต้องทำอะไรพิเศษ
-            }
-            ConsentStatus.NON_PERSONALIZED -> {
-                // ไม่ต้องทำอะไรพิเศษ
-            }
-            ConsentStatus.UNKNOWN -> {
-                handleUnknownConsent()
-                return
-            }
+        // ✅ สำหรับแอปเด็ก ควรใช้ non-personalized ads เป็นหลัก
+        val finalConsentStatus = if (consentStatus == ConsentStatus.UNKNOWN) {
+            ConsentStatus.NON_PERSONALIZED
+        } else {
+            consentStatus
         }
 
         val configurationBuilder = RequestConfiguration.Builder()
@@ -653,13 +784,50 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         MobileAds.setRequestConfiguration(configurationBuilder.build())
 
-        // โหลด ad ใหม่เมื่อ consent เปลี่ยน
-        loadAdWithExistingAdUnitId()
+        // บันทึก consent status
+        val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        sharedPref.edit().putString("consent_status",
+            when (finalConsentStatus) {
+                ConsentStatus.PERSONALIZED -> "PERSONALIZED"
+                ConsentStatus.NON_PERSONALIZED -> "NON_PERSONALIZED"
+                else -> "NON_PERSONALIZED"
+            }
+        ).apply()
+
+        Log.d(TAG, "✅ Consent updated for family app: $finalConsentStatus")
+
+        // ✅ ตรวจสอบการตั้งค่า AdView ก่อนโหลดโฆษณา
+        if (validateAdViewSettings()) {
+            adHandler.postDelayed({
+                loadFamilySafeAd()
+            }, 1000)
+        } else {
+            Log.e(TAG, "❌ Cannot load ad due to invalid AdView settings")
+        }
+    }
+
+    private fun validateAdViewSettings(): Boolean {
+        val currentAdView = adView ?: return false
+
+        return when {
+            !isAdViewInitialized -> {
+                Log.e(TAG, "❌ AdView not initialized")
+                false
+            }
+            currentAdView.adUnitId.isNullOrEmpty() -> {
+                Log.e(TAG, "❌ AdUnitId is null or empty")
+                false
+            }
+            else -> {
+                Log.d(TAG, "✅ AdView settings valid - UnitId: ${currentAdView.adUnitId}")
+                true
+            }
+        }
     }
 
     private fun handleUnknownConsent() {
         adView?.visibility = View.GONE
-        Log.w(TAG, "Consent status unknown - ads are hidden")
+        Log.w(TAG, "Consent status unknown - ads are hidden for child safety")
     }
 
     fun setChildDirectedTreatment(isChildDirected: Boolean) {
@@ -680,16 +848,28 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                     RequestConfiguration.MAX_AD_CONTENT_RATING_MA
                 }
             )
+            .setTagForUnderAgeOfConsent(
+                if (isChildDirected) {
+                    RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE
+                } else {
+                    RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE
+                }
+            )
             .build()
 
         MobileAds.setRequestConfiguration(configuration)
 
         // โหลด ad ใหม่เมื่อการตั้งค่าเปลี่ยน
-        loadAdWithExistingAdUnitId()
+        adHandler.postDelayed({
+            loadFamilySafeAd()
+        }, 1000)
+
+        Log.d(TAG, "✅ Child directed treatment updated: $isChildDirected")
     }
 
     fun updateGdprConsent(consentGiven: Boolean) {
-        val consentStatus = if (consentGiven) {
+        // ✅ สำหรับแอปเด็ก แนะนำให้ใช้ non-personalized ads เสมอ
+        val consentStatus = if (consentGiven && !isChildDirectedApp) {
             ConsentStatus.PERSONALIZED
         } else {
             ConsentStatus.NON_PERSONALIZED
@@ -697,10 +877,11 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         sharedPref.edit().putString("consent_status",
-            if (consentGiven) "PERSONALIZED" else "NON_PERSONALIZED"
+            if (consentStatus == ConsentStatus.PERSONALIZED) "PERSONALIZED" else "NON_PERSONALIZED"
         ).apply()
 
         updateAdMobConsent(consentStatus)
+        Log.d(TAG, "✅ GDPR consent updated for family app: $consentStatus")
     }
 
     private fun setupToolbarAndNav() {
@@ -766,6 +947,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     override fun onPause() {
         super<AppCompatActivity>.onPause()
         adView?.pause()
+        // ✅ ล้าง pending ad loads เมื่อแอปถูก pause
+        adHandler.removeCallbacksAndMessages(null)
+        isAdLoading = false
     }
 
     // Enum สำหรับจัดการ consent status

@@ -3,6 +3,7 @@ package com.pongploydev.videowatchfeature.rests;
 
 
 
+import com.pongploydev.videowatchfeature.callbacks.CallbackCategoryDetails;
 import com.pongploydev.videowatchfeature.callbacks.CallbackListVideo;
 import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetail;
 
@@ -46,15 +47,15 @@ public interface ApiInterface {
 //            @Query("api_key") String api_key
 //    );
 //
-//    @Headers({CACHE, AGENT})
-//    @GET("api/get_category_videos")
-//    Call<CallbackCategoryDetails> getCategoryVideos(
-//            @Query("id") int id,
-//            @Query("page") int page,
-//            @Query("count") int count,
-//            @Query("sort") String sort,
-//            @Query("api_key") String api_key
-//    );
+    @Headers({CACHE, AGENT})
+    @GET("api/get_category_videos")
+    Call<CallbackCategoryDetails> getCategoryVideos(
+            @Query("id") int id,
+            @Query("page") int page,
+            @Query("count") int count,
+            @Query("sort") String sort,
+            @Query("api_key") String api_key
+    );
     @Headers({CACHE, AGENT})
     @GET("api/get_search_results")
     Call<CallbackListVideo> getSearchPosts(

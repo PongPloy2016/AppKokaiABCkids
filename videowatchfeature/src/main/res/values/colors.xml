@@ -266,4 +266,53 @@
     <color name="gnt_red">#FF0000</color>
 
 
+
+        <!-- Primary Kids Colors -->
+        <color name="kids_primary">#FF6B8E</color>
+        <color name="kids_secondary">#4ECDC4</color>
+        <color name="kids_accent">#FFE66D</color>
+
+        <!-- Gradient Background -->
+        <color name="kids_gradient_start">#A6C0FE</color>
+        <color name="kids_gradient_center">#FFE0EB</color>
+        <color name="kids_gradient_end">#D4FC79</color>
+
+        <!-- Text Colors -->
+        <color name="kids_text_dark">#2D3047</color>
+        <color name="kids_text_light">#6D7278</color>
+
+        <!-- Shimmer Colors -->
+        <color name="kids_shimmer_start">#80FFFFFF</color>
+        <color name="kids_shimmer_center">#40FFFFFF</color>
+        <color name="kids_shimmer_end">#80FFFFFF</color>
+
+        <!-- Additional Colors -->
+        <color name="kids_light_blue">#E3F2FD</color>
+        <color name="kids_light_pink">#FCE4EC</color>
+
+
+    <!-- Kids Primary Colors -->
+    <color name="kids_primary_light">#FFE4EC</color>
+
+
+    <!-- Bottom Navigation Colors for Kids -->
+    <color name="kids_nav_background_start">#FFFAFA</color>
+    <color name="kids_nav_background_end">#FFFFFF</color>
+    <color name="kids_nav_item_selected">#E3F2FD</color>
+    <color name="kids_nav_item_pressed">#F3F9FF</color>
+
+      <!-- State Colors -->
+    <color name="bottom_nav_icon_color_state_kids">@color/bottom_nav_icon_color_selector_kids</color>
+    <color name="bottom_nav_text_color_state_kids">@color/bottom_nav_text_color_selector_kids</color>
+
+    <!-- Bottom Navigation Colors - แก้ไขตรงนี้ -->
+    <color name="bottom_nav_icon_color_kids">#FF6B8E</color>
+    <color name="bottom_nav_text_color_kids">#FF6B8E</color>
+
+    <!-- หรือจะใช้แบบนี้ก็ได้ -->
+    <color name="nav_icon_color_selected">#FF6B8E</color>
+    <color name="nav_icon_color_normal">#9E9E9E</color>
+    <color name="nav_text_color_selected">#FF6B8E</color>
+    <color name="nav_text_color_normal">#9E9E9E</color>
+
 </resources>

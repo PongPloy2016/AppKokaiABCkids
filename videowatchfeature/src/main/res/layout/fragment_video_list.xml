@@ -1,56 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient_kids">
+
+    <!-- Header สำหรับเด็ก -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/kids_primary"
+        android:padding="@dimen/spacing_medium"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_kids_tv"
+            android:tint="@color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_medium"
+            android:text="วิดีโอสำหรับเด็ก"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+             />
+
+    </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout_home"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="match_parent">
 
+            <!-- Shimmer Loading Effect สำหรับเด็ก -->
             <com.facebook.shimmer.ShimmerFrameLayout
                 android:id="@+id/shimmer_view_container"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:shimmer_duration="1000">
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                app:shimmer_auto_start="true"
+                app:shimmer_duration="1200"
+                app:shimmer_repeat_count="-1"
+                app:shimmer_repeat_delay="0"
+                app:shimmer_repeat_mode="restart"
 
-                <RelativeLayout
+               >
+
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_medium">
 
-                    <include
-                        android:id="@+id/lyt_shimmer_default"
-                        layout="@layout/include_shimmer_video_default" />
+                    <!-- Shimmer items สำหรับเด็ก -->
+                    <include layout="@layout/include_shimmer_video_compact" />
 
-                    <include
-                        android:id="@+id/lyt_shimmer_compact"
-                        layout="@layout/include_shimmer_video_compact" />
-
-                </RelativeLayout>
+                </LinearLayout>
 
             </com.facebook.shimmer.ShimmerFrameLayout>
 
+            <!-- Main Content -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scrollbars="none"
-                android:scrollingCache="true" />
+                android:clipToPadding="false"
+                android:fadeScrollbars="false"
+                android:overScrollMode="ifContentScrolls"
+                android:padding="@dimen/spacing_medium"
+                android:scrollbars="vertical"
+                android:background="@drawable/bg_pattern_dots"
+                tools:listitem="@layout/item_video_kids" />
 
+            <!-- Empty State สำหรับเด็ก -->
             <include
                 android:id="@+id/lyt_no_item_home"
                 layout="@layout/include_no_item"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:visibility="gone" />
 
+            <!-- Error State สำหรับเด็ก -->
             <include
                 android:id="@+id/lyt_failed_home"
                 layout="@layout/include_failed"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:visibility="gone" />
 
         </RelativeLayout>

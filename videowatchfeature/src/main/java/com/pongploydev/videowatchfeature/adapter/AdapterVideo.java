@@ -142,7 +142,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video_compact, parent, false);
                 vh = new OriginalViewHolder(v);
             } else {
-                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video_default, parent, false);
+                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video_kids, parent, false);
                 vh = new OriginalViewHolder(v);
             }
         }

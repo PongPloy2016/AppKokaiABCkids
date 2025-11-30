@@ -18,8 +18,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.3.0"
+        versionCode = 19
+        versionName = "1.3.2"
     }
 
     buildTypes {
@@ -81,7 +81,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
 
     // Ads
-    implementation("com.google.android.gms:play-services-ads:22.6.0")
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 
     // App Update
     implementation("com.google.android.play:app-update:2.1.0")

@@ -80,6 +80,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.pongploydev.priyankvex.paintapp.R
+import com.pongploydev.priyankvex.paintapp.activity.KidsWebViewActivity
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
@@ -163,6 +164,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                 onAdFailed = {
                     isAdLoading = false
                     println("❌ Failed to load interstitial ad (attempt $adLoadAttempt)")
+                    Toast.makeText(context, "❌ Failed to load interstitial ad (attempt $adLoadAttempt)", Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -273,11 +275,11 @@ fun MainComposeScreen(navController: NavController? = null) {
                         .padding(paddingValues)
                 ) {
                     // แสดงจำนวนรอบจนกว่าจะถึงโฆษณา
-                    VisitCounter(
-                        currentCount = visitCount,
-                        maxCount = VISITS_BEFORE_AD,
-                        isAdLoaded = interstitialAdManager.isAdLoaded()
-                    )
+//                    VisitCounter(
+//                        currentCount = visitCount,
+//                        maxCount = VISITS_BEFORE_AD,
+//                        isAdLoaded = interstitialAdManager.isAdLoaded()
+//                    )
 
                     ViewModeSelector(
                         currentMode = viewMode.value,
@@ -998,7 +1000,8 @@ private fun getMenuItems(): List<MenuItem> {
         MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one, 1),
         MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two, 2),
         MenuItem(4, "กิจกรรมเสริม", R.drawable.card_three, 3),
-        MenuItem(5, "จัดทำโดย", R.drawable.card_four, 4)
+        MenuItem(4, "บทความน่ารู้", R.drawable.leraning_kid, 4),
+        MenuItem(5, "จัดทำโดย", R.drawable.card_four, 5)
     )
 }
 
@@ -1024,6 +1027,20 @@ private fun handleItemClickDirectly(
             showKidsActivitiesDialog(context)
         }
         4 -> {
+            val intent = Intent(context, KidsWebViewActivity::class.java).apply {
+                putExtra("extra_url", "https://www.youngciety.com/")
+                putExtra("extra_title", "Youngciety - สนุกสนาน")
+            }
+            context.startActivity(intent)
+
+            // วิธีที่ 2: ใช้ companion function (แนะนำ)
+//            KidsWebViewActivity.start(
+//                context = this,
+//                url = "https://www.youngciety.com/",
+//                title = "Youngciety สำหรับเด็ก"
+//            )
+        }
+        5 -> {
             AboutDialog(context).show()
         }
     }

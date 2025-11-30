@@ -81,6 +81,10 @@ dependencies {
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
+    implementation("androidx.activity:activity:1.12.0")
+
+    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
+    implementation("com.google.android.exoplayer:extension-ima:2.19.1")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

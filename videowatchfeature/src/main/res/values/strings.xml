@@ -163,6 +163,7 @@
     <string name="press_again_to_close_player">Press again to close player</string>
 
     <string name="img_content_description">TODO</string>
+    <string name="no_internet">internet</string>
 
 
 </resources>

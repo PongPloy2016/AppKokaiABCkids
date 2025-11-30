@@ -97,26 +97,27 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <com.google.android.gms.ads.AdView
+            xmlns:ads="http://schemas.android.com/apk/res-auto"
             android:id="@+id/adView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="visible"
             ads:adSize="BANNER"
-            ads:adUnitId="ca-app-pub-3940256099942544/6300978111" />
+            ads:adUnitId="ca-app-pub-3940256099942544/6300978111">
+        </com.google.android.gms.ads.AdView>
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/navigation"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:attr/windowBackground"
-            app:itemBackground="@color/white_with_alpha"
-            app:itemIconSize="22dp"
-            app:itemIconTint="@color/red"
-            app:itemTextAppearanceActive="@style/BottomNavigationView.TextAppearance.Active"
-            app:itemTextColor="@color/progress_drawable_bg"
-            app:labelVisibilityMode="auto"
+            android:layout_height="70dp"
+            android:background="@drawable/bg_bottom_nav_kids"
+            android:elevation="16dp"
+            app:itemIconSize="32dp"
+            app:itemIconTint="@color/bottom_nav_icon_color_kids"
+            app:itemTextColor="@color/bottom_nav_text_color_kids"
+            app:itemRippleColor="@color/kids_primary_light"
+            app:labelVisibilityMode="labeled"
             app:itemHorizontalTranslationEnabled="true"
+            app:itemBackground="@drawable/bottom_nav_item_background_kids"
             app:menu="@menu/bottom_nav_menu" />
 
     </LinearLayout>
