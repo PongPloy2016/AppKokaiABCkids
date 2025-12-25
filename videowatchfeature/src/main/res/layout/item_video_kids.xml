@@ -112,7 +112,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_title_star"
-                        android:tint="@color/kids_primary" />
+                        app:tint="@color/kids_primary" />
 
                     <TextView
                         android:id="@+id/video_title"
@@ -141,7 +141,7 @@
                         android:layout_width="16dp"
                         android:layout_height="16dp"
                         android:src="@drawable/ic_category"
-                        android:tint="@color/kids_secondary" />
+                        app:tint="@color/kids_secondary" />
 
                     <TextView
                         android:id="@+id/category_name"
@@ -203,7 +203,7 @@
                             android:layout_width="14dp"
                             android:layout_height="14dp"
                             android:src="@drawable/ic_eye_kids"
-                            android:tint="@color/kids_secondary" />
+                            app:tint="@color/kids_secondary" />
 
                         <TextView
                             android:id="@+id/total_views"
@@ -236,7 +236,7 @@
                         android:padding="6dp"
                         android:visibility="gone"
                         android:src="@drawable/ic_heart_outline"
-                        android:tint="@color/kids_primary"
+                        app:tint="@color/kids_primary"
                         tools:ignore="ContentDescription" />
 
                     <!-- Overflow Menu Button -->
@@ -248,7 +248,7 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:padding="6dp"
                         android:src="@drawable/ic_dots_vertical"
-                        android:tint="@color/kids_text_light"
+                        app:tint="@color/kids_text_light"
                         tools:ignore="ContentDescription" />
 
                 </LinearLayout>

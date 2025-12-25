@@ -267,10 +267,7 @@
 
 
 
-        <!-- Primary Kids Colors -->
-        <color name="kids_primary">#FF6B8E</color>
-        <color name="kids_secondary">#4ECDC4</color>
-        <color name="kids_accent">#FFE66D</color>
+
 
         <!-- Gradient Background -->
         <color name="kids_gradient_start">#A6C0FE</color>
@@ -314,5 +311,45 @@
     <color name="nav_icon_color_normal">#9E9E9E</color>
     <color name="nav_text_color_selected">#FF6B8E</color>
     <color name="nav_text_color_normal">#9E9E9E</color>
+
+    <!-- สีสำหรับเด็ก -->
+    <color name="kids_primary">#4CAF50</color>
+    <color name="kids_secondary">#4ECDC4</color>
+
+    <color name="kids_accent">#FF9800</color>
+    <color name="kids_dark">#333333</color>
+    <color name="kids_dark_alpha_70">#B3333333</color>
+
+    <!-- สีพื้นฐาน -->
+    <color name="white_alpha_20">#33FFFFFF</color>
+    <color name="white_alpha_40">#66FFFFFF</color>
+    <color name="white_alpha_70">#B3FFFFFF</color>
+    <color name="white_alpha_80">#CCFFFFFF</color>
+
+    <!-- สีสำหรับการ์ตูน -->
+    <color name="cartoon_blue">#2196F3</color>
+    <color name="cartoon_pink">#E91E63</color>
+    <color name="cartoon_yellow">#FFC107</color>
+    <color name="cartoon_green">#4CAF50</color>
+    <color name="cartoon_purple">#9C27B0</color>
+
+    <!-- สีการ์ดวิดีโอ -->
+    <color name="video_card_bg">#FFFFFF</color>
+    <color name="video_card_shadow">#1A000000</color>
+    <color name="video_title">#333333</color>
+    <color name="video_description">#666666</color>
+    <color name="video_duration_bg">#CC000000</color>
+    <color name="video_duration_text">#FFFFFF</color>
+
+    <!-- สีสถานะ -->
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    <color name="error">#F44336</color>
+    <color name="info">#2196F3</color>
+
+    <!-- สีโฆษณา -->
+    <color name="ad_background">#FFF3E0</color>
+    <color name="ad_text">#5D4037</color>
+    <color name="ad_badge">#FF9800</color>
 
 </resources>

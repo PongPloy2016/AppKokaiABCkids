@@ -106,16 +106,16 @@ class MainGridFragment : Fragment() {
     }
 
     private fun setupAdMob() {
-        binding.adView.loadAd(AdRequest.Builder().build())
-        binding.adView.adListener = object : AdListener() {
-            override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.e("AdMob", "Ad failed to load: ${adError.message}")
-            }
-            override fun onAdClosed() {
-                val adRequest = AdRequest.Builder().build()
-                binding.adView.loadAd(adRequest)
-            }
-        }
+//        binding.adView.loadAd(AdRequest.Builder().build())
+//        binding.adView.adListener = object : AdListener() {
+//            override fun onAdFailedToLoad(adError: LoadAdError) {
+//                Log.e("AdMob", "Ad failed to load: ${adError.message}")
+//            }
+//            override fun onAdClosed() {
+//                val adRequest = AdRequest.Builder().build()
+//                binding.adView.loadAd(adRequest)
+//            }
+//        }
     }
 
     private fun switchToGridView() {
@@ -232,18 +232,18 @@ class MainGridFragment : Fragment() {
     // --- Lifecycle ของ Fragment ---
     override fun onResume() {
         super.onResume()
-        binding.adView.resume()
+       // binding.adView.resume()
     }
 
     override fun onPause() {
         super.onPause()
-        binding.adView.pause()
+        //binding.adView.pause()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         binding.recyclerView.adapter = null
-        binding.adView.destroy()
+       // binding.adView.destroy()
         _binding = null
     }
 

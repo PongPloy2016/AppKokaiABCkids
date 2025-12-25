@@ -13,7 +13,7 @@ public class CategoryDataHelper {
         String[] titles = {"ตัวอักษร", "ตัวเลข", "สี", "รูปทรง", "สัตว์", "นก", "ดอกไม้", "ผลไม้", "เดือน", "ผัก", "ส่วนของร่างกาย", "เสื้อผ้า", "ประเทศ", "อาหาร", "เรขาคณิต", "บ้าน", "อาชีพ", "โรงเรียน", "กีฬา", "ยานพาหนะ"};
         // **สำคัญ:** R.drawable.* เหล่านี้ต้องมีอยู่จริงใน folder res/drawable ของคุณ
         int[] drawables = {
-                R.drawable.home_alphabet, R.drawable.home_number, R.drawable.home_color, R.drawable.home_shape,
+                R.drawable.ic_svg_alphabet_abc_two, R.drawable.home_number, R.drawable.home_color, R.drawable.home_shape,
                 R.drawable.home_animal, R.drawable.home_birds, R.drawable.home_flower, R.drawable.home_fruits,
                 R.drawable.home_month, R.drawable.home_vegetable, R.drawable.home_body_parts, R.drawable.home_clothes,
                 R.drawable.home_country, R.drawable.home_food, R.drawable.home_geometry, R.drawable.home_house,

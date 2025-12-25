@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 
     <application
@@ -125,6 +126,21 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3279793802315716~2607584711" />
+
+
+        <!-- สำหรับแอปที่กำหนดเป้าหมายเด็ก -->
+        <meta-data
+            android:name="com.google.android.gms.ads.FAMILY_AD"
+            android:value="true"/>
+
+        <!-- Content rating -->
+        <meta-data
+            android:name="com.google.android.gms.ads.MAX_AD_CONTENT_RATING"
+            android:value="G"/>
+        <!-- ตั้งค่านโยบายสำหรับเด็ก (ถ้าแอปทั้งหมดสำหรับเด็ก) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.TAG_FOR_CHILD_DIRECTED_TREATMENT"
+            android:value="1" />
         <!-- <meta-data -->
         <!-- android:name="com.google.android.gms.ads.APPLICATION_ID" -->
         <!-- android:value="@string/admob_app_id" /> -->

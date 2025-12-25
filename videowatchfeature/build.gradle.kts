@@ -85,6 +85,7 @@ dependencies {
 
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
     implementation("com.google.android.exoplayer:extension-ima:2.19.1")
+    implementation("com.google.android.gms:play-services-ads:23.1.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

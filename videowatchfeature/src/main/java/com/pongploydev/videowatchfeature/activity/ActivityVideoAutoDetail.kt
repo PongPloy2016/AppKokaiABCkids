@@ -1,12 +1,11 @@
 package com.pongploydev.videowatchfeature.activity
 
-
-
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -20,9 +19,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.annotation.NonNull
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -33,6 +30,10 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.facebook.shimmer.ShimmerFrameLayout
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.gms.ads.initialization.InitializationStatus
 import com.google.android.material.snackbar.Snackbar
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.customui.views.YouTubePlayerSeekBar
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.customui.views.YouTubePlayerSeekBarListener
@@ -73,7 +74,6 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private lateinit var lytDate: LinearLayout
     private lateinit var videoThumbnail: ImageView
     private lateinit var webView: WebView
-//    private lateinit var dbFavorite: DbFavoriteite
     private lateinit var parentView: CoordinatorLayout
     private lateinit var shimmerFrameLayout: ShimmerFrameLayout
     private lateinit var lytSuggested: RelativeLayout
@@ -82,9 +82,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private lateinit var btnFavorite: ImageButton
     private lateinit var btnShare: ImageButton
     private lateinit var adsPref: AdsPref
-//    private lateinit var adsManager: AdsPrefManager
     private lateinit var tools: Tools
-//    private lateinit var onBackPressedDispatcher: OnBackPressedDispatcher
 
     // ตัวแปรสำหรับ YouTube Player
     private lateinit var youTubePlayerView: YouTubePlayerView
@@ -104,32 +102,33 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private var updateSeekBarRunnable: Runnable? = null
     private var videoDuration = 0f
 
+    // ตัวแปรสำหรับ Banner Ad
+//    private lateinit var adView: AdView
+    private lateinit var bannerContainer: RelativeLayout
+    private var isBannerLoading = false
+    private var bannerLoadAttempts = 0
+    private val maxBannerRetries = 3
+
     private val seekBarTracker = SeekBarTracker()
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       // Tools.getTheme(this)
         setContentView(R.layout.activity_video_auto_detail)
 
         video = intent.getParcelableExtra(Constant.EXTRA_OBJC)!!
 
-        //Tools.setNavigation(this)
         tools = Tools(this)
         sharedPref = SharedPref(this)
         adsPref = AdsPref(this)
-//        adsManager = AdsManager(this)
-//        dbFavorite = DbFavorite(applicationContext)
-//
-//        adsManager.loadBannerAd(adsPref.isBannerPostDetails)
-//        adsManager.loadInterstitialAd(adsPref.isInterstitialPostDetails, 1)
 
-        val nativeAdView = findViewById<LinearLayout>(R.id.native_ad_view)
-//        Tools.setNativeAdStyle(this, nativeAdView, Constant.NATIVE_AD_STYLE_POST_DETAILS)
-//
-//        if (nativeAdView != null) {
-//            adsManager.loadNativeAd(adsPref.isNativeAdPostDetails, Constant.NATIVE_AD_STYLE_EXIT_DIALOG)
-//        }
+        // ตั้งค่าโหมดทดสอบ (ระหว่างพัฒนา)
+        adsPref.isTestMode = false
+        adsPref.isFamiliesApp = true // สำหรับแอปครอบครัว
+
+        // ซ่อน Native Ad สำหรับแอปครอบครัว
+//        val nativeAdView = findViewById<LinearLayout>(R.id.native_ad_view)
+//        nativeAdView?.visibility = View.GONE
 
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
         swipeRefreshLayout.setColorSchemeResources(R.color.color_light_primary)
@@ -137,7 +136,6 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container)
         lytMainContent = findViewById(R.id.lyt_main_content)
-//        parentView = findViewById(R.id.lyt_content)
 
         videoThumbnail = findViewById(R.id.video_thumbnail)
         txtTitle = findViewById(R.id.video_title)
@@ -165,15 +163,20 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         btnRew10s = findViewById(R.id.btn_rew_10s)
         btnFfwd10s = findViewById(R.id.btn_ffwd_10s)
 
-//        if (AppConfig.ALLOW_APP_ACCESSED_USING_VPN) {
-//            requestAction()
-//        } else {
-//            if (Tools.isVpnConnectionAvailable()) {
-//                Tools.showWarningDialog(this, getString(R.string.vpn_detected), getString(R.string.close_vpn))
-//            } else {
-                requestAction()
-     //       }
-       // }
+        // หา Banner Ad View จาก XML
+//        adView = findViewById(R.id.adView_banner)
+//        bannerContainer = findViewById(R.id.banner_container)
+
+        // ตรวจสอบว่าเป็นแอปครอบครัวหรือไม่
+//        if (adsPref.isFamiliesApp) {
+//            // สำหรับแอปครอบครัว: ตรวจสอบว่ามีโฆษณาเพียง 1 ตัวต่อหน้า
+//            checkFamiliesCompliance()
+//        }
+
+        // เริ่มต้น Mobile Ads SDK สำหรับแอปครอบครัว
+//        initializeMobileAdsForFamilies()
+
+        requestAction()
 
         swipeRefreshLayout.setOnRefreshListener {
             shimmerFrameLayout.visibility = View.VISIBLE
@@ -182,7 +185,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             requestAction()
         }
 
-        //initToolbar()
+        initToolbar()
         handleOnBackPressed()
 
         // เริ่มต้น YouTube Player
@@ -190,6 +193,538 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
         // ตั้งค่า SeekBar และการควบคุม
         setupControls()
+
+//        // ตั้งค่า Banner Ad สำหรับแอปครอบครัว (รอให้ Mobile Ads SDK พร้อม)
+//        Handler(Looper.getMainLooper()).postDelayed({
+//            setupBannerAdForFamilies()
+//        }, 1000) // รอ 1 วินาทีให้ SDK พร้อม
+    }
+
+    /**
+     * เริ่มต้น Mobile Ads SDK สำหรับแอปครอบครัว
+     */
+    private fun initializeMobileAdsForFamilies() {
+        try {
+            Log.d("FamiliesAds", "Initializing Mobile Ads SDK for Families app...")
+
+            // ตั้งค่า RequestConfiguration สำหรับแอปครอบครัว
+            val requestConfiguration = RequestConfiguration.Builder()
+                .apply {
+                    if (adsPref.isFamiliesApp) {
+                        // ตั้งค่าสำหรับแอปครอบครัว (เด็กอายุต่ำกว่า 13 ปี)
+                        setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE)
+
+                        // ตั้งค่าโฆษณาที่ปลอดภัยสำหรับครอบครัว
+                        setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
+
+                        // ตั้งค่าระดับเนื้อหาสูงสุดเป็น G (สำหรับทุกวัย)
+                        setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+
+                        Log.d("FamiliesAds", "Families configuration applied: TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE, MAX_AD_CONTENT_RATING_G")
+                    }
+
+                    // เพิ่ม test devices สำหรับการพัฒนา
+                    if (adsPref.isTestMode) {
+                        // ใช้ test device ID ที่ได้จาก Logcat
+                        setTestDeviceIds(listOf(
+                            AdRequest.DEVICE_ID_EMULATOR, // Emulator
+                            resources.getString(R.string.banner_ad_unit_id_test) // ใส่ Device ID จริงของคุณที่นี่
+                        ))
+                        Log.d("FamiliesAds", "Test mode enabled with test devices")
+                    }
+                }
+                .build()
+
+            MobileAds.setRequestConfiguration(requestConfiguration)
+
+            // เริ่มต้น Mobile Ads SDK
+            MobileAds.initialize(this) { initializationStatus ->
+                Log.d("FamiliesAds", "✅ Mobile Ads SDK initialized successfully")
+
+                // ตรวจสอบสถานะ initialization
+                logInitializationStatus(initializationStatus)
+
+                // ตรวจสอบ Adapter สำหรับ Families
+                if (adsPref.isFamiliesApp) {
+                    checkFamiliesAdapters(initializationStatus)
+                }
+
+                // เมื่อ SDK พร้อมแล้ว แสดง Banner Ad
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) {
+                        setupBannerAdForFamilies()
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e("FamiliesAds", "❌ Failed to initialize Mobile Ads SDK: ${e.message}")
+        }
+    }
+
+    /**
+     * Log initialization status
+     */
+    private fun logInitializationStatus(initializationStatus: InitializationStatus) {
+        val adapterStatusMap = initializationStatus.adapterStatusMap
+        Log.d("FamiliesAds", "=== Adapter Status ===")
+
+        for ((adapterClass, status) in adapterStatusMap) {
+//            val state = when (status.initializationState) {
+//                InitializationStatus.AdapterStatus.State.NOT_READY -> "NOT_READY"
+//                InitializationStatus.AdapterStatus.State.READY -> "READY"
+//                else -> "UNKNOWN"
+//            }
+//            Log.d("FamiliesAds", "$adapterClass: $state - ${status.description}")
+        }
+        Log.d("FamiliesAds", "=====================")
+    }
+
+    /**
+     * ตรวจสอบ Adapter สำหรับแอปครอบครัว
+     */
+    private fun checkFamiliesAdapters(initializationStatus: InitializationStatus) {
+        val adapterStatusMap = initializationStatus.adapterStatusMap
+        var hasGoogleAdapters = false
+
+        for ((adapterClass, _) in adapterStatusMap) {
+            Log.d("FamiliesAdapters", "Found adapter: $adapterClass")
+
+            // ตรวจสอบว่าเป็น Google/AdMob adapter หรือไม่
+            if (adapterClass.contains("com.google.android.gms.ads") ||
+                adapterClass.contains("admob", ignoreCase = true)) {
+                hasGoogleAdapters = true
+            }
+        }
+
+        if (hasGoogleAdapters) {
+            Log.d("FamiliesAdapters", "✅ Google AdMob adapter found - Families support available")
+        } else {
+            Log.w("FamiliesAdapters", "⚠️ No Google AdMob adapter found - Families support may be limited")
+        }
+    }
+
+    /**
+     * ตรวจสอบความสอดคล้องกับ Families Policy
+     */
+    private fun checkFamiliesCompliance() {
+        Log.d("FamiliesPolicy", "=== Families Policy Compliance Check ===")
+
+        val complianceIssues = mutableListOf<String>()
+
+        // 1. ตรวจสอบจำนวนโฆษณาต่อหน้า
+        if (adsPref.maxAdsPerPage > 1) {
+            complianceIssues.add("Max ads per page should be 1 (currently: ${adsPref.maxAdsPerPage})")
+            adsPref.maxAdsPerPage = 1 // แก้ไขอัตโนมัติ
+            Log.d("FamiliesPolicy", "Fixed: Set max ads per page to 1")
+        }
+
+        // 2. ตรวจสอบ Native Ad (ควรปิดสำหรับ Families)
+        if (adsPref.isNativeAdPostDetails) {
+            complianceIssues.add("Native ads should be disabled for Families app")
+            adsPref.isNativeAdPostDetails = false // ปิดอัตโนมัติ
+            Log.d("FamiliesPolicy", "Fixed: Disabled native ads")
+        }
+
+        // 3. ตรวจสอบ Interstitial Ad (ควรจำกัด)
+        if (adsPref.interstitialAdInterval < 3) {
+            complianceIssues.add("Interstitial ads should show less frequently (min interval: 3)")
+            adsPref.interstitialAdInterval = 3
+            Log.d("FamiliesPolicy", "Fixed: Set interstitial interval to 3")
+        }
+
+        // 4. ตรวจสอบ Ad Content Rating
+        if (adsPref.adContentRating != "G") {
+            complianceIssues.add("Ad content rating should be G (currently: ${adsPref.adContentRating})")
+            adsPref.adContentRating = "G"
+            Log.d("FamiliesPolicy", "Fixed: Set ad content rating to G")
+        }
+
+        // 5. ตรวจสอบ Banner Ad Unit ID
+        val bannerAdUnitId = resources.getString(R.string.banner_ad_unit_id)
+        if (!isValidFamiliesAdUnit(bannerAdUnitId)) {
+            complianceIssues.add("Banner ad unit may not be approved for Families program")
+            Log.w("FamiliesPolicy", "Check banner ad unit in AdMob console")
+        }
+
+        // Log ผลการตรวจสอบ
+        if (complianceIssues.isNotEmpty()) {
+            Log.w("FamiliesPolicy", "⚠️ Found ${complianceIssues.size} compliance issues:")
+            complianceIssues.forEachIndexed { index, issue ->
+                Log.w("FamiliesPolicy", "${index + 1}. $issue")
+            }
+
+            // แจ้งเตือน developer (เฉพาะโหมดทดสอบ)
+            if (adsPref.isTestMode && !isFinishing) {
+                runOnUiThread {
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "Families Policy: Fixed ${complianceIssues.size} issues",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("OK") {}.show()
+                }
+            }
+        } else {
+            Log.d("FamiliesPolicy", "✅ All Families policy requirements are met")
+        }
+
+        Log.d("FamiliesPolicy", "========================================")
+    }
+
+    /**
+     * ตรวจสอบว่า Ad Unit ID ถูกต้องสำหรับ Families
+     */
+    private fun isValidFamiliesAdUnit(adUnitId: String?): Boolean {
+        if (adUnitId == null || adUnitId.isEmpty()) {
+            return false
+        }
+
+        // Ad Unit ID ต้องเริ่มต้นด้วย ca-app-pub-
+        val isValidFormat = adUnitId.startsWith("ca-app-pub-")
+
+        // ไม่ควรเป็น test ID ใน production
+        val isTestId = adUnitId.contains("test", ignoreCase = true) ||
+                adUnitId.contains("sample", ignoreCase = true)
+
+        // สำหรับโหมดทดสอบ อนุญาตให้ใช้ test ID ได้
+        if (adsPref.isTestMode) {
+            return true
+        }
+
+        return isValidFormat && !isTestId
+    }
+
+    /**
+     * ตั้งค่า Banner Ad สำหรับแอปครอบครัว
+     */
+    private fun setupBannerAdForFamilies() {
+        // ตรวจสอบว่า activity ยังไม่ถูกทำลาย
+        if (isFinishing || isDestroyed) {
+            Log.d("FamiliesBanner", "Activity is finishing, skipping banner setup")
+            return
+        }
+
+        // ตรวจสอบว่าเปิดใช้งาน Banner Ad หรือไม่
+        if (!adsPref.isBannerAdEnabled || !adsPref.isBannerPostDetails) {
+            Log.d("FamiliesBanner", "Banner ads are disabled in settings")
+            bannerContainer.visibility = View.GONE
+            return
+        }
+
+        // สำหรับแอปครอบครัว: ตรวจสอบเงื่อนไขเพิ่มเติม
+        if (adsPref.isFamiliesApp && !shouldShowAdsForFamilies()) {
+            Log.d("FamiliesBanner", "Ads not allowed for Families app in current configuration")
+            bannerContainer.visibility = View.GONE
+            return
+        }
+
+        // ตรวจสอบว่า adView พบใน layout หรือไม่
+//        if (adView == null) {
+//            Log.e("FamiliesBanner", "AdView not found in layout")
+//            return
+//        }
+
+        // ตรวจสอบว่าไม่ได้กำลังโหลดอยู่แล้ว
+        if (isBannerLoading) {
+            Log.d("FamiliesBanner", "Banner is already loading, skipping")
+            return
+        }
+
+        // รีเซ็ตจำนวนครั้งที่ลองโหลด
+        bannerLoadAttempts = 0
+
+        Log.d("FamiliesBanner", "Setting up banner ad for Families app...")
+
+        // แสดง container ก่อน
+        runOnUiThread {
+            bannerContainer.visibility = View.VISIBLE
+            bannerContainer.alpha = 0.3f // ตั้งค่าโปร่งใสขณะโหลด
+        }
+
+        // โหลด Banner Ad
+//        loadFamiliesBannerAd()
+    }
+
+    /**
+     * โหลด Banner Ad สำหรับแอปครอบครัว
+     */
+//    private fun loadFamiliesBannerAd() {
+//        isBannerLoading = true
+//        bannerLoadAttempts++
+//
+//        Log.d("FamiliesBanner", "Loading banner ad (attempt $bannerLoadAttempts/$maxBannerRetries)...")
+//
+//        runOnUiThread {
+//            try {
+//                // สร้าง AdRequest สำหรับแอปครอบครัว
+//                val adRequestBuilder = AdRequest.Builder()
+//
+//                // สำหรับแอปครอบครัว
+//                if (adsPref.isFamiliesApp) {
+//                    Log.d("FamiliesBanner", "Applying Families-specific ad targeting")
+//
+//                    // ไม่ต้องใช้ tagForChildDirectedTreatment อีกต่อไป
+//                    // SDK จะจัดการเองผ่าน RequestConfiguration
+//                }
+//
+//                // สำหรับโหมดทดสอบ
+//                if (adsPref.isTestMode) {
+//                    Log.d("FamiliesBanner", "Test mode enabled - using test ads")
+//
+//                    // เพิ่ม test device (ใช้จาก Logcat)
+//                   // adRequestBuilder.addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+//
+//                    // ใช้ test ad unit ID ถ้าจำเป็น
+////                    val currentAdUnitId = adView.adUnitId
+////                    if (!isValidFamiliesAdUnit(currentAdUnitId)) {
+////                        Log.w("FamiliesBanner", "Using test ad unit for development")
+////                        // ใช้ test ad unit ID
+////                        // adView.adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test banner ID
+////                    }
+//                }
+//
+//                val adRequest = adRequestBuilder.build()
+//
+//                // ตั้งค่า AdListener
+//                adView.adListener = object : com.google.android.gms.ads.AdListener() {
+//                    override fun onAdLoaded() {
+//                        isBannerLoading = false
+//
+//                        Log.d("FamiliesBanner", "✅ Banner ad loaded successfully")
+//                        Log.d("FamiliesBanner", "Ad size: ${adView.adSize}, Ad unit: ${adView.adUnitId}")
+//
+//                        runOnUiThread {
+//                            bannerContainer.visibility = View.VISIBLE
+//                            bannerContainer.animate()
+//                                .alpha(1f)
+//                                .setDuration(500)
+//                                .start()
+//
+//                            // แสดงข้อมูลเพิ่มเติมสำหรับ debugging
+//                            if (adsPref.isTestMode) {
+//                                Log.d("FamiliesBanner", "=== BANNER AD INFO ===")
+//                                Log.d("FamiliesBanner", "Ad Unit ID: ${adView.adUnitId}")
+//                                Log.d("FamiliesBanner", "Ad Size: ${adView.adSize}")
+//                                Log.d("FamiliesBanner", "Visibility: ${adView.visibility}")
+//                                Log.d("FamiliesBanner", "=========================")
+//                            }
+//                        }
+//
+//                        // บันทึกการโหลดสำเร็จ
+//                        recordAdEvent("banner_loaded", "success")
+//                    }
+//
+//                    override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
+//                        isBannerLoading = false
+//
+//                        val errorCode = error.code
+//                        val errorMessage = error.message
+//                        val domain = error.domain
+//                        val cause = error.cause?.message
+//
+//                        val detailedError = """
+//                            ❌ Banner ad failed to load
+//                            Code: $errorCode
+//                            Message: $errorMessage
+//                            Domain: $domain
+//                            Cause: ${cause ?: "None"}
+//                            Ad Unit: ${adView.adUnitId}
+//                        """.trimIndent()
+//
+//                        Log.e("FamiliesBanner", detailedError)
+//
+//                        // ตรวจสอบ error เฉพาะสำหรับ Families
+//                        when (errorCode) {
+//                            0 -> { // ERROR_CODE_INTERNAL_ERROR
+//                                Log.w("FamiliesBanner", "Internal error - SDK issue")
+//                            }
+//                            1 -> { // ERROR_CODE_INVALID_REQUEST
+//                                Log.w("FamiliesBanner", "Invalid request - check ad unit ID")
+//                            }
+//                            2 -> { // ERROR_CODE_NETWORK_ERROR
+//                                Log.w("FamiliesBanner", "Network error - check connectivity")
+//                            }
+//                            3 -> { // ERROR_CODE_NO_FILL
+//                                Log.w("FamiliesBanner", "No fill - no inventory for Families app")
+//
+//                                // สำหรับ Families app อาจมี inventory น้อยกว่า
+//                                if (adsPref.isFamiliesApp) {
+//                                    Log.d("FamiliesBanner", "This is normal for Families apps with limited inventory")
+//                                }
+//                            }
+//                            8 -> { // ERROR_CODE_MEDIATION_NO_FILL
+//                                Log.w("FamiliesBanner", "Mediation no fill - no ad from mediation networks")
+//                            }
+//                            else -> {
+//                                Log.w("FamiliesBanner", "Unknown error code: $errorCode")
+//                            }
+//                        }
+//
+//                        runOnUiThread {
+//                            bannerContainer.visibility = View.GONE
+//
+//                            // ลองโหลดใหม่ถ้ายังไม่เกินจำนวนครั้งที่กำหนด
+//                            if (bannerLoadAttempts < maxBannerRetries) {
+//                                val retryDelay = bannerLoadAttempts * 3000L // เพิ่ม delay ตามจำนวนครั้ง
+//
+//                                Log.d("FamiliesBanner", "Retrying in ${retryDelay/1000} seconds...")
+//
+//                                Handler(Looper.getMainLooper()).postDelayed({
+//                                    if (!isFinishing && !isDestroyed) {
+//                                        loadFamiliesBannerAd()
+//                                    }
+//                                }, retryDelay)
+//                            } else {
+//                                Log.w("FamiliesBanner", "Max retries reached ($maxBannerRetries), giving up")
+//                            }
+//                        }
+//
+//                        // บันทึก error
+//                        recordAdEvent("banner_failed", "code_$errorCode")
+//                    }
+//
+//                    override fun onAdClicked() {
+//                        Log.d("FamiliesBanner", "👆 Banner ad clicked")
+//
+//                        // สำหรับแอปครอบครัว: บันทึกการโต้ตอบที่ปลอดภัย
+//                        if (adsPref.isFamiliesApp) {
+//                            recordFamilySafeInteraction()
+//                        }
+//
+//                        recordAdEvent("banner_clicked", "user_interaction")
+//                    }
+//
+//                    override fun onAdImpression() {
+//                        Log.d("FamiliesBanner", "📊 Banner ad impression recorded")
+//                        recordAdEvent("banner_impression", "viewed")
+//                    }
+//
+//                    override fun onAdOpened() {
+//                        Log.d("FamiliesBanner", "Banner ad opened")
+//                        // ตรวจสอบว่าโฆษณาปลอดภัยสำหรับครอบครัว
+//                        checkAdSafety()
+//                    }
+//
+//                    override fun onAdClosed() {
+//                        Log.d("FamiliesBanner", "Banner ad closed")
+//                    }
+//                }
+//
+//                // โหลดโฆษณา
+//                adView.loadAd(adRequest)
+//
+//                Log.d("FamiliesBanner", "Banner ad request sent to AdMob")
+//
+//            } catch (e: Exception) {
+//                isBannerLoading = false
+//                Log.e("FamiliesBanner", "Exception while loading banner: ${e.message}")
+//                bannerContainer.visibility = View.GONE
+//            }
+//        }
+//    }
+
+    /**
+     * ตรวจสอบความปลอดภัยของโฆษณา
+     */
+    private fun checkAdSafety() {
+        if (adsPref.isFamiliesApp) {
+            Log.d("FamiliesSafety", "Verifying ad safety for Families app...")
+
+            // ตรวจสอบว่าเป็นโฆษณาจากแหล่งที่ปลอดภัย
+            // Note: การตรวจสอบเชิงลึกต้องใช้ Ad Review API
+
+            // สำหรับตอนนี้ แค่บันทึก log
+            recordAdEvent("ad_safety_check", "performed")
+        }
+    }
+
+    /**
+     * บันทึกการโต้ตอบที่ปลอดภัยสำหรับครอบครัว
+     */
+    private fun recordFamilySafeInteraction() {
+        Log.d("FamiliesSafety", "📝 Recording family-safe ad interaction")
+
+        // สามารถบันทึกลง analytics หรือ Firebase ได้ที่นี่
+        // ตัวอย่าง: FirebaseAnalytics.getInstance(this).logEvent("family_safe_ad_click", null)
+
+        recordAdEvent("family_interaction", "safe_click")
+    }
+
+    /**
+     * บันทึกเหตุการณ์โฆษณา
+     */
+    private fun recordAdEvent(eventName: String, eventValue: String) {
+        // บันทึกสำหรับ debugging
+        val timestamp = System.currentTimeMillis()
+        val logMessage = "[$timestamp] Ad Event: $eventName = $eventValue"
+
+        if (adsPref.isTestMode) {
+            Log.d("AdEvents", logMessage)
+        }
+
+        // สามารถส่งไปยัง analytics service ได้ที่นี่
+    }
+
+    /**
+     * ตรวจสอบว่าควรแสดงโฆษณาสำหรับแอปครอบครัวหรือไม่
+     */
+    private fun shouldShowAdsForFamilies(): Boolean {
+        // เงื่อนไขสำหรับแสดงโฆษณาในแอปครอบครัว
+        val conditions = mutableListOf<Boolean>()
+
+        // 1. ต้องเปิดใช้งานโฆษณา
+        conditions.add(adsPref.isAdEnabled)
+
+        // 2. ต้องเปิดใช้งาน Banner Ad
+        conditions.add(adsPref.isBannerAdEnabled)
+
+        // 3. ต้องเปิดใช้งาน Banner ในหน้านี้
+        conditions.add(adsPref.isBannerPostDetails)
+
+        // 4. ต้องมีโฆษณาเพียง 1 ตัวต่อหน้า
+        conditions.add(adsPref.maxAdsPerPage == 1)
+
+        // 5. Content rating ต้องเป็น G
+        conditions.add(adsPref.adContentRating == "G")
+
+        // 6. ต้องอนุญาตเฉพาะโฆษณาที่ปลอดภัยสำหรับครอบครัว
+        conditions.add(adsPref.allowFamilySafeAdsOnly)
+
+        // ตรวจสอบทั้งหมด
+        val shouldShow = conditions.all { it }
+
+        if (!shouldShow && adsPref.isTestMode) {
+            Log.d("FamiliesAds", "Ads not shown because:")
+            conditions.forEachIndexed { index, condition ->
+                if (!condition) {
+                    val reasons = listOf(
+                        "Ads disabled",
+                        "Banner ads disabled",
+                        "Banner not enabled for this page",
+                        "Max ads per page != 1",
+                        "Content rating != G",
+                        "Family-safe ads not enforced"
+                    )
+                    if (index < reasons.size) {
+                        Log.d("FamiliesAds", "  - ${reasons[index]}")
+                    }
+                }
+            }
+        }
+
+        return shouldShow
+    }
+
+    /**
+     * ลองโหลด Banner Ad อีกครั้ง
+     */
+    private fun retryBannerAd() {
+        if (bannerLoadAttempts < maxBannerRetries) {
+            Log.d("FamiliesBanner", "Retrying banner ad load...")
+//            loadFamiliesBannerAd()
+        } else {
+            Log.d("FamiliesBanner", "Max retry attempts reached")
+        }
     }
 
     private fun initYouTubePlayer() {
@@ -275,9 +810,6 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     }
 
     private fun setupControls() {
-        // ตั้งค่า SeekBar listener
-        //seekBar.setYoutubePlayerSeekBarListener(seekBarTracker)
-
         // ตั้งค่าปุ่ม Play/Pause
         btnPlayPause.setOnClickListener {
             youTubePlayer?.let { player ->
@@ -389,20 +921,19 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         updateSeekBarRunnable = null
     }
 
-    fun handleOnBackPressed() {
-        //onBackPressedDispatcher = onBackPressedDispatcher
-//        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-//            override fun handleOnBackPressed() {
-//                finish()
-//               // adsManager.destroyBannerAd()
-//            }
-//        })
+    private fun handleOnBackPressed() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finish()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
     }
 
     private fun requestAction() {
         showFailedView(false, "")
         swipeProgress(true)
-        Handler().postDelayed({ requestPostData() }, 200)
+        Handler(Looper.getMainLooper()).postDelayed({ requestPostData() }, 200)
     }
 
     private fun requestPostData() {
@@ -471,7 +1002,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
     private fun displayAllData(responseHome: CallbackVideoDetail) {
         displayData(responseHome.post)
-       // displaySuggested(responseHome.suggested)
+        // displaySuggested(responseHome.suggested)
     }
 
     fun displayData(video: Video) {
@@ -523,12 +1054,12 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
         addToFavorite()
 
-        Handler().postDelayed({ lytSuggested.visibility = View.VISIBLE }, 1000)
+        Handler(Looper.getMainLooper()).postDelayed({ lytSuggested.visibility = View.VISIBLE }, 1000)
     }
 
     private fun showInterstitialAd() {
         if (adsPref.counter >= adsPref.interstitialAdInterval) {
-           // adsPref.saveCounter(1)
+            adsPref.saveCounter(1)
             //adsManager.showInterstitialAd()
         } else {
             adsPref.saveCounter(adsPref.counter + 1)
@@ -543,45 +1074,14 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             return
         }
 
-        val intent: Intent
-
         if (video.video_type != null && video.video_type.equals("youtube", ignoreCase = true)) {
             // ไม่ต้องทำอะไรสำหรับ YouTube เพราะเล่นอัตโนมัติแล้ว
             return
-        } else if (video.video_type != null && video.video_type.equals("upload", ignoreCase = true)) {
-            //intent = Intent(this, ActivityVideoPlayer::class.java)
-            //intent.putExtra("url", sharedPref.baseUrl + "/upload/video/" + video.video_url)
-        } else {
-//            intent = Intent(this, ActivityVideoPlayer::class.java)
-//            intent.putExtra("url", video.video_url)
         }
 
         Log.d("IntentLaunch", "Launching video activity")
-        //startActivity(intent)
         loadViewed()
     }
-
-//    private fun displaySuggested(videos: List<Video>) {
-//        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view_suggested)
-//        recyclerView.layoutManager = LinearLayoutManager(this)
-//        val adapterSuggested = AdapterSuggested(this, recyclerView, videos)
-//        recyclerView.adapter = adapterSuggested
-//        recyclerView.isNestedScrollingEnabled = false
-//
-//        adapterSuggested.setOnItemClickListener { view, obj, position ->
-//            val intent = Intent(applicationContext, ActivityVideoDetail::class.java)
-//            intent.putExtra(Constant.EXTRA_OBJC, obj)
-//            startActivity(intent)
-//            adsManager.destroyBannerAd()
-//        }
-//
-//        adapterSuggested.setOnItemOverflowClickListener { view, obj, position ->
-//            tools.showBottomSheetDialog(this, parentView, obj)
-//        }
-//
-//        val txtSuggested = findViewById<TextView>(R.id.txt_suggested)
-//        txtSuggested.text = if (videos.isEmpty()) "" else getString(R.string.txt_suggested)
-//    }
 
     private fun initToolbar() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -589,7 +1089,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         toolbar.setBackgroundColor(
             ContextCompat.getColor(
                 this,
-                if (sharedPref.isDarkTheme) R.color.color_light_primary else R.color.color_light_primary
+                if (sharedPref.isDarkTheme) R.color.color_dark_toolbar else R.color.light_orange
             )
         )
 
@@ -603,27 +1103,17 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         txtCategory.text = if (video.category_name == null || video.category_name.isEmpty()) "-" else video.category_name
     }
 
-//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-//        menuInflater.inflate(R.menu.main, menu)
-//        return true
-//    }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_video_sort, menu)
+        return true
+    }
 
     fun addToFavorite() {
-//        val data = dbFavorite.getFavRow(video.vid)
-//        btnFavorite.setImageResource(if (data.isEmpty()) R.drawable.ic_fav_outline else R.drawable.ic_fav)
-//
-//        btnFavorite.setOnClickListener { view ->
-//            val current = dbFavorite.getFavRow(video.vid)
-//            if (current.isEmpty()) {
-//                dbFavorite.addToFavorite(video)
-//                Snackbar.make(lytSuggested, R.string.msg_favorite_added, Snackbar.LENGTH_SHORT).show()
-//                btnFavorite.setImageResource(R.drawable.ic_fav)
-//            } else {
-//                dbFavorite.RemoveFav(Video(video.vid))
-//                Snackbar.make(lytSuggested, R.string.msg_favorite_removed, Snackbar.LENGTH_SHORT).show()
-//                btnFavorite.setImageResource(R.drawable.ic_fav_outline)
-//            }
-//        }
+        // ฟังก์ชันเพิ่ม/ลบ favorite
+        btnFavorite.setOnClickListener { view ->
+            Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show()
+            // btnFavorite.setImageResource(R.drawable.ic_fav)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -667,19 +1157,28 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         super.onDestroy()
         if (callbackCall != null && !callbackCall!!.isCanceled) callbackCall!!.cancel()
         shimmerFrameLayout.stopShimmer()
-       // adsManager.destroyBannerAd()
+
+        // Destroy Banner Ad
+        //adView?.destroy()
 
         // หยุดการอัพเดท SeekBar
         stopSeekBarUpdates()
 
         // ลบ YouTube Player listener
         youTubePlayerView?.release()
+
+        Log.d("FamiliesBanner", "Activity destroyed, banner ad cleaned up")
     }
 
     override fun onPause() {
         super.onPause()
         // หยุดการอัพเดท SeekBar เมื่อแอปถูก pause
         stopSeekBarUpdates()
+
+        // Pause Banner Ad
+        //adView?.pause()
+
+        Log.d("FamiliesBanner", "Activity paused, banner ad paused")
     }
 
     override fun onResume() {
@@ -688,6 +1187,45 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         if (isPlaying) {
             startSeekBarUpdates()
         }
-       // adsManager.resumeBannerAd(adsPref.isBannerPostDetails)
+
+        // Resume Banner Ad
+        //adView?.resume()
+
+        Log.d("FamiliesBanner", "Activity resumed, banner ad resumed")
+
+        // รีเฟรช Banner Ad ถ้าจำเป็น
+//        if (shouldRefreshBanner()) {
+//            refreshBannerAd()
+//        }
+    }
+
+    /**
+     * ตรวจสอบว่าควรรีเฟรช Banner Ad หรือไม่
+     */
+    private fun shouldRefreshBanner(): Boolean {
+        // รีเฟรชทุก 60 วินาที (1 นาที)
+        // หรือเมื่อกลับมาจากหน้าอื่น
+        return true // สำหรับตอนนี้ให้รีเฟรชเมื่อ resume
+    }
+
+    /**
+     * รีเฟรช Banner Ad
+     */
+    private fun refreshBannerAd() {
+        if (adsPref.isBannerAdEnabled &&
+            !isBannerLoading &&
+            bannerContainer.visibility == View.VISIBLE &&
+            !isFinishing && !isDestroyed) {
+
+            Log.d("FamiliesBanner", "Refreshing banner ad...")
+
+            // รีโหลด banner
+            //loadFamiliesBannerAd()
+        }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
     }
 }

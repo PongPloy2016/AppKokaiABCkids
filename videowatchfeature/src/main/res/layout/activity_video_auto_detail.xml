@@ -1,5 +1,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:ads="http://schemas.android.com/tools"
     android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -79,18 +80,36 @@
             </com.facebook.shimmer.ShimmerFrameLayout>
 
             <androidx.core.widget.NestedScrollView
+                android:id="@+id/nested_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
+                android:fillViewport="true"
                 android:paddingBottom="60dp">
 
                 <LinearLayout
                     android:id="@+id/lyt_main_content"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <!-- Include Video Detail Layout -->
                     <include layout="@layout/include_video_detail" />
+
+                    <!-- Banner Ad Container (เพิ่มตรงนี้แทนที่จะวางด้านล่าง) -->
+                    <FrameLayout
+                        android:id="@+id/banner_ad_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="50dp"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:layout_marginTop="16dp"
+                        android:visibility="gone">
+
+                        <!-- Banner จะถูกโหลดแบบ dynamic -->
+
+                    </FrameLayout>
 
                     <RelativeLayout
                         android:id="@+id/lyt_suggested"
@@ -125,13 +144,28 @@
                 android:id="@+id/lyt_failed_home"
                 layout="@layout/include_failed"
                 android:visibility="gone" />
-        </RelativeLayout>
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Banner Ad fixed at bottom -->
-<!--    <com.solodroid.ads.sdk.ui.BannerAdView-->
-<!--        android:id="@+id/bannerAdView"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_alignParentBottom="true" />-->
+
+
+            <!-- ใน activity_video_auto_detail.xml -->
+<!--            <RelativeLayout-->
+<!--                android:id="@+id/banner_container"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_alignParentBottom="true"-->
+<!--                android:background="@color/light_orange"-->
+<!--                android:padding="8dp"-->
+<!--                android:visibility="gone">-->
+
+<!--                &lt;!&ndash; AdView จะถูกเพิ่มแบบ dynamic โดย BannerAdManager &ndash;&gt;-->
+<!--                &lt;!&ndash; ไม่ต้องมี AdView ใน XML &ndash;&gt;-->
+
+<!--            </RelativeLayout>-->
+
+
+
+        </RelativeLayout>
+
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </RelativeLayout>

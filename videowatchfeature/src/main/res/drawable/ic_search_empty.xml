@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:fillColor="@color/kids_accent"
+        android:pathData="M60,20c22.09,0 40,17.91 40,40s-17.91,40 -40,40 -40,-17.91 -40,-40 17.91,-40 40,-40m0,-10c-27.57,0 -50,22.43 -50,50s22.43,50 50,50 50,-22.43 50,-50 -22.43,-50 -50,-50z" />
+    <path
+        android:fillColor="@color/kids_accent"
+        android:pathData="M85.66,75.66l-10,10L65,75l10,-10c-5.52,-5.52 -13.12,-9 -21.5,-9 -16.54,0 -30,13.46 -30,30h10c0,-11.03 8.97,-20 20,-20 6.48,0 12.33,2.99 16.16,7.66l-11.16,11.16L75,90l10.66,-10.66z" />
+</vector>

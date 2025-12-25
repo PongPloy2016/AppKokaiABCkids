@@ -12,7 +12,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.MainActivity
 import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
-import com.pongploydev.priyankvex.paintapp.fragment.MainGridFragment
 import com.pongploydev.videowatchfeature.VideoListFragment
 
 
@@ -260,7 +259,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
 
               // 4 -> return KidsItemFragment()
             }
-            return MainGridFragment()
+            return ComposeFragment()
         }
 
         override fun getCount(): Int {
@@ -273,7 +272,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
         FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
         override fun getItem(position: Int): Fragment {
             when (position) {
-                0 -> return MainGridFragment()
+                0 -> return ComposeFragment()
                 1-> return VideoListFragment()
             }
             return ComposeFragment()

@@ -1,12 +1,12 @@
 package com.pongploydev.videowatchfeature.adapter;
 
-
-
 import static com.pongploydev.videowatchfeature.Constant.VIDEO_LIST_COMPACT;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.PorterDuff;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +55,9 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     SharedPref sharedPref;
     AdsPref adsPref;
 
+    // เพิ่ม Handler
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
     public interface OnItemClickListener {
         void onItemClick(View view, Video obj, int position);
     }
@@ -77,8 +80,6 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.sharedPref = new SharedPref(context);
         this.adsPref = new AdsPref(context);
         lastItemViewDetector(view);
-
-
 
         view.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -145,24 +146,13 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video_kids, parent, false);
                 vh = new OriginalViewHolder(v);
             }
-        }
-//        else if (viewType == VIEW_AD) {
-//            if (sharedPref.getVideoViewType() == VIDEO_LIST_COMPACT) {
-//                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_native_ad_video_small, parent, false);
-//                vh = new NativeAdViewHolder(v);
-//            } else {
-//                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_native_ad_video_large, parent, false);
-//                vh = new NativeAdViewHolder(v);
-//            }
-//        }
-        else {
+        } else {
             View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_load_more, parent, false);
             vh = new ProgressViewHolder(v);
         }
         return vh;
     }
 
-    // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         if (holder instanceof OriginalViewHolder) {
@@ -234,55 +224,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 }
             });
 
-        }
-//        else if (holder instanceof NativeAdViewHolder) {
-//
-//            final NativeAdViewHolder vItem = (NativeAdViewHolder) holder;
-//
-//            String nativeAdStyle;
-//            if (sharedPref.getVideoViewType() == VIDEO_LIST_COMPACT) {
-//                nativeAdStyle = STYLE_VIDEO_SMALL;
-//            } else {
-//                nativeAdStyle = STYLE_VIDEO_LARGE;
-//            }
-//
-//            if (adsPref.getIsNativeAdPostList()) {
-//                vItem.loadNativeAd(context,
-//                        adsPref.getAdStatus(),
-//                        1,
-//                        adsPref.getMainAds(),
-//                        adsPref.getBackupAds(),
-//                        adsPref.getAdMobNativeId(),
-//                        adsPref.getAdManagerNativeId(),
-//                        adsPref.getFanNativeId(),
-//                        adsPref.getAppLovinNativeAdManualUnitId(),
-//                        adsPref.getAppLovinBannerMrecZoneId(),
-//                        sharedPref.getIsDarkTheme(),
-//                        false,
-//                        nativeAdStyle,
-//                        R.color.color_light_native_ad_background,
-//                        R.color.color_dark_native_ad_background
-//                );
-//            }
-//
-//            if (sharedPref.getVideoViewType() != VIDEO_LIST_COMPACT) {
-//                vItem.setNativeAdPadding(
-//                        context.getResources().getDimensionPixelOffset(R.dimen.gnt_no_size),
-//                        context.getResources().getDimensionPixelOffset(R.dimen.spacing_small),
-//                        context.getResources().getDimensionPixelOffset(R.dimen.gnt_no_size),
-//                        context.getResources().getDimensionPixelOffset(R.dimen.spacing_small)
-//                );
-//            }
-//
-//            vItem.setNativeAdMargin(
-//                    context.getResources().getDimensionPixelOffset(R.dimen.gnt_no_size),
-//                    context.getResources().getDimensionPixelOffset(R.dimen.spacing_small),
-//                    context.getResources().getDimensionPixelOffset(R.dimen.gnt_no_size),
-//                    context.getResources().getDimensionPixelOffset(R.dimen.spacing_small)
-//            );
-//
-//        }
-        else {
+        } else {
             ((ProgressViewHolder) holder).progressBar.setIndeterminate(true);
         }
     }
@@ -296,9 +238,6 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public int getItemViewType(int position) {
         Video video = videos.get(position);
         if (video != null) {
-//            if (video.video_title == null || video.video_title.equals("")) {
-//                return VIEW_AD;
-//            }
             return VIEW_ITEM;
         } else {
             return VIEW_PROG;
@@ -306,37 +245,46 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     public void insertData(List<Video> videos) {
-        setLoaded();
-        int positionStart = getItemCount();
-//        if (videos.size() >= adsPref.getNativeAdIndex()) {
-//            videos.add(adsPref.getNativeAdIndex(), new Video());
-//        }
-        int itemCount = videos.size();
-        this.videos.addAll(videos);
-        notifyItemRangeInserted(positionStart, itemCount);
+        handler.post(() -> {
+            if (videos == null || videos.isEmpty()) return;
+
+            int positionStart = getItemCount();
+            int itemCount = videos.size();
+            this.videos.addAll(videos);
+            notifyItemRangeInserted(positionStart, itemCount);
+        });
     }
 
     public void setLoaded() {
-        loading = false;
-        for (int i = 0; i < getItemCount(); i++) {
-            if (videos.get(i) == null) {
-                videos.remove(i);
-                notifyItemRemoved(i);
+        handler.post(() -> {
+            loading = false;
+            // ตรวจสอบจากท้ายไปหน้าเพื่อป้องกัน ConcurrentModificationException
+            for (int i = getItemCount() - 1; i >= 0; i--) {
+                if (videos.get(i) == null) {
+                    videos.remove(i);
+                    notifyItemRemoved(i);
+                }
             }
-        }
+        });
     }
 
     public void setLoading() {
         if (getItemCount() != 0) {
-            this.videos.add(null);
-            notifyItemInserted(getItemCount() - 1);
-            loading = true;
+            handler.post(() -> {
+                if (!loading) {
+                    this.videos.add(null);
+                    notifyItemInserted(getItemCount() - 1);
+                    loading = true;
+                }
+            });
         }
     }
 
     public void resetListData() {
-        this.videos = new ArrayList<>();
-        notifyDataSetChanged();
+        handler.post(() -> {
+            this.videos = new ArrayList<>();
+            notifyDataSetChanged();
+        });
     }
 
     public void setOnLoadMoreListener(OnLoadMoreListener onLoadMoreListener) {
@@ -344,40 +292,29 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     private void lastItemViewDetector(RecyclerView recyclerView) {
-
         if (recyclerView.getLayoutManager() instanceof StaggeredGridLayoutManager) {
             final StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
             recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
                 public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                     super.onScrolled(recyclerView, dx, dy);
+
+                    // ตรวจสอบว่าไม่ใช่ในระหว่าง layout
+                    if (recyclerView.isComputingLayout()) {
+                        return;
+                    }
+
                     int lastPos = getLastVisibleItem(layoutManager.findLastVisibleItemPositions(null));
                     if (!loading && lastPos == getItemCount() - 1 && onLoadMoreListener != null) {
-//                        if (adsPref.getIsNativeAdPostList()) {
-//                            switch (adsPref.getMainAds()) {
-//                                case ADMOB:
-//                                case GOOGLE_AD_MANAGER:
-//                                case FAN:
-//                                case STARTAPP:
-//                                case APPLOVIN:
-//                                case APPLOVIN_MAX:
-//                                case APPLOVIN_DISCOVERY:
-//                                case WORTISE: {
-//                                    int current_page = getItemCount() / (AppConfig.LOAD_MORE + 1); //posts per page plus 1 Ad
-//                                    onLoadMoreListener.onLoadMore(current_page);
-//                                    break;
-//                                }
-//                                default: {
-//                                    int current_page = getItemCount() / (AppConfig.LOAD_MORE);
-//                                    onLoadMoreListener.onLoadMore(current_page);
-//                                    break;
-//                                }
-//                            }
-//                        } else {
-                            int current_page = getItemCount() / (AppConfig.LOAD_MORE);
-                            onLoadMoreListener.onLoadMore(current_page);
- //                       }
-                       loading = true;
+                        int current_page = getItemCount() / (AppConfig.LOAD_MORE);
+
+                        // ใช้ handler เพื่อเลื่อนการเรียกไปยังเฟรมถัดไป
+                        handler.post(() -> {
+                            if (!loading && onLoadMoreListener != null) {
+                                onLoadMoreListener.onLoadMore(current_page);
+                                loading = true;
+                            }
+                        });
                     }
                 }
             });
@@ -395,5 +332,4 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         }
         return lastIdx;
     }
-
 }

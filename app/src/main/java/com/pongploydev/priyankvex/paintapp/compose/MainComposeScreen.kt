@@ -3,6 +3,7 @@ package com.pongploydev.priyankvex.paintapp.compose
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -43,17 +44,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -84,9 +83,20 @@ import com.pongploydev.priyankvex.paintapp.activity.KidsWebViewActivity
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
-import com.pongploydev.priyankvex.paintapp.ads.InterstitialAdManager
+import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
+import com.pongploydev.videowatchfeature.utils.ads.InterstitialAdManager
 import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
 import kotlinx.coroutines.delay
+
+// Import สำหรับ AdMob
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 
 // สีสันสำหรับเด็กๆ
 val KidsColorPalette = listOf(
@@ -146,10 +156,6 @@ fun MainComposeScreen(navController: NavController? = null) {
     var visitCount by remember { mutableStateOf(0) }
     val VISITS_BEFORE_AD = 3 // แสดงโฆษณาทุก 3 รอบ
 
-    // State สำหรับ Banner Ad
-    var isBannerAdLoaded by remember { mutableStateOf(false) }
-    var bannerAdError by remember { mutableStateOf<String?>(null) }
-
     // ฟังก์ชันโหลดโฆษณา
     val loadInterstitialAd: (InterstitialAdManager) -> Unit = { manager ->
         if (!isAdLoading && adLoadAttempt < 3) {
@@ -164,7 +170,6 @@ fun MainComposeScreen(navController: NavController? = null) {
                 onAdFailed = {
                     isAdLoading = false
                     println("❌ Failed to load interstitial ad (attempt $adLoadAttempt)")
-                    Toast.makeText(context, "❌ Failed to load interstitial ad (attempt $adLoadAttempt)", Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -192,7 +197,7 @@ fun MainComposeScreen(navController: NavController? = null) {
         }
     }
 
-    // ฟังก์ชันจัดการการคลิก - ใช้การนับ count แทนการแสดง dialog
+    // ฟังก์ชันจัดการการคลิก
     val handleItemClick: (MenuItem) -> Unit = { item ->
         // เพิ่มจำนวนรอบ
         visitCount++
@@ -263,6 +268,10 @@ fun MainComposeScreen(navController: NavController? = null) {
                 }
             )
         },
+//        bottomBar = {
+//            // Banner Ad ใน bottomBar ของ Scaffold
+//            ChildDirectedBannerAd(adUnitId = "ca-app-pub-3279793802315716/1117791498")
+//        },
         content = { paddingValues ->
             Box(
                 modifier = Modifier
@@ -281,55 +290,204 @@ fun MainComposeScreen(navController: NavController? = null) {
 //                        isAdLoaded = interstitialAdManager.isAdLoaded()
 //                    )
 
-                    ViewModeSelector(
-                        currentMode = viewMode.value,
-                        onModeSelected = { mode ->
-                            viewMode.value = mode
-                        }
-                    )
+//                    ViewModeSelector(
+//                        currentMode = viewMode.value,
+//                        onModeSelected = { mode ->
+//                            viewMode.value = mode
+//                        }
+//                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    when (viewMode.value) {
-                        ViewMode.GRID -> {
-                            GridView(
-                                items = menuItems,
-                                onItemClick = { item ->
-                                    handleItemClick(item)
-                                }
-                            )
-                        }
-                        ViewMode.LIST -> {
-                            ListView(
-                                items = menuItems,
-                                onItemClick = { item ->
-                                    handleItemClick(item)
-                                }
-                            )
+                    // ใช้ Box กับ weight เพื่อให้เนื้อหาเต็มพื้นที่
+                    Box(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        when (viewMode.value) {
+                            ViewMode.GRID -> {
+                                GridView(
+                                    items = menuItems,
+                                    onItemClick = { item ->
+                                        handleItemClick(item)
+                                    }
+                                )
+                            }
+                            ViewMode.LIST -> {
+                                ListView(
+                                    items = menuItems,
+                                    onItemClick = { item ->
+                                        handleItemClick(item)
+                                    }
+                                )
+                            }
                         }
                     }
 
-                    // แสดง Banner Ad
-                    BannerAdSection(
-                        isLoaded = isBannerAdLoaded,
-                        error = bannerAdError,
-                        onRetry = {
-                            isBannerAdLoaded = false
-                            bannerAdError = null
-                        }
-                    )
+                    // แสดงสถานะการโหลดโฆษณาเต็มจอ
+//                    AdLoadingStatus(
+//                        isAdLoading = isAdLoading,
+//                        isAdLoaded = interstitialAdManager.isAdLoaded(),
+//                        adLoadAttempt = adLoadAttempt
+//                    )
 
-                    // แสดงสถานะการโหลดโฆษณา
-                    AdLoadingStatus(
-                        isAdLoading = isAdLoading,
-                        isAdLoaded = interstitialAdManager.isAdLoaded(),
-                        adLoadAttempt = adLoadAttempt
-                    )
+                    // เพิ่ม Spacer เล็กน้อยเพื่อไม่ให้เนื้อหาติดกับ Banner
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
     )
 }
+
+// ==================== Banner Ad Functions ====================
+//
+//@Composable
+//fun ChildDirectedBannerAd(
+//    adUnitId: String = "ca-app-pub-3940256099942544/6300978111",
+//    adSize: AdSize = AdSize.BANNER,
+//    modifier: Modifier = Modifier.fillMaxWidth().height(60.dp)
+//) {
+//    val context = LocalContext.current
+//    var showFallback by remember { mutableStateOf(false) }
+//
+//    // ตั้งค่าสำหรับเด็ก
+//    LaunchedEffect(Unit) {
+//        try {
+//            MobileAds.setRequestConfiguration(
+//                RequestConfiguration.Builder()
+//                    .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
+//                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+//                    .build()
+//            )
+//        } catch (e: Exception) {
+//            Log.w("ChildAd", "Failed to set child config: ${e.message}")
+//        }
+//    }
+//
+//    if (!adUnitId.startsWith("ca-app-pub-") || showFallback) {
+//        BannerAdFallback()
+//        return
+//    }
+//
+//    AndroidView(
+//        factory = { ctx ->
+//            AdView(ctx).apply {
+//                this.adUnitId = adUnitId
+//                setAdSize(adSize)
+//                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+//
+//                adListener = object : AdListener() {
+//                    override fun onAdLoaded() {
+//                        showFallback = false
+//                        Log.d("ChildAd", "Ad loaded successfully")
+//                    }
+//
+//                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+//                        showFallback = true
+//                        Log.w("ChildAd", "Ad failed: ${loadAdError.message}")
+//                    }
+//                }
+//
+//                try {
+//                    loadAd(AdRequest.Builder().build())
+//                } catch (e: Exception) {
+//                    showFallback = true
+//                    Log.e("ChildAd", "Exception: ${e.message}")
+//                }
+//            }
+//        },
+//        modifier = modifier
+//    )
+//}
+@Composable
+fun BannerAdFallback() {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF2D3047)
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable {
+                    Toast.makeText(
+                        context,
+                        "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Ad Icon
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = Color(0xFFFF6B6B),
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "AD",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Ad Content
+                Column(
+                    modifier = Modifier.weight(1f)
+                        .padding(horizontal = 12.dp)
+                ) {
+                    Text(
+                        text = "สนับสนุนนักพัฒนา",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "ขอบคุณที่ใช้แอปพลิเคชันของเรา",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 10.sp
+                    )
+                }
+
+                // Support Badge
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = Color(0xFF06D6A0),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "สนับสนุน",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==================== Other Composable Functions ====================
 
 @Composable
 fun VisitCounter(
@@ -398,79 +556,6 @@ fun VisitCounter(
 }
 
 @Composable
-fun BannerAdSection(
-    isLoaded: Boolean,
-    error: String?,
-    onRetry: () -> Unit
-) {
-    val context = LocalContext.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Banner Ad Container
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(
-                    color = Color(0xFFF5F5F5),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .padding(8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            when {
-                isLoaded -> {
-                    Text(
-                        text = "✅ โฆษณากำลังแสดง",
-                        color = Color(0xFF06D6A0),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                error != null -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "❌ ไม่สามารถโหลดโฆษณาได้",
-                            color = Color(0xFFFF6B6B),
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = "แตะเพื่อลองใหม่",
-                            color = Color(0xFF666666),
-                            fontSize = 10.sp,
-                            modifier = Modifier.clickable { onRetry() }
-                        )
-                    }
-                }
-                else -> {
-                    Text(
-                        text = "🔄 กำลังโหลดโฆษณา...",
-                        color = Color(0xFF666666),
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
-
-        // Support Message
-        Text(
-            text = "📱 การสนับสนุนจากโฆษณาช่วยให้เราพัฒนาแอปฯ ต่อไปได้",
-            color = Color(0xFF666666),
-            fontSize = 10.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
-}
-
-@Composable
 fun AdLoadingStatus(
     isAdLoading: Boolean,
     isAdLoaded: Boolean,
@@ -483,26 +568,34 @@ fun AdLoadingStatus(
         contentAlignment = Alignment.Center
     ) {
         when {
-            isAdLoading -> Text(
-                text = "🔄 กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
-                color = Color(0xFF666666),
-                fontSize = 12.sp
-            )
-            isAdLoaded -> Text(
-                text = "✅ โฆษณาเต็มจอพร้อมแสดง",
-                color = Color(0xFF06D6A0),
-                fontSize = 12.sp
-            )
-            else -> Text(
-                text = "❌ โฆษณาเต็มจอยังไม่พร้อม",
-                color = Color(0xFFFF6B6B),
-                fontSize = 12.sp
-            )
+            isAdLoading -> Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(12.dp),
+                    strokeWidth = 1.dp,
+                    color = Color(0xFF4ECDC4)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
+                    color = Color(0xFF666666),
+                    fontSize = 12.sp
+                )
+            }
+//            isAdLoaded -> Text(
+//                text = "✅ โฆษณาเต็มจอพร้อมแสดง",
+//                color = Color(0xFF06D6A0),
+//                fontSize = 12.sp
+//            )
+//            else -> Text(
+//                text = "❌ โฆษณาเต็มจอยังไม่พร้อม",
+//                color = Color(0xFFFF6B6B),
+//                fontSize = 12.sp
+//            )
         }
     }
 }
-
-// ... (ส่วนที่เหลือของโค้ด保持不变)
 
 @Composable
 fun AnimatedIconButton(
@@ -563,8 +656,8 @@ fun ViewModeSelector(currentMode: ViewMode, onModeSelected: (ViewMode) -> Unit) 
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
@@ -1032,13 +1125,6 @@ private fun handleItemClickDirectly(
                 putExtra("extra_title", "Youngciety - สนุกสนาน")
             }
             context.startActivity(intent)
-
-            // วิธีที่ 2: ใช้ companion function (แนะนำ)
-//            KidsWebViewActivity.start(
-//                context = this,
-//                url = "https://www.youngciety.com/",
-//                title = "Youngciety สำหรับเด็ก"
-//            )
         }
         5 -> {
             AboutDialog(context).show()
@@ -1112,8 +1198,8 @@ private fun showKidsActivitiesDialog(context: Context) {
 }
 
 private fun startColoringActivity(context: Context) {
-//    val intent = Intent(context, ColoringGameActivity::class.java)
-//    context.startActivity(intent)
+    val intent = Intent(context, ColoringGameActivity::class.java)
+    context.startActivity(intent)
 }
 
 private fun getRandomColor(): Int {

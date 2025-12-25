@@ -16,6 +16,22 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+
+
+        <!-- สำหรับแอปครอบครัว -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3279793802315716~2607584711"/>
+
+        <!-- สำหรับแอปที่กำหนดเป้าหมายเด็ก -->
+        <meta-data
+            android:name="com.google.android.gms.ads.FAMILY_AD"
+            android:value="true"/>
+
+        <!-- Content rating -->
+        <meta-data
+            android:name="com.google.android.gms.ads.MAX_AD_CONTENT_RATING"
+            android:value="G"/>
     </application>
 
 </manifest>

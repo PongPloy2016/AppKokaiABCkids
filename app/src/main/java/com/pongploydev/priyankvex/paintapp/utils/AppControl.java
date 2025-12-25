@@ -5,6 +5,10 @@ import android.content.Context;
 import android.speech.tts.TextToSpeech;
 
 
+import com.onesignal.Continue;
+import com.onesignal.OneSignal;
+import com.onesignal.debug.LogLevel;
+
 import java.util.Locale;
 
 
@@ -15,6 +19,16 @@ public class AppControl extends Application {
     public void onCreate() {
         super.onCreate();
         context=this;
+
+        // Enable verbose logging for debugging (remove in production)
+        OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);
+        // Initialize with your OneSignal App ID
+        OneSignal.initWithContext(this, "3836f6b5-1484-496d-b452-d7ab16a5988e");
+        // Use this method to prompt for push notifications.
+        // We recommend removing this method after testing and instead use In-App Messages to prompt for notification permission.
+        OneSignal.getNotifications().requestPermission(false, Continue.none());
+
+
         new Utils(context);
 //        CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
 //                .setDefaultFontPath("Fon/OhWhale.ttf")

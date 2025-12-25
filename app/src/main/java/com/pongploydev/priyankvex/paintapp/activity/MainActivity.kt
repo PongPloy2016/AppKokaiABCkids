@@ -110,12 +110,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         // 3. Initialize AdView ก่อน (เพียงครั้งเดียว)
-        if (!isAdViewInitialized) {
-            initializeAdViewWithDefaults()
-        }
-
-        // 4. ตั้งค่า AdMob สำหรับเด็กและครอบครัวโดยเฉพาะ
-        initializeAdMobForFamily()
+//        if (!isAdViewInitialized) {
+//            initializeAdViewWithDefaults()
+//        }
+//
+//        // 4. ตั้งค่า AdMob สำหรับเด็กและครอบครัวโดยเฉพาะ
+//        initializeAdMobForFamily()
 
         // 5. ตั้งค่า AppUpdateManager
         initializeAppUpdateManager()
@@ -586,7 +586,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         }
 
         try {
-            val testAdUnitId = "ca-app-pub-3940256099942544/6300978111"
+            val testAdUnitId = "ca-app-pub-3279793802315716/1117791498"
 
             // ✅ ใช้ apply {} เพื่อตั้งค่า properties
             currentAdView.apply {

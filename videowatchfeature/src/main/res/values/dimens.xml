@@ -69,4 +69,7 @@
     <!-- Item Dimensions -->
     <dimen name="item_video_height">220dp</dimen>
 
+
+    <dimen name="max_banner_height_families">60dp</dimen>
+
 </resources>

@@ -309,13 +309,15 @@
             card_view:cardCornerRadius="@dimen/corner_radius"
             card_view:cardPreventCornerOverlap="false">
 
-            <LinearLayout
-                android:id="@+id/native_ad_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+<!--            <LinearLayout-->
+<!--                android:id="@+id/native_ad_view"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical" />-->
 
         </androidx.cardview.widget.CardView>
+
+
 
     </LinearLayout>
 
