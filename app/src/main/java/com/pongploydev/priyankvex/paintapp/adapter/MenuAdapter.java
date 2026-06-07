@@ -18,6 +18,18 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuItemViewHolder> {
     private MenuItemViewHolder.OnItemClickListener itemListener;
     private MenuItemViewHolder.OnSoundClickListener soundListener;
 
+    // [NEW] Kids Color Palette
+    private final int[] kidsColors = {
+            0xFFFF6B6B, // Red
+            0xFF4ECDC4, // Teal
+            0xFFFFD166, // Yellow
+            0xFF06D6A0, // Green
+            0xFF118AB2, // Blue
+            0xFFEF476F, // Pink
+            0xFF7209B7, // Purple
+            0xFFF15BB5  // Pink-Purple
+    };
+
     public MenuAdapter(List<MenuItem> itemList,
                        MenuItemViewHolder.OnItemClickListener itemListener,
                        MenuItemViewHolder.OnSoundClickListener soundListener) {
@@ -36,6 +48,17 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuItemViewHolder> {
     @Override
     public void onBindViewHolder(MenuItemViewHolder holder, int position) {
         holder.bind(itemList.get(position), itemListener, soundListener);
+
+        // [NEW] Animation
+        android.view.animation.Animation animation = android.view.animation.AnimationUtils.loadAnimation(holder.itemView.getContext(), R.anim.pop_in);
+        holder.itemView.startAnimation(animation);
+
+        // [NEW] Set Dynamic Background Color for the label
+        // Note: Assuming MenuItemViewHolder exposes the text view or we can find it
+        android.widget.TextView textView = holder.itemView.findViewById(R.id.country_name);
+        if (textView != null) {
+            textView.setBackgroundColor(kidsColors[position % kidsColors.length]);
+        }
     }
 
     @Override

@@ -39,8 +39,15 @@
                     android:src="@drawable/ic_kids_placeholder"
                      />
 
+                <FrameLayout
+                    android:id="@+id/lyt_youtube_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+
                 <!-- Play Button Overlay -->
                 <ImageView
+                    android:id="@+id/img_play"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
                     android:layout_centerInParent="true"

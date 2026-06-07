@@ -7,211 +7,189 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- Wrapped in CardView for Kid-Friendly Look -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/lyt_youtube_card_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        app:cardCornerRadius="24dp"
+        app:cardBackgroundColor="#000000"
+        app:cardElevation="8dp">
 
-        <RelativeLayout
-            android:id="@+id/root_view"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/lyt_youtube_constraint_container"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:background="@color/color_black"
-            android:keepScreenOn="true"
-            tools:ignore="MissingConstraints">
-
-            <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-                android:id="@+id/youtube_player_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_centerInParent="true" />
-
-            <FrameLayout
-                android:id="@+id/full_screen_view_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <View
-                android:id="@+id/panel_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="gone" />
+            android:layout_height="wrap_content">
 
             <RelativeLayout
-                android:id="@+id/custom_controls_container"
+                android:id="@+id/lyt_youtube_root_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#66000000"
-                android:padding="4dp"
-                android:visibility="gone">
+                android:layout_height="250dp"
+                android:background="@color/color_black"
+                android:keepScreenOn="true"
+                tools:ignore="MissingConstraints"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
 
-                <!-- ปุ่มควบคุมกลาง -->
+                <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+                    android:id="@+id/youtube_player_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_centerInParent="true"
+                    app:enableAutomaticInitialization="false" />
+
+                <FrameLayout
+                    android:id="@+id/full_screen_view_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+
+                <View
+                    android:id="@+id/panel_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone" />
+
+                <RelativeLayout
+                    android:id="@+id/custom_controls_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#66000000"
+                    android:padding="4dp"
+                    android:visibility="gone">
+
+                    <!-- Playback buttons removed to match Local Video style -->
+
+                    <!-- แถบควบคุมล่าง (เวลา + SeekBar + ปุ่มเต็มจอ) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="12dp">
+
+                        <TextView
+                            android:id="@+id/txt_current_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0:00"
+                            android:textColor="@color/color_white"
+                            android:textSize="14sp"
+                            android:textStyle="bold"/>
+
+                        <com.pierfrancescosoffritti.androidyoutubeplayer.core.customui.views.YouTubePlayerSeekBar
+                            android:id="@+id/youtube_player_seekbar"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="12dp"
+                            app:color="@color/gnt_red"
+                            app:fontSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/txt_duration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0:00"
+                            android:textColor="@color/color_white"
+                            android:textSize="14sp"
+                            android:textStyle="bold"/>
+
+                        <ImageView
+                            android:id="@+id/btn_fullscreen"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="12dp"
+                            android:background="@drawable/bg_circle_button"
+                            android:backgroundTint="#2196F3"
+                            android:contentDescription="@string/img_content_description"
+                            android:padding="10dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_exo_fullscreen_open"
+                            app:tint="@android:color/white"/>
+
+                    </LinearLayout>
+
+                </RelativeLayout>
+
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingTop="4dp">
+                    android:orientation="vertical">
 
-                    <ImageButton
-                        android:id="@+id/btn_rew_10s"
-                        android:layout_width="54dp"
-                        android:layout_height="54dp"
-                        android:background="?selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_10s_rew"
-                        android:visibility="invisible" />
-
-                    <View
-                        android:layout_width="20dp"
-                        android:layout_height="0dp" />
-
-                    <ImageButton
-                        android:id="@+id/btn_play_pause"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:background="?selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_exo_pause"
-                        android:visibility="invisible" />
-
-                    <View
-                        android:layout_width="20dp"
-                        android:layout_height="0dp" />
-
-                    <ImageButton
-                        android:id="@+id/btn_ffwd_10s"
-                        android:layout_width="54dp"
-                        android:layout_height="54dp"
-                        android:background="?selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_10s_ffwd"
-                        android:visibility="invisible" />
-
-                </LinearLayout>
-
-                <!-- แถบควบคุมล่าง (เวลา + SeekBar + ปุ่มเต็มจอ) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentBottom="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:paddingBottom="4dp">
-
-                    <TextView
-                        android:id="@+id/txt_current_time"
+                    <ProgressBar
+                        android:id="@+id/progress_bar"
+                        style="?android:attr/progressBarStyleLarge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0:00"
-                        android:textColor="@color/color_white"
-                        android:textSize="12sp" />
-
-                    <com.pierfrancescosoffritti.androidyoutubeplayer.core.customui.views.YouTubePlayerSeekBar
-                        android:id="@+id/youtube_player_seekbar"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:layout_marginEnd="8dp"
-                        app:color="@color/gnt_red"
-                        app:fontSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/txt_duration"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0:00"
-                        android:textColor="@color/color_white"
-                        android:textSize="12sp" />
-
-                    <ImageView
-                        android:id="@+id/btn_fullscreen"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/img_content_description"
-                        android:padding="5dp"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_exo_fullscreen_open" />
+                        android:layout_marginTop="2dp"
+                        android:indeterminateDuration="1000"
+                        android:indeterminateTint="@color/color_white" />
 
                 </LinearLayout>
 
             </RelativeLayout>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:orientation="vertical">
+            <!-- Thumbnail Container -->
+            <RelativeLayout
+                android:id="@+id/lyt_thumbnail_container"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="visible"
+                app:layout_constraintDimensionRatio="H,2:1.1"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@+id/lyt_youtube_root_view"> <!-- Constraint to root_view -->
 
-                <ProgressBar
-                    android:id="@+id/progress_bar"
-                    style="?android:attr/progressBarStyleLarge"
+                <ImageView
+                    android:id="@+id/video_thumbnail"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:foreground="?selectableItemBackground"
+                    android:scaleType="centerCrop" />
+
+                <TextView
+                    android:id="@+id/video_duration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:indeterminateDuration="1000"
-                    android:indeterminateTint="@color/color_white" />
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/bg_rounded"
+                    android:paddingLeft="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingRight="8dp"
+                    android:paddingBottom="4dp"
+                    android:text="30:00"
+                    android:textColor="@color/color_white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
 
-            </LinearLayout>
+                <ImageView
+                    android:id="@+id/icon_play"
+                    android:layout_width="90dp"
+                    android:layout_height="90dp"
+                    android:layout_centerInParent="true"
+                    android:alpha="0.9"
+                    android:src="@drawable/ic_thumbnail_video" />
 
-        </RelativeLayout>
+            </RelativeLayout>
 
-        <!-- Thumbnail Container -->
-        <RelativeLayout
-            android:id="@+id/lyt_thumbnail_container"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="visible"
-            app:layout_constraintDimensionRatio="H,2:1.1"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <ImageView
-                android:id="@+id/video_thumbnail"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:foreground="?selectableItemBackground"
-                android:scaleType="centerCrop" />
-
-            <TextView
-                android:id="@+id/video_duration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_margin="10dp"
-                android:background="@drawable/bg_rounded"
-                android:paddingLeft="5dp"
-                android:paddingTop="3dp"
-                android:paddingRight="5dp"
-                android:paddingBottom="3dp"
-                android:text="30:00"
-                android:textColor="@color/color_white"
-                android:textSize="12sp" />
-
-            <ImageView
-                android:id="@+id/icon_play"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_centerInParent="true"
-                android:alpha="0.9"
-                android:src="@drawable/ic_thumbnail_video" />
-
-        </RelativeLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 
     <!-- Video Info Section -->
     <RelativeLayout
@@ -284,14 +262,17 @@
 
     <!-- Description and Ads Section -->
     <LinearLayout
+        android:id="@+id/lyt_description_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        tools:ignore="WebViewLayout">
 
         <WebView
             android:id="@+id/video_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:visibility="visible"
             android:layout_marginStart="4dp"
             android:layout_marginTop="3dp"
             android:layout_marginEnd="4dp"
@@ -309,11 +290,11 @@
             card_view:cardCornerRadius="@dimen/corner_radius"
             card_view:cardPreventCornerOverlap="false">
 
-<!--            <LinearLayout-->
-<!--                android:id="@+id/native_ad_view"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="vertical" />-->
+            <!--            <LinearLayout-->
+            <!--                android:id="@+id/native_ad_view"-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:orientation="vertical" />-->
 
         </androidx.cardview.widget.CardView>
 
@@ -322,3 +303,4 @@
     </LinearLayout>
 
 </LinearLayout>
+

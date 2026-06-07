@@ -42,10 +42,62 @@ public class LearningCategoriesAdapter extends RecyclerView.Adapter<LearningCate
     private final List<LearningCategory> categories;
     private final int activityType;
 
+    // [NEW] Kids Color Palette
+    private final int[] kidsColors = {
+            0xFFFF6B6B, // Red
+            0xFF4ECDC4, // Teal
+            0xFFFFD166, // Yellow
+            0xFF06D6A0, // Green
+            0xFF118AB2, // Blue
+            0xFFEF476F, // Pink
+            0xFF7209B7, // Purple
+            0xFFF15BB5 // Pink-Purple
+    };
+
+    private android.media.SoundPool soundPool;
+    private int soundClickId;
+    private boolean isSoundLoaded = false;
+
     public LearningCategoriesAdapter(Context context, List<LearningCategory> categories, int type) {
         this.context = context;
         this.categories = categories;
         this.activityType = type;
+
+        initSounds();
+    }
+
+    private void initSounds() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            android.media.AudioAttributes audioAttributes = new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_GAME)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build();
+            soundPool = new android.media.SoundPool.Builder()
+                    .setMaxStreams(1)
+                    .setAudioAttributes(audioAttributes)
+                    .build();
+        } else {
+            soundPool = new android.media.SoundPool(1, android.media.AudioManager.STREAM_MUSIC, 0);
+        }
+
+        try {
+            soundClickId = soundPool.load(context, R.raw.button, 1);
+            soundPool.setOnLoadCompleteListener(new android.media.SoundPool.OnLoadCompleteListener() {
+                @Override
+                public void onLoadComplete(android.media.SoundPool soundPool, int sampleId, int status) {
+                    if (status == 0)
+                        isSoundLoaded = true;
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void playClickSound() {
+        if (isSoundLoaded && soundPool != null) {
+            soundPool.play(soundClickId, 1f, 1f, 0, 0, 1f);
+        }
     }
 
     @NonNull
@@ -66,13 +118,19 @@ public class LearningCategoriesAdapter extends RecyclerView.Adapter<LearningCate
 
         // 2. Set Title
         viewHolder.txtCategoryTitle.setText(category.getTitle());
+        // [NEW] Set Dynamic Background Color
+        viewHolder.txtCategoryTitle.setBackgroundColor(kidsColors[position % kidsColors.length]);
 
         // 3. Click Listener
         viewHolder.lloutHome.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
+                // Play Sound
+                playClickSound();
+
                 Intent intent;
 
-                // TODO: ต้องเปลี่ยน SubActivity, LookChooseActivity, ListenGuessActivity เป็นชื่อ Activity ที่ถูกต้อง
+                // TODO: ต้องเปลี่ยน SubActivity, LookChooseActivity, ListenGuessActivity
+                // เป็นชื่อ Activity ที่ถูกต้อง
                 Class<?> targetActivity;
 
                 switch (activityType) {
@@ -84,28 +142,33 @@ public class LearningCategoriesAdapter extends RecyclerView.Adapter<LearningCate
                         intent.putExtra("Category", category.getTitle());
                         intent.putExtra("Type", activityType);
                         break;
-//                    case 2:
-//                        // ต้องเปลี่ยน LookChooseActivity.class เป็นชื่อ Activity จริง
-//                        targetActivity = LookChooseActivity.class;
-//                        intent = new Intent(context, targetActivity);
-//                        intent.putExtra("categoryPosition", category.getCategoryPosition());
-//                        intent.putExtra("SubCate", category.getTitle());
-//                        intent.putExtra("TYPE", activityType);
-//                        break;
-//                    case 3:
-//                        // ต้องเปลี่ยน ListenGuessActivity.class เป็นชื่อ Activity จริง
-//                        targetActivity = ListenGuessActivity.class;
-//                        intent = new Intent(context, targetActivity);
-//                        intent.putExtra("categoryPosition", category.getCategoryPosition());
-//                        intent.putExtra("SubCate", category.getTitle());
-//                        intent.putExtra("TYPE", activityType);
-//                        break;
+                    // case 2:
+                    // // ต้องเปลี่ยน LookChooseActivity.class เป็นชื่อ Activity จริง
+                    // targetActivity = LookChooseActivity.class;
+                    // intent = new Intent(context, targetActivity);
+                    // intent.putExtra("categoryPosition", category.getCategoryPosition());
+                    // intent.putExtra("SubCate", category.getTitle());
+                    // intent.putExtra("TYPE", activityType);
+                    // break;
+                    // case 3:
+                    // // ต้องเปลี่ยน ListenGuessActivity.class เป็นชื่อ Activity จริง
+                    // targetActivity = ListenGuessActivity.class;
+                    // intent = new Intent(context, targetActivity);
+                    // intent.putExtra("categoryPosition", category.getCategoryPosition());
+                    // intent.putExtra("SubCate", category.getTitle());
+                    // intent.putExtra("TYPE", activityType);
+                    // break;
                     default:
                         return; // ไม่ทำอะไรถ้า Type ไม่ถูกต้อง
                 }
                 context.startActivity(intent);
             }
         });
+
+        // [NEW] Animation
+        android.view.animation.Animation animation = android.view.animation.AnimationUtils.loadAnimation(context,
+                R.anim.pop_in);
+        viewHolder.itemView.startAnimation(animation);
     }
 
     @Override

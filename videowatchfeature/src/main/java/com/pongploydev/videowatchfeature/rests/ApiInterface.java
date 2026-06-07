@@ -15,15 +15,15 @@ import retrofit2.http.Query;
 public interface ApiInterface {
 
     String CACHE = "Cache-Control: max-age=0";
-    String AGENT = "Data-Agent: Your Videos Channel";
+    String AGENT = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
     @Headers({CACHE, AGENT})
-    @GET("api/get_videos")
+    @GET("api/api.php")
     Call<CallbackListVideo> getVideos(
-            @Query("page") int page,
-            @Query("count") int count,
+            @Query("get_videos") String get_videos,
             @Query("sort") String sort,
-            @Query("api_key") String api_key
+            @Query("count") int count,
+            @Query("page") int page
     );
 
 //    @Headers({CACHE, AGENT})
@@ -48,7 +48,7 @@ public interface ApiInterface {
 //    );
 //
     @Headers({CACHE, AGENT})
-    @GET("api/get_category_videos")
+    @GET("api/get_category_videos/")
     Call<CallbackCategoryDetails> getCategoryVideos(
             @Query("id") int id,
             @Query("page") int page,
@@ -57,7 +57,7 @@ public interface ApiInterface {
             @Query("api_key") String api_key
     );
     @Headers({CACHE, AGENT})
-    @GET("api/get_search_results")
+    @GET("api/get_search_results/")
     Call<CallbackListVideo> getSearchPosts(
             @Query("search") String search,
             @Query("count") int count,
@@ -94,4 +94,12 @@ public interface ApiInterface {
 //            @Query("api_key") String api_key
 //    );
 
+    @GET("api/get_category_videos/")
+    Call<String> getCategoryVideosRaw(
+            @Query("id") int id,
+            @Query("page") int page,
+            @Query("count") int count,
+            @Query("sort") String sort,
+            @Query("api_key") String api_key
+    );
 }

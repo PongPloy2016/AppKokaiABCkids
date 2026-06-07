@@ -55,7 +55,7 @@ public class SharedPref {
     }
 
     public String getBaseUrl() {
-        return sharedPreferences.getString("base_url", "https://pongploydev.com/public/your_videos_channel/");
+        return sharedPreferences.getString("base_url", "https://pongploydev.infinityfree.me");
     }
 
 

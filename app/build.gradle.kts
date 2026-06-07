@@ -19,8 +19,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         targetSdk = 35
-        versionCode = 29
-        versionName = "1.4.6"
+        versionCode = 36
+        versionName = "1.8.0"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
@@ -34,23 +34,23 @@ android {
             isMinifyEnabled = false
             buildConfigField("boolean", "SHOW_TEST_ADS", "true")
             buildConfigField("String", "BUILD_MODE", "\"DEBUG\"")
-//            firebaseCrashlytics {
-//                mappingFileUploadEnabled = false
-//            }
+            //            firebaseCrashlytics {
+            //                mappingFileUploadEnabled = false
+            //            }
         }
 
         release {
             isDebuggable = false
             isMinifyEnabled = false // ⭐ เปิด minify แต่ต้องมี proguard rules ถูกต้อง
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro" // ⭐ ต้องมีไฟล์นี้
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro" // ⭐ ต้องมีไฟล์นี้
             )
             buildConfigField("boolean", "SHOW_TEST_ADS", "false")
             buildConfigField("String", "BUILD_MODE", "\"RELEASE\"")
-//            firebaseCrashlytics {
-//                mappingFileUploadEnabled = true
-//            }
+            //            firebaseCrashlytics {
+            //                mappingFileUploadEnabled = true
+            //            }
         }
     }
 
@@ -59,13 +59,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+    kotlinOptions { jvmTarget = "11" }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
-    }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.11" }
 }
 
 dependencies {
@@ -126,7 +122,7 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.10.01")
     implementation(composeBom)
     implementation("androidx.activity:activity-compose:1.8.1")
-//    implementation("androidx.compose.ui:ui")
+    //    implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui:1.10.0")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- พื้นหลังหลัก - โทนสีสันสดใส สำหรับเด็ก -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FFF0F5"
+                android:centerColor="#F0F8FF"
+                android:endColor="#F0FFF4"
+                android:angle="135" />
+        </shape>
+    </item>
+
+    <!-- ฟองใหญ่ มุมบนซ้าย - ชมพูสด -->
+    <item
+        android:top="-80dp"
+        android:left="-80dp"
+        android:width="260dp"
+        android:height="260dp">
+        <shape android:shape="oval">
+            <solid android:color="#50FFB6C1" />
+        </shape>
+    </item>
+
+    <!-- ฟอง มุมบนขวา - ฟ้าสด -->
+    <item
+        android:top="-40dp"
+        android:left="120dp"
+        android:width="200dp"
+        android:height="200dp">
+        <shape android:shape="oval">
+            <solid android:color="#508EC5E6" />
+        </shape>
+    </item>
+
+    <!-- ฟอง กลาง-ซ้าย - เขียวอ่อน -->
+    <item
+        android:top="260dp"
+        android:left="-80dp"
+        android:width="220dp"
+        android:height="220dp">
+        <shape android:shape="oval">
+            <solid android:color="#4098FB98" />
+        </shape>
+    </item>
+
+    <!-- ฟองกลาง-ขวา - เหลืองทอง -->
+    <item
+        android:top="400dp"
+        android:left="160dp"
+        android:width="200dp"
+        android:height="200dp">
+        <shape android:shape="oval">
+            <solid android:color="#50FFD700" />
+        </shape>
+    </item>
+
+    <!-- ฟองเล็ก กลางหน้าจอ - ม่วงอ่อน -->
+    <item
+        android:top="340dp"
+        android:left="60dp"
+        android:width="120dp"
+        android:height="120dp">
+        <shape android:shape="oval">
+            <solid android:color="#40DDA0DD" />
+        </shape>
+    </item>
+
+    <!-- ฟองเล็ก ล่างซ้าย - ส้มพีช -->
+    <item
+        android:top="560dp"
+        android:left="10dp"
+        android:width="100dp"
+        android:height="100dp">
+        <shape android:shape="oval">
+            <solid android:color="#45FFCCBC" />
+        </shape>
+    </item>
+
+    <!-- ฟองเล็กสุด ล่างขวา - เขียวมิ้นต์ -->
+    <item
+        android:top="620dp"
+        android:left="200dp"
+        android:width="70dp"
+        android:height="70dp">
+        <shape android:shape="oval">
+            <solid android:color="#4598FB98" />
+        </shape>
+    </item>
+
+</layer-list>

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/gradient_background"
+    android:background="@drawable/bg_main"
     android:padding="16dp">
 
     <!-- Header Section -->
@@ -27,11 +27,13 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose an item to learn and play!"
-            android:textSize="16sp"
+            android:text="เลือกตัวอักษรเพื่อเรียนรู้"
+            android:textSize="18sp"
             android:textColor="@android:color/white"
+            android:textStyle="bold"
             android:gravity="center"
-            android:alpha="0.9" />
+            android:layout_marginTop="4dp"
+            android:alpha="1.0" />
     </LinearLayout>
 
     <!-- Auto Read Control Panel -->

@@ -3,8 +3,10 @@ package com.pongploydev.priyankvex.paintapp.utils;
 import android.app.Application;
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 
 
+import com.google.android.gms.ads.MobileAds;
 import com.onesignal.Continue;
 import com.onesignal.OneSignal;
 import com.onesignal.debug.LogLevel;
@@ -19,6 +21,10 @@ public class AppControl extends Application {
     public void onCreate() {
         super.onCreate();
         context=this;
+
+        MobileAds.initialize(this);
+
+        Log.d("App", "MobileAds initialized");
 
         // Enable verbose logging for debugging (remove in production)
         OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);

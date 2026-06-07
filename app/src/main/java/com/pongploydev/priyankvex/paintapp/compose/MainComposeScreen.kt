@@ -1,9 +1,9 @@
 package com.pongploydev.priyankvex.paintapp.compose
 
+// Import สำหรับ AdMob
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -55,6 +55,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -77,76 +79,79 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.KidsWebViewActivity
-import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
+import com.pongploydev.priyankvex.paintapp.activity.QuizActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
 import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
-import com.pongploydev.videowatchfeature.utils.ads.InterstitialAdManager
+import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
+import com.pongploydev.videowatchfeature.utils.ads.InterstitialAdManager
 import kotlinx.coroutines.delay
 
-// Import สำหรับ AdMob
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
-import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
-
 // สีสันสำหรับเด็กๆ
-val KidsColorPalette = listOf(
-    Color(0xFFFF6B6B), // สีแดงสด
-    Color(0xFF4ECDC4), // สีฟ้าอมเขียว
-    Color(0xFFFFD166), // สีเหลือง
-    Color(0xFF06D6A0), // สีเขียวสด
-    Color(0xFF118AB2), // สีน้ำเงิน
-    Color(0xFFEF476F), // สีชมพู
-    Color(0xFF7209B7), // สีม่วง
-    Color(0xFFF15BB5)  // สีชมพูอมม่วง
-)
-
-val ActivityColorPalette = listOf(
-    Color(0xFFFF9E6D), // สีส้ม
-    Color(0xFF6A67CE), // สีม่วงอ่อน
-    Color(0xFF4CD7D0), // สีฟ้าใส
-    Color(0xFFFF78C8), // สีชมพูเจล
-    Color(0xFF9DDE1B), // สีเขียวเหลือง
-    Color(0xFFE8A0B0)  // สีชมพูพาสเทล
-)
-
-val GradientBackground = Brush.verticalGradient(
-    colors = listOf(
-        Color(0xFF87CEEB), // สีฟ้าอ่อน
-        Color(0xFF98FB98)  // สีเขียวอ่อน
+val KidsColorPalette =
+    listOf(
+        Color(0xFFFF6B6B), // สีแดงสด
+        Color(0xFF4ECDC4), // สีฟ้าอมเขียว
+        Color(0xFFFFD166), // สีเหลือง
+        Color(0xFF06D6A0), // สีเขียวสด
+        Color(0xFF118AB2), // สีน้ำเงิน
+        Color(0xFFEF476F), // สีชมพู
+        Color(0xFF7209B7), // สีม่วง
+        Color(0xFFF15BB5) // สีชมพูอมม่วง
     )
-)
 
-val RainbowGradient = Brush.horizontalGradient(
-    colors = listOf(
-        Color(0xFFFF6B6B), // แดง
-        Color(0xFFFFD166), // เหลือง
-        Color(0xFF06D6A0), // เขียว
-        Color(0xFF118AB2), // น้ำเงิน
-        Color(0xFF7209B7)  // ม่วง
+val ActivityColorPalette =
+    listOf(
+        Color(0xFFFF9E6D), // สีส้ม
+        Color(0xFF6A67CE), // สีม่วงอ่อน
+        Color(0xFF4CD7D0), // สีฟ้าใส
+        Color(0xFFFF78C8), // สีชมพูเจล
+        Color(0xFF9DDE1B), // สีเขียวเหลือง
+        Color(0xFFE8A0B0) // สีชมพูพาสเทล
     )
-)
+
+val GradientBackground =
+    Brush.verticalGradient(
+        colors =
+            listOf(
+                Color(0xFF87CEEB), // สีฟ้าอ่อน
+                Color(0xFF98FB98) // สีเขียวอ่อน
+            )
+    )
+
+val RainbowGradient =
+    Brush.horizontalGradient(
+        colors =
+            listOf(
+                Color(0xFFFF6B6B), // แดง
+                Color(0xFFFFD166), // เหลือง
+                Color(0xFF06D6A0), // เขียว
+                Color(0xFF118AB2), // น้ำเงิน
+                Color(0xFF7209B7) // ม่วง
+            )
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainComposeScreen(navController: NavController? = null) {
     val context = LocalContext.current
+    var isMusicEnabled by remember {
+        mutableStateOf(
+            com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
+                .isMusicEnabled(context)
+        )
+    }
     val viewMode = remember { mutableStateOf(ViewMode.GRID) }
     val menuItems = remember { getMenuItems() }
 
     // สร้าง Interstitial Ad Manager
-    val interstitialAdManager = remember {
-        InterstitialAdManager(context)
-    }
+    val interstitialAdManager = remember { InterstitialAdManager(context) }
 
     // State สำหรับ tracking
     var isAdLoading by remember { mutableStateOf(false) }
@@ -169,7 +174,9 @@ fun MainComposeScreen(navController: NavController? = null) {
                 },
                 onAdFailed = {
                     isAdLoading = false
-                    println("❌ Failed to load interstitial ad (attempt $adLoadAttempt)")
+                    println(
+                        "❌ Failed to load interstitial ad (attempt $adLoadAttempt)"
+                    )
                 }
             )
         }
@@ -203,7 +210,8 @@ fun MainComposeScreen(navController: NavController? = null) {
         visitCount++
 
         // ตรวจสอบว่าถึงรอบที่ต้องแสดงโฆษณาหรือยัง
-        val shouldShowAd = visitCount >= VISITS_BEFORE_AD && interstitialAdManager.isAdLoaded()
+        val shouldShowAd =
+            visitCount >= VISITS_BEFORE_AD && interstitialAdManager.isAdLoaded()
 
         if (shouldShowAd) {
             // แสดงโฆษณาและรีเซ็ตนับรอบ
@@ -226,97 +234,149 @@ fun MainComposeScreen(navController: NavController? = null) {
     }
 
     // โหลดโฆษณาเมื่อเริ่มต้น
-    LaunchedEffect(Unit) {
-        loadInterstitialAd(interstitialAdManager)
+    LaunchedEffect(Unit) { loadInterstitialAd(interstitialAdManager) }
+
+    // Background Music
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val musicManager =
+            com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
+
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> musicManager.startMusic(context)
+                Lifecycle.Event.ON_PAUSE -> musicManager.pauseMusic()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = "ฝึกเขียน ก ไก่-ABC",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color(0xFF2D3047),
-                        modifier = Modifier.background(
-                            brush = RainbowGradient,
-                            shape = RoundedCornerShape(12.dp)
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(
+                                    brush = RainbowGradient,
+                                    shape =
+                                        RoundedCornerShape(
+                                            50
+                                        ) // More rounded,
+                                    // pill/cloud
+                                    // shape
+                                )
+                                .padding(
+                                    horizontal = 24.dp,
+                                    vertical = 8.dp
+                                )
+                    ) {
+                        Text(
+                            text = "ฝึกเขียน ก ไก่-ABC",
+                            fontWeight = FontWeight.ExtraBold, // Bolder
+                            fontSize = 24.sp, // Larger font
+                            color = Color(0xFF2D3047)
                         )
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
+                    }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF87CEEB)
-                ),
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color(0xFF87CEEB)
+                    ),
                 actions = {
                     // Animated Settings Button
                     AnimatedIconButton(
-                        onClick = { showSettingsDialog(context) },
+                        onClick = {
+                            showSettingsDialog(
+                                context,
+                                isMusicEnabled
+                            ) { enabled ->
+                                isMusicEnabled = enabled
+                                com.pongploydev.priyankvex.paintapp
+                                    .utils.MusicManager
+                                    .getInstance()
+                                    .setMusicEnabled(
+                                        context,
+                                        enabled
+                                    )
+                            }
+                        },
                         icon = Icons.Default.Settings,
                         contentDescription = "Settings",
-                        buttonColor = Color(0xFFFF6B6B)
+                        buttonColor = Color(0xFFFF6B6B),
+                        size = 48.dp // Larger button
                     )
+
+                    Spacer(modifier = Modifier.width(8.dp)) // Add spacing
 
                     // Animated Info Button
                     AnimatedIconButton(
                         onClick = { AboutDialog(context).show() },
                         icon = Icons.Default.Info,
                         contentDescription = "About",
-                        buttonColor = Color(0xFF4ECDC4)
+                        buttonColor = Color(0xFF4ECDC4),
+                        size = 48.dp // Larger button
                     )
+                    Spacer(modifier = Modifier.width(8.dp)) // Add spacing end
                 }
             )
         },
-//        bottomBar = {
-//            // Banner Ad ใน bottomBar ของ Scaffold
-//            ChildDirectedBannerAd(adUnitId = "ca-app-pub-3279793802315716/1117791498")
-//        },
+        //        bottomBar = {
+        //            // Banner Ad ใน bottomBar ของ Scaffold
+        //            ChildDirectedBannerAd(adUnitId =
+        // "ca-app-pub-3279793802315716/1117791498")
+        //        },
         content = { paddingValues ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(brush = GradientBackground)
-            ) {
-                Column(
-                    modifier = Modifier
+                modifier =
+                    Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
+                        .background(brush = GradientBackground)
+            ) {
+                Column(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)) {
                     // แสดงจำนวนรอบจนกว่าจะถึงโฆษณา
-//                    VisitCounter(
-//                        currentCount = visitCount,
-//                        maxCount = VISITS_BEFORE_AD,
-//                        isAdLoaded = interstitialAdManager.isAdLoaded()
-//                    )
+                    //                    VisitCounter(
+                    //                        currentCount = visitCount,
+                    //                        maxCount = VISITS_BEFORE_AD,
+                    //                        isAdLoaded =
+                    // interstitialAdManager.isAdLoaded()
+                    //                    )
 
-//                    ViewModeSelector(
-//                        currentMode = viewMode.value,
-//                        onModeSelected = { mode ->
-//                            viewMode.value = mode
-//                        }
-//                    )
+                    //                    ViewModeSelector(
+                    //                        currentMode = viewMode.value,
+                    //                        onModeSelected = { mode ->
+                    //                            viewMode.value = mode
+                    //                        }
+                    //                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // ใช้ Box กับ weight เพื่อให้เนื้อหาเต็มพื้นที่
-                    Box(
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Box(modifier = Modifier.weight(1f)) {
                         when (viewMode.value) {
                             ViewMode.GRID -> {
                                 GridView(
                                     items = menuItems,
                                     onItemClick = { item ->
-                                        handleItemClick(item)
+                                        handleItemClick(
+                                            item
+                                        )
                                     }
                                 )
                             }
+
                             ViewMode.LIST -> {
                                 ListView(
                                     items = menuItems,
                                     onItemClick = { item ->
-                                        handleItemClick(item)
+                                        handleItemClick(
+                                            item
+                                        )
                                     }
                                 )
                             }
@@ -324,11 +384,12 @@ fun MainComposeScreen(navController: NavController? = null) {
                     }
 
                     // แสดงสถานะการโหลดโฆษณาเต็มจอ
-//                    AdLoadingStatus(
-//                        isAdLoading = isAdLoading,
-//                        isAdLoaded = interstitialAdManager.isAdLoaded(),
-//                        adLoadAttempt = adLoadAttempt
-//                    )
+                    //                    AdLoadingStatus(
+                    //                        isAdLoading = isAdLoading,
+                    //                        isAdLoaded =
+                    // interstitialAdManager.isAdLoaded(),
+                    //                        adLoadAttempt = adLoadAttempt
+                    //                    )
 
                     // เพิ่ม Spacer เล็กน้อยเพื่อไม่ให้เนื้อหาติดกับ Banner
                     Spacer(modifier = Modifier.height(8.dp))
@@ -340,12 +401,12 @@ fun MainComposeScreen(navController: NavController? = null) {
 
 // ==================== Banner Ad Functions ====================
 //
-//@Composable
-//fun ChildDirectedBannerAd(
+// @Composable
+// fun ChildDirectedBannerAd(
 //    adUnitId: String = "ca-app-pub-3940256099942544/6300978111",
 //    adSize: AdSize = AdSize.BANNER,
 //    modifier: Modifier = Modifier.fillMaxWidth().height(60.dp)
-//) {
+// ) {
 //    val context = LocalContext.current
 //    var showFallback by remember { mutableStateOf(false) }
 //
@@ -354,7 +415,8 @@ fun MainComposeScreen(navController: NavController? = null) {
 //        try {
 //            MobileAds.setRequestConfiguration(
 //                RequestConfiguration.Builder()
-//                    .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
+//
+// .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
 //                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
 //                    .build()
 //            )
@@ -397,7 +459,7 @@ fun MainComposeScreen(navController: NavController? = null) {
 //        },
 //        modifier = modifier
 //    )
-//}
+// }
 @Composable
 fun BannerAdFallback() {
     val context = LocalContext.current
@@ -407,20 +469,20 @@ fun BannerAdFallback() {
             .fillMaxWidth()
             .height(60.dp),
         shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2D3047)
-        )
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D3047))
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable {
-                    Toast.makeText(
-                        context,
-                        "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                },
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        Toast.makeText(
+                            context,
+                            "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    },
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -432,12 +494,13 @@ fun BannerAdFallback() {
             ) {
                 // Ad Icon
                 Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = Color(0xFFFF6B6B),
-                            shape = RoundedCornerShape(8.dp)
-                        ),
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .background(
+                                color = Color(0xFFFF6B6B),
+                                shape = RoundedCornerShape(8.dp)
+                            ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -449,10 +512,9 @@ fun BannerAdFallback() {
                 }
 
                 // Ad Content
-                Column(
-                    modifier = Modifier.weight(1f)
-                        .padding(horizontal = 12.dp)
-                ) {
+                Column(modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp)) {
                     Text(
                         text = "สนับสนุนนักพัฒนา",
                         color = Color.White,
@@ -468,12 +530,16 @@ fun BannerAdFallback() {
 
                 // Support Badge
                 Box(
-                    modifier = Modifier
-                        .background(
-                            color = Color(0xFF06D6A0),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                    modifier =
+                        Modifier
+                            .background(
+                                color = Color(0xFF06D6A0),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(
+                                horizontal = 12.dp,
+                                vertical = 6.dp
+                            )
                 ) {
                     Text(
                         text = "สนับสนุน",
@@ -490,11 +556,7 @@ fun BannerAdFallback() {
 // ==================== Other Composable Functions ====================
 
 @Composable
-fun VisitCounter(
-    currentCount: Int,
-    maxCount: Int,
-    isAdLoaded: Boolean
-) {
+fun VisitCounter(currentCount: Int, maxCount: Int, isAdLoaded: Boolean) {
     val remaining = maxCount - currentCount
     val progress = currentCount.toFloat() / maxCount.toFloat()
 
@@ -506,42 +568,54 @@ fun VisitCounter(
     ) {
         // Progress Text
         Text(
-            text = when {
-                currentCount >= maxCount && isAdLoaded -> "🎉 พร้อมแสดงโฆษณา!"
-                currentCount >= maxCount -> "⏳ รอโฆษณาโหลด..."
-                else -> "📊 อีก $remaining ครั้งจะแสดงโฆษณา"
-            },
-            color = when {
-                currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
-                currentCount >= maxCount -> Color(0xFFFF6B6B)
-                else -> Color(0xFF666666)
-            },
+            text =
+                when {
+                    currentCount >= maxCount && isAdLoaded ->
+                        "🎉 พร้อมแสดงโฆษณา!"
+
+                    currentCount >= maxCount -> "⏳ รอโฆษณาโหลด..."
+                    else -> "📊 อีก $remaining ครั้งจะแสดงโฆษณา"
+                },
+            color =
+                when {
+                    currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
+                    currentCount >= maxCount -> Color(0xFFFF6B6B)
+                    else -> Color(0xFF666666)
+                },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
 
         // Progress Bar
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .background(
-                    color = Color(0xFFE0E0E0),
-                    shape = RoundedCornerShape(2.dp)
-                )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+            modifier =
+                Modifier
+                    .fillMaxWidth()
                     .height(4.dp)
                     .background(
-                        color = when {
-                            currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
-                            currentCount >= maxCount -> Color(0xFFFF6B6B)
-                            else -> Color(0xFF4ECDC4)
-                        },
+                        color = Color(0xFFE0E0E0),
                         shape = RoundedCornerShape(2.dp)
                     )
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                        .height(4.dp)
+                        .background(
+                            color =
+                                when {
+                                    currentCount >= maxCount &&
+                                            isAdLoaded ->
+                                        Color(0xFF06D6A0)
+
+                                    currentCount >= maxCount ->
+                                        Color(0xFFFF6B6B)
+
+                                    else -> Color(0xFF4ECDC4)
+                                },
+                            shape = RoundedCornerShape(2.dp)
+                        )
             )
         }
 
@@ -556,11 +630,7 @@ fun VisitCounter(
 }
 
 @Composable
-fun AdLoadingStatus(
-    isAdLoading: Boolean,
-    isAdLoaded: Boolean,
-    adLoadAttempt: Int
-) {
+fun AdLoadingStatus(isAdLoading: Boolean, isAdLoaded: Boolean, adLoadAttempt: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -568,31 +638,31 @@ fun AdLoadingStatus(
         contentAlignment = Alignment.Center
     ) {
         when {
-            isAdLoading -> Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(12.dp),
-                    strokeWidth = 1.dp,
-                    color = Color(0xFF4ECDC4)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
-                    color = Color(0xFF666666),
-                    fontSize = 12.sp
-                )
-            }
-//            isAdLoaded -> Text(
-//                text = "✅ โฆษณาเต็มจอพร้อมแสดง",
-//                color = Color(0xFF06D6A0),
-//                fontSize = 12.sp
-//            )
-//            else -> Text(
-//                text = "❌ โฆษณาเต็มจอยังไม่พร้อม",
-//                color = Color(0xFFFF6B6B),
-//                fontSize = 12.sp
-//            )
+            isAdLoading ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(12.dp),
+                        strokeWidth = 1.dp,
+                        color = Color(0xFF4ECDC4)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text =
+                            "กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
+                        color = Color(0xFF666666),
+                        fontSize = 12.sp
+                    )
+                }
+            //            isAdLoaded -> Text(
+            //                text = "✅ โฆษณาเต็มจอพร้อมแสดง",
+            //                color = Color(0xFF06D6A0),
+            //                fontSize = 12.sp
+            //            )
+            //            else -> Text(
+            //                text = "❌ โฆษณาเต็มจอยังไม่พร้อม",
+            //                color = Color(0xFFFF6B6B),
+            //                fontSize = 12.sp
+            //            )
         }
     }
 }
@@ -602,19 +672,23 @@ fun AnimatedIconButton(
     onClick: () -> Unit,
     icon: ImageVector,
     contentDescription: String,
-    buttonColor: Color
+    buttonColor: Color,
+    size: androidx.compose.ui.unit.Dp = 40.dp
 ) {
     var isClicked by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
+    val scale by
+    animateFloatAsState(
         targetValue = if (isClicked) 0.8f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
         label = "icon button scale"
     )
 
-    val rotation by animateFloatAsState(
+    val rotation by
+    animateFloatAsState(
         targetValue = if (isClicked) 360f else 0f,
         animationSpec = tween(durationMillis = 500),
         label = "icon button rotation"
@@ -627,17 +701,18 @@ fun AnimatedIconButton(
         }
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    color = buttonColor,
-                    shape = RoundedCornerShape(10.dp)
-                )
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    rotationZ = rotation
-                },
+            modifier =
+                Modifier
+                    .size(size)
+                    .background(
+                        color = buttonColor,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        rotationZ = rotation
+                    },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -660,21 +735,22 @@ fun ViewModeSelector(currentMode: ViewMode, onModeSelected: (ViewMode) -> Unit) 
         horizontalArrangement = Arrangement.Center
     ) {
         Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color(0xFFFFD166),
-                            Color(0xFFFF6B6B)
-                        )
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        brush =
+                            Brush.horizontalGradient(
+                                colors =
+                                    listOf(
+                                        Color(0xFFFFD166),
+                                        Color(0xFFFF6B6B)
+                                    )
+                            )
                     )
-                )
-                .padding(4.dp)
+                    .padding(4.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.Center
-            ) {
+            Row(horizontalArrangement = Arrangement.Center) {
                 AnimatedSelectorButton(
                     text = "แบบตาราง",
                     isSelected = currentMode == ViewMode.GRID,
@@ -706,30 +782,33 @@ fun AnimatedSelectorButton(
     unselectedColor: Color
 ) {
     var isClicked by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
+    val scale by
+    animateFloatAsState(
         targetValue = if (isClicked) 0.95f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
         label = "selector button scale"
     )
 
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                color = if (isSelected) selectedColor else unselectedColor
-            )
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickableNoRipple {
-                isClicked = true
-                onClick()
-            }
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    color = if (isSelected) selectedColor else unselectedColor
+                )
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clickableNoRipple {
+                    isClicked = true
+                    onClick()
+                }
     ) {
         Text(
             text = text,
@@ -772,38 +851,45 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
     var isHovered by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
 
-    val cardColor = when (item.targetActivity) {
-        4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
-        else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
-    }
+    val cardColor =
+        when (item.targetActivity) {
+            4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
+            else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
+        }
 
-    val darkerColor = Color(
-        red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
-        green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
-        blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
-    )
+    val darkerColor =
+        Color(
+            red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
+            green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
+            blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
+        )
 
-    val scale by animateFloatAsState(
-        targetValue = when {
-            isClicked -> 0.95f
-            isHovered -> 1.05f
-            else -> 1f
-        },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+    val scale by
+    animateFloatAsState(
+        targetValue =
+            when {
+                isClicked -> 0.95f
+                isHovered -> 1.05f
+                else -> 1f
+            },
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
         label = "grid item scale"
     )
 
     val infiniteTransition = rememberInfiniteTransition(label = "infinite transition")
-    val floatAnimation by infiniteTransition.animateFloat(
+    val floatAnimation by
+    infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
         label = "float animation"
     )
 
@@ -815,10 +901,11 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         if (isClicked) {
             bounceScale.animateTo(
                 0.9f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
             )
             bounceScale.animateTo(1f)
             isClicked = false
@@ -826,41 +913,49 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale * bounceScale.value
-                scaleY = scale * bounceScale.value
-                translationY = floatOffset
-                rotationZ = if (isClicked) 2f else 0f
-            }
-            .clickable {
-                isClicked = true
-                onClick()
-            },
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = when {
-                isClicked -> 12.dp
-                isHovered -> 8.dp
-                else -> 4.dp
-            }
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isClicked) darkerColor else cardColor
-        )
-    ) {
-        Column(
-            modifier = Modifier
+        modifier =
+            Modifier
                 .fillMaxWidth()
-        ) {
+                .graphicsLayer {
+                    scaleX = scale * bounceScale.value
+                    scaleY = scale * bounceScale.value
+                    translationY = floatOffset
+                    rotationZ = if (isClicked) 2f else 0f
+                }
+                .clickable {
+                    isClicked = true
+                    onClick()
+                },
+        shape = RoundedCornerShape(32.dp),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation =
+                    when {
+                        isClicked -> 12.dp
+                        isHovered -> 8.dp
+                        else -> 4.dp
+                    }
+            ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = if (isClicked) darkerColor else cardColor
+            ),
+        border = androidx.compose.foundation.BorderStroke(4.dp, Color.White)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             PulsingImage(
                 painter = painterResource(id = item.iconRes),
                 contentDescription = item.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 24.dp,
+                                topEnd = 24.dp
+                            )
+                        )
             )
 
             Text(
@@ -884,27 +979,32 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
     var isHovered by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
 
-    val cardColor = when (item.targetActivity) {
-        4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
-        else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
-    }
+    val cardColor =
+        when (item.targetActivity) {
+            4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
+            else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
+        }
 
-    val darkerColor = Color(
-        red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
-        green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
-        blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
-    )
+    val darkerColor =
+        Color(
+            red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
+            green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
+            blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
+        )
 
-    val scale by animateFloatAsState(
-        targetValue = when {
-            isClicked -> 0.98f
-            isHovered -> 1.02f
-            else -> 1f
-        },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+    val scale by
+    animateFloatAsState(
+        targetValue =
+            when {
+                isClicked -> 0.98f
+                isHovered -> 1.02f
+                else -> 1f
+            },
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
         label = "list item scale"
     )
 
@@ -915,10 +1015,11 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
     LaunchedEffect(Unit) {
         slideOffset.animateTo(
             targetValue = 0f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
         )
     }
 
@@ -931,40 +1032,49 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationX = slideOffset.value + pressOffset.value
-                translationY = pressOffset.value * 0.5f
-            }
-            .clickable {
-                isClicked = true
-                onClick()
-            },
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = when {
-                isClicked -> 12.dp
-                isHovered -> 8.dp
-                else -> 4.dp
-            }
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isClicked) darkerColor else cardColor
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = slideOffset.value + pressOffset.value
+                    translationY = pressOffset.value * 0.5f
+                }
+                .clickable {
+                    isClicked = true
+                    onClick()
+                },
+        shape = RoundedCornerShape(32.dp),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation =
+                    when {
+                        isClicked -> 12.dp
+                        isHovered -> 8.dp
+                        else -> 4.dp
+                    }
+            ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = if (isClicked) darkerColor else cardColor
+            ),
+        border = androidx.compose.foundation.BorderStroke(4.dp, Color.White)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             FadeInImage(
                 painter = painterResource(id = item.iconRes),
                 contentDescription = item.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 24.dp,
+                                topEnd = 24.dp
+                            )
+                        )
             )
 
             Text(
@@ -984,56 +1094,54 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
 }
 
 @Composable
-fun PulsingImage(
-    painter: Painter,
-    contentDescription: String?,
-    modifier: Modifier = Modifier
-) {
+fun PulsingImage(painter: Painter, contentDescription: String?, modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse transition")
-    val pulseScale by infiniteTransition.animateFloat(
+    val pulseScale by
+    infiniteTransition.animateFloat(
         initialValue = 0.98f,
         targetValue = 1.02f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1500, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
         label = "pulse scale"
     )
 
     Box(
-        modifier = modifier
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.3f),
-                        Color.Transparent
+        modifier =
+            modifier.background(
+                brush =
+                    Brush.radialGradient(
+                        colors =
+                            listOf(
+                                Color.White.copy(alpha = 0.3f),
+                                Color.Transparent
+                            )
                     )
-                )
             )
     ) {
         Image(
             painter = painter,
             contentDescription = contentDescription,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .graphicsLayer {
-                    scaleX = pulseScale
-                    scaleY = pulseScale
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .graphicsLayer {
+                        scaleX = pulseScale
+                        scaleY = pulseScale
+                    },
             contentScale = ContentScale.Crop
         )
     }
 }
 
 @Composable
-fun FadeInImage(
-    painter: Painter,
-    contentDescription: String?,
-    modifier: Modifier = Modifier
-) {
+fun FadeInImage(painter: Painter, contentDescription: String?, modifier: Modifier = Modifier) {
     var isVisible by remember { mutableStateOf(false) }
-    val alpha by animateFloatAsState(
+    val alpha by
+    animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
         animationSpec = tween(durationMillis = 800),
         label = "fade in animation"
@@ -1045,46 +1153,46 @@ fun FadeInImage(
     }
 
     Box(
-        modifier = modifier
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.3f),
-                        Color.Transparent
+        modifier =
+            modifier.background(
+                brush =
+                    Brush.radialGradient(
+                        colors =
+                            listOf(
+                                Color.White.copy(alpha = 0.3f),
+                                Color.Transparent
+                            )
                     )
-                )
             )
     ) {
         Image(
             painter = painter,
             contentDescription = contentDescription,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .graphicsLayer {
-                    this.alpha = alpha
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .graphicsLayer {
+                        this.alpha = alpha
+                    },
             contentScale = ContentScale.Crop
         )
     }
 }
 
-fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = this.then(
-    Modifier.clickable(
-        interactionSource = MutableInteractionSource(),
-        indication = null
-    ) { onClick() }
-)
+fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
+    this.then(
+        Modifier.clickable(
+            interactionSource = MutableInteractionSource(),
+            indication = null
+        ) { onClick() }
+    )
 
-data class MenuItem(
-    val id: Int,
-    val title: String,
-    val iconRes: Int,
-    val targetActivity: Int
-)
+data class MenuItem(val id: Int, val title: String, val iconRes: Int, val targetActivity: Int)
 
 enum class ViewMode {
-    GRID, LIST
+    GRID,
+    LIST
 }
 
 private fun getMenuItems(): List<MenuItem> {
@@ -1093,8 +1201,8 @@ private fun getMenuItems(): List<MenuItem> {
         MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one, 1),
         MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two, 2),
         MenuItem(4, "กิจกรรมเสริม", R.drawable.card_three, 3),
-        MenuItem(4, "บทความน่ารู้", R.drawable.leraning_kid, 4),
-        MenuItem(5, "จัดทำโดย", R.drawable.card_four, 5)
+        MenuItem(5, "บทความน่ารู้", R.drawable.leraning_kid, 4),
+        MenuItem(6, "แบบทดสอบ", R.drawable.card_three_two, 5),
     )
 }
 
@@ -1108,85 +1216,86 @@ private fun handleItemClickDirectly(
             val intent = Intent(context, LeaningActvity::class.java)
             context.startActivity(intent)
         }
+
         1 -> {
             val intent = Intent(context, MenuThaiLettersActivity::class.java)
             context.startActivity(intent)
         }
+
         2 -> {
             val intent = Intent(context, MenuActivityAZ::class.java)
             context.startActivity(intent)
         }
+
         3 -> {
             showKidsActivitiesDialog(context)
         }
+
         4 -> {
-            val intent = Intent(context, KidsWebViewActivity::class.java).apply {
-                putExtra("extra_url", "https://www.youngciety.com/")
-                putExtra("extra_title", "Youngciety - สนุกสนาน")
-            }
+            val intent =
+                Intent(context, KidsWebViewActivity::class.java).apply {
+                    putExtra("extra_url", "https://www.youngciety.com/")
+                    putExtra("extra_title", "Youngciety - สนุกสนาน")
+                }
             context.startActivity(intent)
         }
+
         5 -> {
-            AboutDialog(context).show()
+            val intent = Intent(context, QuizActivity::class.java)
+            context.startActivity(intent)
         }
     }
 }
 
 private fun showAdSuccessMessage(context: Context) {
-    Toast.makeText(
-        context,
-        "🙏 ขอบคุณสำหรับการสนับสนุน!",
-        Toast.LENGTH_SHORT
-    ).show()
+    Toast.makeText(context, "🙏 ขอบคุณสำหรับการสนับสนุน!", Toast.LENGTH_SHORT).show()
 }
 
 private fun showAdFailedMessage(context: Context) {
-    Toast.makeText(
-        context,
-        "⚠️ โฆษณาไม่พร้อมใช้งาน",
-        Toast.LENGTH_SHORT
-    ).show()
+    Toast.makeText(context, "⚠️ โฆษณาไม่พร้อมใช้งาน", Toast.LENGTH_SHORT).show()
 }
 
 private fun showKidsActivitiesDialog(context: Context) {
-    val activities = listOf(
-        "🎨 ระบายสีสร้างสรรค์" to { startColoringActivity(context) },
-    )
+    val activities =
+        listOf(
+            "🎨 ระบายสีสร้างสรรค์" to { startColoringActivity(context) },
+        )
 
-    val layout = LinearLayout(context).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(50, 30, 50, 30)
-    }
+    val layout =
+        LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 30, 50, 30)
+        }
 
-    val titleText = TextView(context).apply {
-        text = "เลือกกิจกรรมที่สนใจ:"
-        textSize = 18f
-        setTextColor(android.graphics.Color.BLACK)
-        gravity = Gravity.CENTER
-        setPadding(0, 0, 0, 20)
-    }
+    val titleText =
+        TextView(context).apply {
+            text = "เลือกกิจกรรมที่สนใจ:"
+            textSize = 18f
+            setTextColor(android.graphics.Color.BLACK)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
+        }
     layout.addView(titleText)
 
     activities.forEach { (activityName, onClick) ->
-        val button = android.widget.Button(context).apply {
-            text = activityName
-            textSize = 16f
-            setBackgroundColor(getRandomColor())
-            setTextColor(android.graphics.Color.WHITE)
-            gravity = Gravity.CENTER
-            setPadding(20, 30, 20, 30)
+        val button =
+            android.widget.Button(context).apply {
+                text = activityName
+                textSize = 16f
+                setBackgroundColor(getRandomColor())
+                setTextColor(android.graphics.Color.WHITE)
+                gravity = Gravity.CENTER
+                setPadding(20, 30, 20, 30)
 
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 8, 0, 8)
-            }
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                        .apply { setMargins(0, 8, 0, 8) }
 
-            setOnClickListener {
-                onClick()
+                setOnClickListener { onClick() }
             }
-        }
         layout.addView(button)
     }
 
@@ -1203,21 +1312,33 @@ private fun startColoringActivity(context: Context) {
 }
 
 private fun getRandomColor(): Int {
-    val colors = listOf(
-        android.graphics.Color.parseColor("#FF6B6B"),
-        android.graphics.Color.parseColor("#4ECDC4"),
-        android.graphics.Color.parseColor("#FFD166"),
-        android.graphics.Color.parseColor("#06D6A0"),
-        android.graphics.Color.parseColor("#118AB2"),
-        android.graphics.Color.parseColor("#7209B7")
-    )
+    val colors =
+        listOf(
+            android.graphics.Color.parseColor("#FF6B6B"),
+            android.graphics.Color.parseColor("#4ECDC4"),
+            android.graphics.Color.parseColor("#FFD166"),
+            android.graphics.Color.parseColor("#06D6A0"),
+            android.graphics.Color.parseColor("#118AB2"),
+            android.graphics.Color.parseColor("#7209B7")
+        )
     return colors.random()
 }
 
-private fun showSettingsDialog(context: Context) {
+private fun showSettingsDialog(
+    context: Context,
+    isMusicEnabled: Boolean,
+    onMusicToggle: (Boolean) -> Unit
+) {
+    val options = arrayOf("เสียงดนตรีพื้นหลัง")
+    val checkedItems = booleanArrayOf(isMusicEnabled)
+
     android.app.AlertDialog.Builder(context)
         .setTitle("ตั้งค่า")
-        .setMessage("ฟังก์ชันตั้งค่าจะถูกเพิ่มในเวอร์ชันถัดไป")
+        .setMultiChoiceItems(options, checkedItems) { _, which, isChecked ->
+            if (which == 0) {
+                onMusicToggle(isChecked)
+            }
+        }
         .setPositiveButton("ตกลง", null)
         .show()
 }

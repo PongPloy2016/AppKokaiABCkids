@@ -11,6 +11,11 @@
         android:icon="@drawable/ic_nav_video"
         android:title="@string/title_nav_video" />
 
+    <item
+        android:id="@+id/navigation_quiz"
+        android:icon="@drawable/ic_quiz"
+        android:title="@string/title_nav_quiz" />
+
 
 
    

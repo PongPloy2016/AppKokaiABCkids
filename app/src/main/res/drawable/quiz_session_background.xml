@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- พื้นหลังหลัก gradient ครีมอุ่น -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FFF8E7"
+                android:centerColor="#FFF0F5"
+                android:endColor="#F0F4FF"
+                android:angle="160" />
+        </shape>
+    </item>
+
+    <!-- ฟองสบู่ มุมบนซ้าย - ชมพูอ่อน -->
+    <item
+        android:top="-50dp"
+        android:left="-50dp"
+        android:width="200dp"
+        android:height="200dp">
+        <shape android:shape="oval">
+            <solid android:color="#35FFB6C1" />
+        </shape>
+    </item>
+
+    <!-- ฟองสบู่ มุมบนขวา - ฟ้าอ่อน -->
+    <item
+        android:top="40dp"
+        android:left="200dp"
+        android:width="160dp"
+        android:height="160dp">
+        <shape android:shape="oval">
+            <solid android:color="#3087CEEB" />
+        </shape>
+    </item>
+
+    <!-- ฟองสบู่ กลาง - เขียวมิ้นต์ -->
+    <item
+        android:top="400dp"
+        android:left="-40dp"
+        android:width="150dp"
+        android:height="150dp">
+        <shape android:shape="oval">
+            <solid android:color="#2598FB98" />
+        </shape>
+    </item>
+
+    <!-- ฟองสบู่ ล่างขวา - ม่วงอ่อน -->
+    <item
+        android:top="600dp"
+        android:left="180dp"
+        android:width="180dp"
+        android:height="180dp">
+        <shape android:shape="oval">
+            <solid android:color="#25DDA0DD" />
+        </shape>
+    </item>
+
+</layer-list>

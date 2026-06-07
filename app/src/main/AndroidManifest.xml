@@ -109,6 +109,11 @@
             android:label="VDO"
             android:screenOrientation="landscape" />
         <activity
+            android:name=".activity.ActivityVideoAutoDetail"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+        <activity
             android:name=".activity.thailetters.MenuThaiLettersActivity"
             android:exported="true" />
         <activity
@@ -117,6 +122,7 @@
         <activity
             android:name=".activity.learning.SubActivity"
             android:exported="true"
+            android:theme="@style/Theme.Material3.Light.NoActionBar"
             android:label="VDO" />
         <activity
             android:name=".activity.learning.FullScreenActivity"
@@ -153,6 +159,18 @@
         <meta-data
             android:name="com.facebook.sdk.AutoInitEnabled"
             android:value="false" />
+
+        <activity
+            android:name=".activity.QuizActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+
+        <activity
+            android:name=".activity.QuizSessionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
 
         <activity
             android:name="com.google.android.gms.ads.AdActivity"

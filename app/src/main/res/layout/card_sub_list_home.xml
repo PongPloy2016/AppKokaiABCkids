@@ -3,39 +3,59 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cvCardSubHome"
     android:layout_width="match_parent"
-    android:layout_height="200.0dip"  android:layout_margin="8dp"      android:clickable="true"
+    android:layout_height="200dp"
+    android:layout_margin="8dp"
+    android:clickable="true"
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground"
-    app:cardCornerRadius="16.0dip"    app:cardElevation="8.0dip"
-    app:cardUseCompatPadding="true">
+    app:cardCornerRadius="24dp"
+    app:cardElevation="12dp"
+    app:cardUseCompatPadding="true"
+    app:cardBackgroundColor="@color/card_default">
 
+    <!-- ใช้ FrameLayout เป็น container หลัก -->
+    <FrameLayout
+        android:id="@+id/flCardContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+    android:focusable="false">
+
+    <!-- Layout ภายใน -->
     <LinearLayout
         android:id="@+id/lloutCardSubHome"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"  android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:clickable="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
 
         <ImageView
             android:id="@+id/imgSubHome"
             android:layout_width="match_parent"
-            android:layout_height="0dp"        android:layout_weight="1"
+            android:layout_height="match_parent"
             android:scaleType="fitCenter"
-            android:padding="10.0dip"
-            />
+            android:padding="16dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:contentDescription="Learning item" />
 
-        <TextView
-            android:id="@+id/txtCategoryTitle"
-            android:visibility="gone"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:text="ชื่อหมวดหมู่"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:background="#4CAF50"/>
+        <!-- สามารถเพิ่ม TextView ได้ที่นี่ถ้าต้องการ -->
 
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+
+    <!-- Overlay สำหรับคลิก (optional) -->
+    <View
+        android:id="@+id/clickOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:clickable="false"
+        android:focusable="false" />
+
+</FrameLayout>
+
+    </androidx.cardview.widget.CardView>

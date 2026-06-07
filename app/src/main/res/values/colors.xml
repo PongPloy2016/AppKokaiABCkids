@@ -233,4 +233,32 @@
     <color name="color_dark_text">#BDC0C3</color>
     <color name="color_dark_toolbar">#101D24</color>
 
+    <!-- New colors for SubHomeAdapter -->
+    <color name="card_default">#FFFFFF</color>
+    <color name="card_default_dark">#F5F5F5</color>
+
+    <!-- Highlight colors -->
+    <color name="reading_highlight">#E3F2FD</color> <!-- Light Blue for reading -->
+    <color name="selected_highlight">#FFF3E0</color> <!-- Light Orange for selected -->
+    <color name="favorite_highlight">#FCE4EC</color> <!-- Light Pink for favorite -->
+
+    <!-- Progress colors -->
+    <color name="progress_low">#FF5252</color> <!-- Red for low progress -->
+    <color name="progress_medium">#FF9800</color> <!-- Orange for medium progress -->
+    <color name="progress_high">#4CAF50</color> <!-- Green for high progress -->
+
+    <!-- Border colors -->
+    <color name="border_normal">#E0E0E0</color>
+    <color name="border_highlight">#2196F3</color>
+    <color name="border_favorite">#FF4081</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_highlight">#2196F3</color>
+
+    <!-- Quiz Colors -->
+    <color name="green_light">#4CAF50</color>
+    <color name="red_light">#F44336</color>
+
 </resources>

@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:orientation="vertical"
-        android:background="@color/kids_primary"
+        android:background="@drawable/bg_header_kids"
         android:padding="@dimen/spacing_medium">
 
         <!-- บรรทัดแรก: ไอคอนและชื่อแอป -->
@@ -40,7 +40,7 @@
                 android:layout_marginStart="@dimen/spacing_medium"
                 android:text="วิดีโอสำหรับเด็ก"
                 android:textColor="@color/white"
-                android:textSize="20sp"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <!-- ปุ่มตัวเลือกการเรียงลำดับ -->
@@ -140,69 +140,78 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_category_selected"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="12dp"
                     android:text="ทั้งหมด"
                     android:textColor="@color/white"
-                    android:textSize="14sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
-                    android:gravity="center" />
+                    android:gravity="center"
+                    android:elevation="4dp"/>
 
                 <!-- หมวดหมู่การ์ตูน -->
                 <TextView
                     android:id="@+id/category_cartoon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_medium"
                     android:background="@drawable/bg_category_unselected"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="12dp"
                     android:text="การ์ตูน"
                     android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:gravity="center" />
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:elevation="4dp"/>
 
                 <!-- หมวดหมู่เพลง -->
                 <TextView
                     android:id="@+id/category_music"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_medium"
                     android:background="@drawable/bg_category_unselected"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="12dp"
                     android:text="เพลงเด็ก"
                     android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:gravity="center" />
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:elevation="4dp"/>
 
                 <!-- หมวดหมู่เรียนรู้ -->
                 <TextView
                     android:id="@+id/category_learning"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_medium"
                     android:background="@drawable/bg_category_unselected"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="12dp"
                     android:text="เรียนรู้"
                     android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:gravity="center" />
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:elevation="4dp"/>
 
                 <!-- หมวดหมู่นิทาน -->
                 <TextView
                     android:id="@+id/category_story"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_medium"
                     android:background="@drawable/bg_category_unselected"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="12dp"
                     android:text="นิทาน"
                     android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:gravity="center" />
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:elevation="4dp"/>
 
             </LinearLayout>
 

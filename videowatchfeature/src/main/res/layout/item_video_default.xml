@@ -38,6 +38,24 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
+            <FrameLayout
+                android:id="@+id/lyt_youtube_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/img_play"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:src="@drawable/ic_play_circle_kids"
+                android:background="@drawable/bg_play_button"
+                android:padding="8dp" />
+
             <TextView
                 android:id="@+id/video_duration"
                 android:layout_width="wrap_content"

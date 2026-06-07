@@ -21,10 +21,19 @@ import com.pongploydev.priyankvex.paintapp.R;
 import java.util.List;
 import java.util.Random;
 
+// ✅ เพิ่ม import สำหรับ Glide
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
+
+// หรือใช้ Picasso
+// import com.squareup.picasso.Picasso;
+
 public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAdapter.ViewHolder> {
 
     public interface OnItemClickListener {
         void onItemClick(ItemObject item, int position);
+
         void onSoundClick(ItemObject item, int position);
     }
 
@@ -35,6 +44,11 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
     private int highlightedPosition = -1;
     private int lastAnimatedPosition = -1;
     private Random random = new Random();
+
+    // ✅ เพิ่ม RequestOptions สำหรับ Glide
+    private RequestOptions glideOptions;
+
+    private boolean isLowMemoryDevice = false;
 
     // สีสันสดใสสำหรับเด็ก
     private int[] cardColors = {
@@ -56,7 +70,7 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
             Color.parseColor("#FFCCBC"), // Light Deep Orange
     };
 
-    // สีสำหรับไฮไลท์ (สีที่เข้มขึ้นเล็กน้อย)
+    // สีสำหรับไฮไลท์
     private int[] highlightColors = {
             Color.parseColor("#EF9A9A"), // Red
             Color.parseColor("#F48FB1"), // Pink
@@ -80,6 +94,14 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
         this.context = context;
         this.rowListItem = rowListItem;
         this.layoutResource = layoutResource;
+
+        // ✅ กำหนด Glide options เพื่อลด memory usage
+        this.glideOptions = new RequestOptions()
+                .override(300, 300) // จำกัดขนาดภาพสูงสุด
+                .centerCrop()
+                .format(com.bumptech.glide.load.DecodeFormat.PREFER_RGB_565) // ใช้ memory น้อยลง
+                .placeholder(R.drawable.placeholder_image) // รูป placeholder
+                .error(R.drawable.error_message_icon); // รูปเมื่อ error
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
@@ -109,7 +131,9 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
 
         // Set item data
         holder.itemName.setText(item.getName());
-        holder.itemImage.setImageResource(item.getImage());
+
+        // ✅ แก้ไขบรรทัด 112: ใช้ Glide แทน setImageResource
+        loadImageSafely(holder.itemImage, item.getImage());
 
         // ตั้งค่าสีการ์ดแบบสุ่มแต่คงที่สำหรับแต่ละตำแหน่ง
         int baseColor = cardColors[position % cardColors.length];
@@ -141,15 +165,15 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
             holder.cardView.setCardElevation(4f);
         }
 
-        // อนิเมชันเมื่อแสดงไอเทม (ล่าช้าเล็กน้อยสำหรับแต่ละตัว)
+        // อนิเมชันเมื่อแสดงไอเทม
         if (position > lastAnimatedPosition) {
             Animation animation = AnimationUtils.loadAnimation(context, R.anim.bounce_in);
-            animation.setStartOffset(position * 100L); // ล่าช้าเพิ่มตามตำแหน่ง
+            animation.setStartOffset(position * 100L);
             holder.itemView.startAnimation(animation);
             lastAnimatedPosition = position;
         }
 
-        // ตั้งค่าสีข้อความตามพื้นหลัง (เพื่อความคมชัด)
+        // ตั้งค่าสีข้อความตามพื้นหลัง
         setTextColorBasedOnBackground(holder.itemName, holder.cardView.getCardBackgroundColor().getDefaultColor());
 
         // เพิ่มขนาดตัวอักษรสำหรับเด็ก
@@ -195,6 +219,56 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
         });
     }
 
+    // ✅ เพิ่มเมธอดใหม่เพื่อโหลดภาพอย่างปลอดภัย
+    private void loadImageSafely(ImageView imageView, int imageResource) {
+        try {
+            // ใช้ Glide เพื่อโหลดภาพและจัดการ memory
+            Glide.with(context)
+                    .load(imageResource)
+                    .apply(glideOptions)
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(imageView);
+
+        } catch (OutOfMemoryError e) {
+            // จัดการเมื่อ memory เต็ม
+            clearMemoryCache();
+
+            // ลองโหลดใหม่ด้วย options ที่เบาลง
+            try {
+                Glide.with(context)
+                        .load(imageResource)
+                        .apply(new RequestOptions()
+                                .override(150, 150) // ขนาดเล็กลง
+                                .encodeQuality(50) // คุณภาพลดลง
+                                .format(com.bumptech.glide.load.DecodeFormat.PREFER_RGB_565))
+                        .into(imageView);
+            } catch (OutOfMemoryError e2) {
+                // ถ้ายัง error ให้ใช้ placeholder
+                imageView.setImageResource(R.drawable.placeholder_image);
+            }
+        }
+    }
+
+    // ✅ เพิ่มเมธอดเคลียร์ memory cache
+    private void clearMemoryCache() {
+        try {
+            // เคลียร์ Glide cache (ต้องทำบน Main Thread)
+            Glide.get(context).clearMemory();
+
+            new Thread(() -> {
+                // เคลียร์ system memory
+                System.gc();
+            }).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ✅ เพิ่มเพื่อเคลียร์เมื่อ adapter ไม่ใช้งานแล้ว
+    public void onDestroy() {
+        clearMemoryCache();
+    }
+
     private void setTextColorBasedOnBackground(TextView textView, int backgroundColor) {
         // ตรวจสอบความสว่างของพื้นหลังเพื่อเลือกสีข้อความที่เหมาะสม
         double brightness = Color.red(backgroundColor) * 0.299 +
@@ -226,11 +300,8 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
         button.setTextColor(Color.WHITE);
         button.setTextSize(16f);
 
-        // ทำให้ปุ่มโค้งมน
-        //button.setRadius(20f);
-
         // เปลี่ยนเอโมจิปุ่มเสียงแบบสุ่ม
-        String[] soundEmojis = {"🔊", "🔔", "🎵", "🎶", "📢", "💫", "🌟", "✨"};
+        String[] soundEmojis = { "🔊", "🔔", "🎵", "🎶", "📢", "💫", "🌟", "✨" };
         button.setText(soundEmojis[position % soundEmojis.length]);
     }
 
@@ -266,5 +337,20 @@ public class AZRecyclerViewAdapter extends RecyclerView.Adapter<AZRecyclerViewAd
             return rowListItem.get(position);
         }
         return null;
+    }
+
+    public void setIsLowMemoryDevice(boolean isLowMemoryDevice) {
+        this.isLowMemoryDevice = isLowMemoryDevice;
+
+        // ปรับ glide options ตาม memory
+        if (isLowMemoryDevice) {
+            this.glideOptions = new RequestOptions()
+                    .override(150, 150) // ขนาดเล็กลง
+                    .centerCrop()
+                    .format(com.bumptech.glide.load.DecodeFormat.PREFER_RGB_565)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.error_image)
+                    .encodeQuality(50); // คุณภาพต่ำลง
+        }
     }
 }

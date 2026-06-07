@@ -8,10 +8,14 @@
     <application>
         <activity
             android:name=".activity.ActivityVideoDetail"
-            android:exported="false" />
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation" />
         <activity
             android:name=".activity.ActivityVideoAutoDetail"
             android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:theme="@style/Theme.Design.Light.NoActionBar" />
         <activity
             android:name=".MainActivity"

@@ -108,16 +108,12 @@
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/navigation"
             android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:background="@drawable/bg_bottom_nav_kids"
+            android:layout_height="wrap_content"
             android:elevation="16dp"
-            app:itemIconSize="32dp"
+            app:itemIconSize="28dp"
             app:itemIconTint="@color/bottom_nav_icon_color_kids"
             app:itemTextColor="@color/bottom_nav_text_color_kids"
-            app:itemRippleColor="@color/kids_primary_light"
             app:labelVisibilityMode="labeled"
-            app:itemHorizontalTranslationEnabled="true"
-            app:itemBackground="@drawable/bottom_nav_item_background_kids"
             app:menu="@menu/bottom_nav_menu" />
 
     </LinearLayout>

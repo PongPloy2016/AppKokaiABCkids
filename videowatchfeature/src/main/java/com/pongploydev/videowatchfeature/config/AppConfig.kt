@@ -7,7 +7,7 @@ import com.pongploydev.videowatchfeature.Constant
 object AppConfig {
 
     // ==================== API Configuration ====================
-    const val LOAD_MORE = 15
+    const val LOAD_MORE = 10
     const val REST_API_KEY: String = "cda11kfV2SDYTQrvIcAleR75FBh0qN4JjLiZym8sWtOx3oKgbM"
     const val ALLOW_APP_ACCESSED_USING_VPN = true
 

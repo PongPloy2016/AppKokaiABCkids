@@ -272,6 +272,7 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                getParent().requestDisallowInterceptTouchEvent(true);
                 drawPath.moveTo(touchX, touchY);
                 drawnPoints.clear();
                 drawnPoints.add(new PointData(touchX, touchY, timestamp,

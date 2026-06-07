@@ -4,7 +4,9 @@ import android.animation.Animator;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -33,15 +35,18 @@ import com.airbnb.lottie.LottieAnimationView;
 import com.google.android.material.card.MaterialCardView;
 import com.pongploydev.priyankvex.paintapp.R;
 import com.pongploydev.priyankvex.paintapp.activity.VideoStream1;
-import com.pongploydev.priyankvex.paintapp.activity.VideoStream2;
 import com.pongploydev.priyankvex.paintapp.confixdata.File_Confix_Data;
 import com.pongploydev.priyankvex.paintapp.drawingView.DrawingView;
 import com.pongploydev.priyankvex.paintapp.model.MenuItem;
 
 import java.util.ArrayList;
 import java.util.List;
+import android.util.SparseArray;
+import androidx.viewpager2.widget.ViewPager2;
+import com.pongploydev.priyankvex.paintapp.adapter.DrawingPagerAdapter;
 
-public class ThaiLettersActivity extends AppCompatActivity implements View.OnClickListener, DrawingView.DrawingCheckListener {
+public class ThaiLettersActivity extends AppCompatActivity
+        implements View.OnClickListener, DrawingView.DrawingCheckListener {
     private static final String TAG = "ThaiLettersActivity";
 
     private DrawingView mDrawingView;
@@ -49,6 +54,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     private ImageButton currPaintButton;
     private MediaPlayer playimgButton;
     private MediaPlayer playimgS;
+    private MediaPlayer bgMediaPlayer; // [NEW] For Background Music
 
     // Constants
     private static final String KEY_VIDEO = "key_2";
@@ -82,6 +88,23 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     private LinearLayout letterSelectionLayout;
     private HorizontalScrollView lettersScrollView;
 
+    // Video Resources
+    private int[] videoResources = new int[] {
+            R.raw.k1, R.raw.k2, R.raw.k3, R.raw.k4, R.raw.k5, R.raw.k6, R.raw.k7, R.raw.k8, R.raw.k9, R.raw.k10,
+            R.raw.k11, R.raw.k12, R.raw.k13, R.raw.k14, R.raw.k15, R.raw.k16, R.raw.k17, R.raw.k18, R.raw.k19,
+            R.raw.k20,
+            R.raw.k21, R.raw.k22, R.raw.k23, R.raw.k24, R.raw.k25, R.raw.k26, R.raw.k27, R.raw.k28, R.raw.k29,
+            R.raw.k30,
+            R.raw.k31, R.raw.k32, R.raw.k33, R.raw.k34, R.raw.k35, R.raw.k36, R.raw.k37, R.raw.k38, R.raw.k39,
+            R.raw.k40,
+            R.raw.k41, R.raw.k42, R.raw.k43, R.raw.k44
+    };
+
+    // [NEW] ViewPager2 and Adapter
+    private ViewPager2 viewPagerLetters;
+    private DrawingPagerAdapter pagerAdapter;
+    private SparseArray<DrawingPagerAdapter.DrawingViewHolder> holderCache = new SparseArray<>();
+
     // ตัวแปรสำหรับรับข้อมูลจาก Intent
     private MenuItem selectedMenuItem;
     private int selectedPosition = 0;
@@ -95,7 +118,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
             getSupportActionBar().hide();
         }
 
-        setContentView(R.layout.activity_main2);
+        setContentView(R.layout.activity_thai_letters);
 
         // รับข้อมูลจาก Intent ก่อน
         handleIntentData();
@@ -105,6 +128,15 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         setupClickListeners();
         setupCheckingSystem();
         setupLetterSelection();
+
+        // [NEW] Initialize Background Music
+        // Music handled by MusicManager in onResume
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().startMusic(this);
     }
 
     private void handleIntentData() {
@@ -141,13 +173,13 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void initializeThaiLetters() {
-        thaiLetters = new String[]{
+        thaiLetters = new String[] {
                 "ก", "ข", "ฃ", "ค", "ฅ", "ฆ", "ง", "จ", "ฉ", "ช", "ซ", "ฌ", "ญ", "ฎ", "ฏ",
                 "ฐ", "ฑ", "ฒ", "ณ", "ด", "ต", "ถ", "ท", "ธ", "น", "บ", "ป", "ผ", "ฝ", "พ",
                 "ฟ", "ภ", "ม", "ย", "ร", "ล", "ว", "ศ", "ษ", "ส", "ห", "ฬ", "อ", "ฮ"
         };
 
-        thaiLetterNames = new String[]{
+        thaiLetterNames = new String[] {
                 "ก ไก่", "ข ไข่", "ฃ ขวด", "ค ควาย", "ฅ คน", "ฆ ระฆัง", "ง งู", "จ จาน", "ฉ ฉิ่ง", "ช ช้าง",
                 "ซ โซ่", "ฌ เฌอ", "ญ หญิง", "ฎ ชฎา", "ฏ ปฏัก", "ฐ ฐาน", "ฑ มณโฑ", "ฒ ผู้เฒ่า", "ณ เณร",
                 "ด เด็ก", "ต เต่า", "ถ ถุง", "ท ทหาร", "ธ ธง", "น หนู", "บ ใบไม้", "ป ปลา", "ผ ผึ้ง",
@@ -181,10 +213,9 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         createLetterCards();
 
         // เลือกตัวอักษรตามข้อมูลจาก Intent
-        updateCurrentLetterDisplay();
-        scrollToCurrentLetter();
+        // เลือกตัวอักษรตามข้อมูลจาก Intent (sync ViewPager)
+        viewPagerLetters.setCurrentItem(currentLetterIndex, false);
     }
-
 
     private void createLetterCards() {
         letterSelectionLayout.removeAllViews();
@@ -198,8 +229,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     private MaterialCardView createLetterCard(int index) {
         // สร้าง LayoutParams
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                dpToPx(60), dpToPx(60)
-        );
+                dpToPx(60), dpToPx(60));
         layoutParams.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
 
         // สร้าง MaterialCardView
@@ -215,8 +245,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         LinearLayout innerLayout = new LinearLayout(this);
         innerLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-        ));
+                ViewGroup.LayoutParams.MATCH_PARENT));
         innerLayout.setOrientation(LinearLayout.VERTICAL);
         innerLayout.setGravity(Gravity.CENTER);
         innerLayout.setBackground(ContextCompat.getDrawable(this, R.drawable.ripple_effect));
@@ -225,8 +254,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         TextView letterText = new TextView(this);
         letterText.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        ));
+                ViewGroup.LayoutParams.WRAP_CONTENT));
         letterText.setText(thaiLetters[index]);
         letterText.setTextSize(18);
         letterText.setTextColor(ContextCompat.getColor(this, R.color.black));
@@ -236,8 +264,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         TextView nameText = new TextView(this);
         nameText.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        ));
+                ViewGroup.LayoutParams.WRAP_CONTENT));
         nameText.setText(thaiLetterNames[index].split(" ")[1]); // แสดงเฉพาะชื่อสัตว์/สิ่งของ
         nameText.setTextSize(8);
         nameText.setTextColor(ContextCompat.getColor(this, R.color.gray_dark));
@@ -272,7 +299,9 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         createGuidePathForLetter(currentLetterIndex);
 
         // รีเซ็ตพื้นที่วาด
-        mDrawingView.startNew();
+        if (mDrawingView != null) {
+            mDrawingView.startNew();
+        }
 
         // รีเซ็ตสถิติ
         resetStatsForNewLetter();
@@ -315,6 +344,46 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         }
     }
 
+    private void highlightSelectedLetter(int index) {
+        if (letterSelectionLayout == null)
+            return;
+
+        for (int i = 0; i < letterSelectionLayout.getChildCount(); i++) {
+            View child = letterSelectionLayout.getChildAt(i);
+            if (child instanceof MaterialCardView) {
+                MaterialCardView card = (MaterialCardView) child;
+                Object tag = card.getTag();
+                if (tag instanceof Integer) {
+                    int cardIndex = (int) tag;
+
+                    if (cardIndex == index) {
+                        // Selected state
+                        card.setStrokeColor(ContextCompat.getColor(this, R.color.purple));
+                        card.setStrokeWidth(dpToPx(3));
+                        card.setCardElevation(dpToPx(4));
+
+                        // Change text color
+                        TextView letterText = findTextViewInCard(card, 0);
+                        if (letterText != null) {
+                            letterText.setTextColor(ContextCompat.getColor(this, R.color.purple));
+                        }
+                    } else {
+                        // Normal state
+                        card.setStrokeColor(ContextCompat.getColor(this, R.color.gray_light));
+                        card.setStrokeWidth(dpToPx(1));
+                        card.setCardElevation(dpToPx(2));
+
+                        // Reset text color
+                        TextView letterText = findTextViewInCard(card, 0);
+                        if (letterText != null) {
+                            letterText.setTextColor(ContextCompat.getColor(this, R.color.black));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private TextView findTextViewInCard(ViewGroup cardView, int index) {
         int textViewCount = 0;
         for (int i = 0; i < cardView.getChildCount(); i++) {
@@ -346,22 +415,18 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void navigateToPreviousLetter() {
-        if (currentLetterIndex > 0) {
-            currentLetterIndex--;
-            updateCurrentLetterDisplay();
-            scrollToCurrentLetter();
-            playSoundEffect();
+        int current = viewPagerLetters.getCurrentItem();
+        if (current > 0) {
+            viewPagerLetters.setCurrentItem(current - 1, true);
         } else {
             showToast("นี่คือตัวอักษรแรกแล้วครับ");
         }
     }
 
     private void navigateToNextLetter() {
-        if (currentLetterIndex < thaiLetters.length - 1) {
-            currentLetterIndex++;
-            updateCurrentLetterDisplay();
-            scrollToCurrentLetter();
-            playSoundEffect();
+        int current = viewPagerLetters.getCurrentItem();
+        if (current < pagerAdapter.getItemCount() - 1) {
+            viewPagerLetters.setCurrentItem(current + 1, true);
         } else {
             showToast("นี่คือตัวอักษรสุดท้ายแล้วครับ");
         }
@@ -410,30 +475,130 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void setupDrawingView() {
-        mDrawingView = findViewById(R.id.drawing);
-        mDrawingView.setDrawingCheckListener(this);
-        updateDrawingBackground();
+        // [NEW] Setup ViewPager instead of static DrawingView
+        viewPagerLetters = findViewById(R.id.viewPagerLetters);
+
+        // Use the length of image config as total items, assuming it matches letters
+        int totalLetters = File_Confix_Data.image_confixe1.length;
+
+        pagerAdapter = new DrawingPagerAdapter(this, totalLetters, (holder, position) -> {
+            DrawingView drawingView = holder.drawingView;
+
+            // Cache the holder
+            holderCache.put(position, holder);
+
+            // Configure listeners for this view
+            drawingView.setDrawingCheckListener(ThaiLettersActivity.this);
+
+            // If this is the current page, update the main reference immediately
+            if (position == viewPagerLetters.getCurrentItem()) {
+                mDrawingView = drawingView;
+            }
+
+            // Set background for this view (initial bind)
+            updateBackgroundForView(drawingView, position);
+
+            // Set initial brush size (default to medium if not set yet)
+            if (mediumBrush == 0) {
+                mediumBrush = getResources().getInteger(R.integer.medium_size);
+            }
+            drawingView.setBrushSize(mediumBrush);
+
+            // Sync checking mode
+            drawingView.setCheckingEnabled(isCheckingMode);
+
+            // Set guide path for this view
+            createGuidePathForLetter(position, drawingView);
+
+            // Handle Video Close Button
+            if (holder.btnCloseVideo != null) {
+                holder.btnCloseVideo.setOnClickListener(v -> closeVideo(holder));
+            }
+        });
+
+        viewPagerLetters.setAdapter(pagerAdapter);
+
+        // [NEW] Setup Dots Indicator
+        me.relex.circleindicator.CircleIndicator3 indicator = findViewById(R.id.indicator);
+        indicator.setViewPager(viewPagerLetters);
+
+        viewPagerLetters.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                onLetterPageChanged(position);
+            }
+        });
+
+        // Disable swipe if desired, or keep it enabled
+        viewPagerLetters.setUserInputEnabled(true);
     }
 
-    private void updateDrawingBackground() {
-        if (isValidImageIndex(currentLetterIndex)) {
+    // [NEW] Handle Page Change
+    private void onLetterPageChanged(int position) {
+        currentLetterIndex = position;
+
+        // Update main reference
+        DrawingPagerAdapter.DrawingViewHolder holder = holderCache.get(position);
+        if (holder != null) {
+            mDrawingView = holder.drawingView;
+        } else {
+            mDrawingView = null;
+        }
+
+        // Update UI
+        highlightSelectedLetter(currentLetterIndex);
+        updateLetterDisplayLocal(currentLetterIndex); // Helper to update text without recursion
+
+        // Ensure background is correct (though adapter binding handles it, this ensures
+        // updates)
+        if (mDrawingView != null) {
+            updateDrawingBackground();
+        }
+
+        // Play sound
+        playLetterSound();
+
+        // [FIX] Create guide path for the new letter
+        createGuidePathForLetter(currentLetterIndex);
+
+        // Scroll bottom list
+        scrollToCurrentLetter();
+    }
+
+    // Helper to update text only (avoid full updateCurrentLetterDisplay which
+    // resets view)
+    private void updateLetterDisplayLocal(int index) {
+        if (textCurrentLetter != null && index < thaiLetters.length) {
+            textCurrentLetter.setText(thaiLetters[index]);
+        }
+        if (textLetterName != null && index < thaiLetterNames.length) {
+            textLetterName.setText(thaiLetterNames[index]);
+        }
+        resetStatsForNewLetter();
+    }
+
+    private void updateBackgroundForView(DrawingView view, int index) {
+        if (isValidImageIndex(index)) {
             try {
-                int drawableId = File_Confix_Data.image_confixe1[currentLetterIndex];
+                int drawableId = File_Confix_Data.image_confixe1[index];
                 Drawable myDrawable = ContextCompat.getDrawable(this, drawableId);
                 if (myDrawable != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        mDrawingView.setBackground(myDrawable);
+                        view.setBackground(myDrawable);
                     } else {
-                        mDrawingView.setBackgroundDrawable(myDrawable);
+                        view.setBackgroundDrawable(myDrawable);
                     }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error setting background", e);
-                showToast("Error loading image");
             }
-        } else {
-            Log.e(TAG, "Invalid image index: " + currentLetterIndex);
-            showToast("Invalid image index");
+        }
+    }
+
+    private void updateDrawingBackground() {
+        if (mDrawingView != null) {
+            updateBackgroundForView(mDrawingView, currentLetterIndex);
         }
     }
 
@@ -451,15 +616,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
             View firstColorView = paintLayout.getChildAt(1);
             if (firstColorView instanceof MaterialCardView) {
                 currPaintCard = (MaterialCardView) firstColorView;
-
-                ImageButton imageButton = findImageButtonInCardView(currPaintCard);
-                if (imageButton != null) {
-                    currPaintButton = imageButton;
-                    currPaintButton.setImageResource(R.drawable.pallet_selected);
-
-                    currPaintCard.setStrokeColor(ContextCompat.getColorStateList(this, R.color.purple));
-                    currPaintCard.setStrokeWidth(2);
-                }
+                currPaintCard.setStrokeWidth(2);
             }
         }
     }
@@ -483,11 +640,16 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         checkButton = findViewById(R.id.buttonCheck);
 
         // Set click listeners
-        if (drawButton != null) drawButton.setOnClickListener(this);
-        if (eraseButton != null) eraseButton.setOnClickListener(this);
-        if (newButton != null) newButton.setOnClickListener(this);
-        if (saveButton != null) saveButton.setOnClickListener(this);
-        if (checkButton != null) checkButton.setOnClickListener(this);
+        if (drawButton != null)
+            drawButton.setOnClickListener(this);
+        if (eraseButton != null)
+            eraseButton.setOnClickListener(this);
+        if (newButton != null)
+            newButton.setOnClickListener(this);
+        if (saveButton != null)
+            saveButton.setOnClickListener(this);
+        if (checkButton != null)
+            checkButton.setOnClickListener(this);
     }
 
     private void setupBrushSizes() {
@@ -495,7 +657,9 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         mediumBrush = getResources().getInteger(R.integer.medium_size);
         largeBrush = getResources().getInteger(R.integer.large_size);
 
-        mDrawingView.setBrushSize(mediumBrush);
+        if (mDrawingView != null) {
+            mDrawingView.setBrushSize(mediumBrush);
+        }
     }
 
     private void setupProgressUI() {
@@ -546,19 +710,43 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
 
     private void setupCheckingSystem() {
         // ตั้งค่าระบบตรวจสอบเริ่มต้น
-        mDrawingView.setCheckingEnabled(false);
+        if (mDrawingView != null) {
+            mDrawingView.setCheckingEnabled(isCheckingMode);
+        }
         updateCheckButtonAppearance();
     }
 
     private void openVideoActivity() {
         playSoundEffect();
-        try {
-            Intent intent = new Intent(this, VideoStream1.class);
-            intent.putExtra(KEY_VIDEO, currentLetterIndex);
-            startActivity(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error opening video activity", e);
-            showToast("Cannot open video");
+        toggleVideoMode(currentLetterIndex);
+    }
+
+    private void toggleVideoMode(int index) {
+        DrawingPagerAdapter.DrawingViewHolder holder = holderCache.get(index);
+        if (holder != null && holder.videoContainer != null && holder.videoView != null) {
+            // Show Video Container
+            holder.videoContainer.setVisibility(View.VISIBLE);
+
+            // Setup Video
+            if (index >= 0 && index < videoResources.length) {
+                Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + videoResources[index]);
+                holder.videoView.setVideoURI(uri);
+                holder.videoView.setMediaController(new android.widget.MediaController(this));
+                holder.videoView.start();
+            }
+        } else {
+            showToast("Video functionality pending for this page");
+        }
+    }
+
+    private void closeVideo(DrawingPagerAdapter.DrawingViewHolder holder) {
+        if (holder != null) {
+            if (holder.videoView != null) {
+                holder.videoView.stopPlayback();
+            }
+            if (holder.videoContainer != null) {
+                holder.videoContainer.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -567,6 +755,8 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
             showToast("ไม่พบไฟล์เสียง");
             return;
         }
+        // [NEW] Release Background Music
+        // MusicManager manages its own lifecycle
 
         try {
             if (playimgS != null) {
@@ -661,7 +851,8 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
 
     @Override
     public void onClick(View v) {
-        if (v == null) return;
+        if (v == null)
+            return;
 
         playSoundEffect();
         int id = v.getId();
@@ -683,10 +874,8 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         } else if (v instanceof MaterialCardView) {
             // เมื่อคลิกที่การ์ดตัวอักษร
             int clickedIndex = (int) v.getTag();
-            if (clickedIndex != currentLetterIndex) {
-                currentLetterIndex = clickedIndex;
-                updateCurrentLetterDisplay();
-                scrollToCurrentLetter();
+            if (clickedIndex != viewPagerLetters.getCurrentItem()) {
+                viewPagerLetters.setCurrentItem(clickedIndex, true);
             }
         }
     }
@@ -701,12 +890,14 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     // เมธอดใหม่สำหรับเปิด/ปิดโหมดตรวจสอบ
     private void toggleCheckingMode() {
         isCheckingMode = !isCheckingMode;
-        mDrawingView.setCheckingEnabled(isCheckingMode);
+        if (mDrawingView != null) {
+            mDrawingView.setCheckingEnabled(isCheckingMode);
+            mDrawingView.invalidate(); // รีเฟรชเพื่อแสดงเส้นนำทาง
+        }
         updateCheckButtonAppearance();
 
         if (isCheckingMode) {
             showToast("เปิดโหมดตรวจสอบการลากเส้น ✅");
-            mDrawingView.invalidate(); // รีเฟรชเพื่อแสดงเส้นนำทาง
         } else {
             showToast("ปิดโหมดตรวจสอบการลากเส้น ⬜");
         }
@@ -731,7 +922,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
             totalAttempts++;
             if (isCorrect) {
                 successfulAttempts++;
-                currentScore += (int)(accuracy * 20); // คะแนนตามความแม่นยำ
+                currentScore += (int) (accuracy * 20); // คะแนนตามความแม่นยำ
                 showSuccessAnimation();
 
                 if (accuracy > 0.9f) {
@@ -821,7 +1012,8 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
 
             animationSuccess.addAnimatorListener(new Animator.AnimatorListener() {
                 @Override
-                public void onAnimationStart(Animator animation) {}
+                public void onAnimationStart(Animator animation) {
+                }
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
@@ -829,10 +1021,12 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
                 }
 
                 @Override
-                public void onAnimationCancel(Animator animation) {}
+                public void onAnimationCancel(Animator animation) {
+                }
 
                 @Override
-                public void onAnimationRepeat(Animator animation) {}
+                public void onAnimationRepeat(Animator animation) {
+                }
             });
         }
     }
@@ -844,7 +1038,8 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
 
             animationTryAgain.addAnimatorListener(new Animator.AnimatorListener() {
                 @Override
-                public void onAnimationStart(Animator animation) {}
+                public void onAnimationStart(Animator animation) {
+                }
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
@@ -852,10 +1047,12 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
                 }
 
                 @Override
-                public void onAnimationCancel(Animator animation) {}
+                public void onAnimationCancel(Animator animation) {
+                }
 
                 @Override
-                public void onAnimationRepeat(Animator animation) {}
+                public void onAnimationRepeat(Animator animation) {
+                }
             });
         }
     }
@@ -894,9 +1091,7 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         layout.setPadding(50, 30, 50, 30);
 
         TextView messageText = new TextView(this);
-        messageText.setText(isCorrect ?
-                "คุณลากเส้นได้ถูกต้อง!" :
-                "พยายามอีกนิด ลากเส้นให้ตรงตามแบบมากขึ้น");
+        messageText.setText(isCorrect ? "คุณลากเส้นได้ถูกต้อง!" : "พยายามอีกนิด ลากเส้นให้ตรงตามแบบมากขึ้น");
         messageText.setTextSize(16);
         messageText.setPadding(0, 0, 0, 20);
 
@@ -942,8 +1137,8 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void setupBrushSizeButtons(View dialogView, AlertDialog dialog, boolean isEraser) {
-        int[] buttonIds = {R.id.small_brush, R.id.medium_brush, R.id.large_brush};
-        float[] sizes = {smallBrush, mediumBrush, largeBrush};
+        int[] buttonIds = { R.id.small_brush, R.id.medium_brush, R.id.large_brush };
+        float[] sizes = { smallBrush, mediumBrush, largeBrush };
 
         for (int i = 0; i < buttonIds.length; i++) {
             ImageButton button = dialogView.findViewById(buttonIds[i]);
@@ -996,16 +1191,87 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
             return;
         }
 
-        mDrawingView.setDrawingCacheEnabled(true);
+        // [Fix] Create a bitmap manually to ensure white background
+        Bitmap combinedBitmap = Bitmap.createBitmap(mDrawingView.getWidth(), mDrawingView.getHeight(),
+                Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(combinedBitmap);
+
+        // 1. Draw White Background
+        canvas.drawColor(Color.WHITE);
+
+        // 2. Draw the view content (includes its background image and drawing)
+        mDrawingView.draw(canvas);
+
+        // 3. [NEW] Add Watermark (App Logo + Text)
         try {
-            Bitmap drawingCache = mDrawingView.getDrawingCache();
-            if (drawingCache != null) {
+            // Load the logo
+            // Using logic to try loading "logo" (logo.png)
+            int logoId = getResources().getIdentifier("logo", "drawable", getPackageName());
+            if (logoId == 0) {
+                logoId = R.drawable.logo_unnamed; // Fallback
+            }
+
+            Bitmap logoBitmap = android.graphics.BitmapFactory.decodeResource(getResources(), logoId);
+
+            if (logoBitmap != null) {
+                // Calculate logo size (e.g., 10% of width)
+                int logoTargetWidth = (int) (combinedBitmap.getWidth() * 0.10f);
+                float ratio = (float) logoBitmap.getHeight() / logoBitmap.getWidth();
+                int logoTargetHeight = (int) (logoTargetWidth * ratio);
+
+                Bitmap scaledLogo = Bitmap.createScaledBitmap(logoBitmap, logoTargetWidth, logoTargetHeight, true);
+
+                // Prepare Text Paint
+                Paint textPaint = new Paint();
+                textPaint.setColor(Color.DKGRAY);
+                textPaint.setTextSize(logoTargetHeight * 0.4f); // Text height relative to logo
+                textPaint.setAntiAlias(true);
+                textPaint.setAlpha(150); // Semi-transparent
+                // Load custom font if needed, or default bold
+                textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+
+                String watermarkText = "สื่อการเรียนการสอนทั่วไป ppdev";
+                float textWidth = textPaint.measureText(watermarkText);
+
+                // Calculate position (Bottom-Right with padding)
+                int padding = 20;
+                int spacing = 20; // Space between text and logo
+
+                // Position: [Text] [Logo] | (Bottom Right)
+                float logoLeft = combinedBitmap.getWidth() - logoTargetWidth - padding;
+                float logoTop = combinedBitmap.getHeight() - logoTargetHeight - padding;
+
+                float textLeft = logoLeft - textWidth - spacing;
+                float textBaseLine = logoTop + (logoTargetHeight / 2)
+                        - ((textPaint.descent() + textPaint.ascent()) / 2);
+
+                // Draw logo
+                Paint watermarkPaint = new Paint();
+                watermarkPaint.setAlpha(180); // Semi-transparent for logo
+                canvas.drawBitmap(scaledLogo, logoLeft, logoTop, watermarkPaint);
+
+                // Draw text
+                canvas.drawText(watermarkText, textLeft, textBaseLine, textPaint);
+
+                // Recycle bitmaps
+                if (logoBitmap != null && !logoBitmap.isRecycled()) {
+                    // logoBitmap.recycle();
+                }
+                if (scaledLogo != null && !scaledLogo.isRecycled() && scaledLogo != logoBitmap) {
+                    // scaledLogo.recycle();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding watermark", e);
+        }
+
+        try {
+            if (combinedBitmap != null) {
                 String imgSaved = MediaStore.Images.Media.insertImage(
                         getContentResolver(),
-                        drawingCache,
+                        combinedBitmap,
                         "drawing_" + System.currentTimeMillis() + ".png",
-                        "drawing"
-                );
+                        "drawing");
 
                 if (imgSaved != null) {
                     showToast("บันทึกภาพสำเร็จ!");
@@ -1015,28 +1281,38 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
                     showToast("บันทึกภาพไม่สำเร็จ");
                 }
             } else {
-                showToast("ไม่พบภาพที่จะบันทึก");
+                showToast("ไม่สามารถสร้างภาพได้");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error saving image", e);
             showToast("เกิดข้อผิดพลาดในการบันทึก");
         } finally {
-            mDrawingView.destroyDrawingCache();
+            if (combinedBitmap != null && !combinedBitmap.isRecycled()) {
+                // combinedBitmap.recycle(); // Let GC handle it, or recycle if strict
+            }
         }
     }
 
     // เมธอดสำหรับสร้างเส้นนำทางตามตัวอักษร
+    // เมธอดสำหรับสร้างเส้นนำทางตามตัวอักษร
     private void createGuidePathForLetter(int letterIndex) {
+        createGuidePathForLetter(letterIndex, mDrawingView);
+    }
+
+    private void createGuidePathForLetter(int letterIndex, DrawingView targetView) {
+        if (targetView == null)
+            return;
+
         Path guidePath = new Path();
 
         // ตัวอย่างการสร้างเส้นนำทางพื้นฐาน
         createBasicGuidePath(guidePath, letterIndex);
 
-        mDrawingView.setGuidePath(guidePath);
+        targetView.setGuidePath(guidePath);
 
         // สร้างเส้นขีดต่างๆ สำหรับตัวอักษรที่ซับซ้อน
         List<Path> strokePaths = createStrokePathsForLetter(letterIndex);
-        mDrawingView.setStrokePaths(strokePaths);
+        targetView.setStrokePaths(strokePaths);
     }
 
     private void createBasicGuidePath(Path path, int letterIndex) {
@@ -1054,25 +1330,25 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
                 path.addCircle(centerX, centerY, size * 0.4f, Path.Direction.CW);
                 break;
             case 1: // ตัวอักษรกลุ่มเส้นตรง
-                path.moveTo(centerX - size/2, centerY - size/2);
-                path.lineTo(centerX + size/2, centerY + size/2);
+                path.moveTo(centerX - size / 2, centerY - size / 2);
+                path.lineTo(centerX + size / 2, centerY + size / 2);
                 break;
             case 2: // ตัวอักษรกลุ่มเส้นผสม
-                path.moveTo(centerX - size/2, centerY);
-                path.lineTo(centerX + size/2, centerY);
-                path.moveTo(centerX, centerY - size/2);
-                path.lineTo(centerX, centerY + size/2);
+                path.moveTo(centerX - size / 2, centerY);
+                path.lineTo(centerX + size / 2, centerY);
+                path.moveTo(centerX, centerY - size / 2);
+                path.lineTo(centerX, centerY + size / 2);
                 break;
             case 3: // ตัวอักษรกลุ่มเส้นโค้งผสม
-                path.moveTo(centerX - size/3, centerY);
-                path.quadTo(centerX, centerY - size/3, centerX + size/3, centerY);
+                path.moveTo(centerX - size / 3, centerY);
+                path.quadTo(centerX, centerY - size / 3, centerX + size / 3, centerY);
                 break;
             case 4: // ตัวอักษรกลุ่มเส้นซับซ้อน
-                path.moveTo(centerX - size/2, centerY - size/4);
-                path.lineTo(centerX, centerY - size/2);
-                path.lineTo(centerX + size/2, centerY - size/4);
-                path.lineTo(centerX + size/3, centerY + size/2);
-                path.lineTo(centerX - size/3, centerY + size/2);
+                path.moveTo(centerX - size / 2, centerY - size / 4);
+                path.lineTo(centerX, centerY - size / 2);
+                path.lineTo(centerX + size / 2, centerY - size / 4);
+                path.lineTo(centerX + size / 3, centerY + size / 2);
+                path.lineTo(centerX - size / 3, centerY + size / 2);
                 path.close();
                 break;
         }
@@ -1090,25 +1366,25 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
         switch (letterIndex) {
             case 0: // ก
                 Path stroke1 = new Path();
-                stroke1.moveTo(centerX - size/3, centerY);
-                stroke1.quadTo(centerX, centerY - size/3, centerX + size/3, centerY);
+                stroke1.moveTo(centerX - size / 3, centerY);
+                stroke1.quadTo(centerX, centerY - size / 3, centerX + size / 3, centerY);
                 strokes.add(stroke1);
 
                 Path stroke2 = new Path();
-                stroke2.moveTo(centerX + size/3, centerY);
-                stroke2.lineTo(centerX + size/3, centerY + size/2);
+                stroke2.moveTo(centerX + size / 3, centerY);
+                stroke2.lineTo(centerX + size / 3, centerY + size / 2);
                 strokes.add(stroke2);
                 break;
 
             case 1: // ข
                 Path stroke1b = new Path();
-                stroke1b.moveTo(centerX - size/4, centerY - size/4);
-                stroke1b.lineTo(centerX + size/4, centerY - size/4);
+                stroke1b.moveTo(centerX - size / 4, centerY - size / 4);
+                stroke1b.lineTo(centerX + size / 4, centerY - size / 4);
                 strokes.add(stroke1b);
 
                 Path stroke2b = new Path();
-                stroke2b.moveTo(centerX, centerY - size/4);
-                stroke2b.lineTo(centerX, centerY + size/2);
+                stroke2b.moveTo(centerX, centerY - size / 4);
+                stroke2b.lineTo(centerX, centerY + size / 2);
                 strokes.add(stroke2b);
                 break;
 
@@ -1127,12 +1403,16 @@ public class ThaiLettersActivity extends AppCompatActivity implements View.OnCli
     protected void onDestroy() {
         super.onDestroy();
         releaseMediaPlayers();
+        // [NEW] Pause Background Music
+        com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().pauseMusic();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         releaseMediaPlayers();
+        // [NEW] Pause Background Music
+        com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().pauseMusic();
     }
 
     private void releaseMediaPlayers() {

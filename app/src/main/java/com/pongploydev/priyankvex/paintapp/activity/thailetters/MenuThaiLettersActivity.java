@@ -26,7 +26,8 @@ import java.util.Locale;
 public class MenuThaiLettersActivity extends AppCompatActivity {
 
     private MenuModule menuModule;
-    private MediaPlayer mediaPlayer;
+    private MediaPlayer mediaPlayer; // For SFX
+    private MediaPlayer bgMediaPlayer; // [NEW] For Background Music
     private TextToSpeech textToSpeech;
 
     // Auto read variables
@@ -70,7 +71,8 @@ public class MenuThaiLettersActivity extends AppCompatActivity {
     private void setupTextToSpeech() {
         textToSpeech = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                int result = textToSpeech.setLanguage(new Locale("th", "TH"));;
+                int result = textToSpeech.setLanguage(new Locale("th", "TH"));
+                ;
                 if (result == TextToSpeech.LANG_MISSING_DATA ||
                         result == TextToSpeech.LANG_NOT_SUPPORTED) {
                     Log.e("TTS", "Language not supported");
@@ -258,32 +260,5 @@ public class MenuThaiLettersActivity extends AppCompatActivity {
         String soundName = "soundk" + (item.getId() + 1);
         return getResources().getIdentifier(soundName, "raw", getPackageName());
     }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stopAutoRead();
-
-        if (textToSpeech != null) {
-            textToSpeech.stop();
-            textToSpeech.shutdown();
-        }
-
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-
-        if (autoReadHandler != null) {
-            autoReadHandler.removeCallbacksAndMessages(null);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (isAutoReading) {
-            stopAutoRead();
-        }
-    }
 }
+

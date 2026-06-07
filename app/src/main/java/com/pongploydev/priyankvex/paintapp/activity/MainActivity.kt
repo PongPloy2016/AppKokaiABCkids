@@ -908,9 +908,38 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     private fun setupViewPager() {
         val vp = findViewById<ViewPager>(R.id.viewpager)
         val vpRTL = findViewById<RtlViewPager>(R.id.viewpager_rtl)
+        val appBarLayout = findViewById<View>(R.id.appbarLayout)
         val helper = ViewPagerHelper(this)
+        
         helper.setupViewPagerRtlDefault(vpRTL, findViewById(R.id.navigation), findViewById(R.id.title_toolbar))
         helper.setupViewPagerDefault(vp, findViewById(R.id.navigation), findViewById(R.id.title_toolbar))
+
+        // ฟังก์ชันช่วยจัดการความคล่องตัวของ Toolbar
+        val updateToolbarVisibility = { position: Int ->
+            // ซ่อน Toolbar สำหรับหน้า Home (0) และ Video (1) เพราะมี Toolbar ภายในตัวเองอยู่แล้ว
+            if (position == 0 || position == 1) {
+                appBarLayout.visibility = View.GONE
+            } else {
+                appBarLayout.visibility = View.VISIBLE
+            }
+        }
+
+        // ตั้งค่าเริ่มต้นตามหน้าแรก
+        updateToolbarVisibility(vp.currentItem)
+
+        // ซ่อน Toolbar เมื่อเปลี่ยนหน้า
+        vp.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+            override fun onPageSelected(position: Int) {
+                updateToolbarVisibility(position)
+            }
+        })
+
+        // สำหรับ RTL ViewPager
+        vpRTL.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+            override fun onPageSelected(position: Int) {
+                updateToolbarVisibility(position)
+            }
+        })
 
         vp.currentItem = 0
     }
