@@ -149,7 +149,7 @@ class VideoListFragment : Fragment() {
         hideActionBar()
 
         // ตรวจสอบและโหลดโฆษณา
-        initializeAds()
+        //initializeAds()
 
         swipeProgress(true)
         ensureCookieChallengeSolved {
@@ -166,6 +166,7 @@ class VideoListFragment : Fragment() {
     private fun setupObservers() {
         viewModel.videoList.observe(viewLifecycleOwner) { videos ->
             displaySearchResults(videos.toMutableList())
+            adapterVideo?.setLoaded()
             showNoItemView(
                     videos.isEmpty() &&
                             !viewModel.isLoading.value!! &&
@@ -184,18 +185,18 @@ class VideoListFragment : Fragment() {
         }
     }
 
-    private fun requestAction(pageNo: Int) {
+    private fun requestAction(pageNo: Int, isRefresh: Boolean = false) {
         showFailedView(false, "")
         showNoItemView(false)
         hideNoSearchResults()
 
-        viewModel.fetchVideos(pageNo)
+        viewModel.fetchVideos(pageNo, isRefresh)
     }
 
     private fun refreshVideos() {
         adapterVideo?.resetListData()
         ensureCookieChallengeSolved {
-            requestAction(1)
+            requestAction(1, true)
         }
     }
 
@@ -311,12 +312,9 @@ class VideoListFragment : Fragment() {
                     }
 
                     setOnLoadMoreListener { currentPage ->
-                        // Pagination logic
                         val totalItems = adapterVideo?.itemCount ?: 0
-                        // Estimate video items (excluding ads if needed, but simplistic check for
-                        // now)
-                        // logic: if (postTotal > totalItems) fetch next
                         if (viewModel.postTotal > totalItems) {
+                            adapterVideo?.setLoading()
                             viewModel.fetchVideos(currentPage + 1)
                         } else {
                             adapterVideo?.setLoaded()
@@ -351,8 +349,8 @@ class VideoListFragment : Fragment() {
     private fun setupListeners() {
         swipeRefreshLayout.setOnRefreshListener {
             adapterVideo?.resetListData()
-            solveCookieChallenge {
-                requestAction(1)
+            ensureCookieChallengeSolved {
+                requestAction(1, true)
             }
             // รีโหลด Interstitial Ad
             loadInterstitialAd()
@@ -360,8 +358,8 @@ class VideoListFragment : Fragment() {
 
         btnRetry.setOnClickListener {
             swipeProgress(true)
-            solveCookieChallenge {
-                requestAction(1)
+            ensureCookieChallengeSolved {
+                requestAction(1, true)
             }
             loadInterstitialAd()
         }
@@ -538,8 +536,8 @@ class VideoListFragment : Fragment() {
         selectCategory("all")
         hideNoSearchResults()
         swipeProgress(true)
-        solveCookieChallenge {
-            requestAction(1)
+        ensureCookieChallengeSolved {
+            requestAction(1, true)
         }
         loadInterstitialAd()
         Toast.makeText(activityContext, "กำลังรีเฟรชข้อมูล...", Toast.LENGTH_SHORT).show()
@@ -1267,8 +1265,8 @@ class VideoListFragment : Fragment() {
     private fun solveCookieChallenge(onComplete: () -> Unit) {
         val context = activityContext ?: return
         val baseUrl = sharedPref.baseUrl
-        // Load the actual API URL instead of just base domain to ensure path-specific cookies are set
-        val challengeUrl = "$baseUrl/api/api.php?get_videos=1"
+        // Load the base URL instead of API to solve challenge faster
+        val challengeUrl = baseUrl
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             val webView = android.webkit.WebView(context)
             webView.settings.javaScriptEnabled = true
@@ -1279,22 +1277,26 @@ class VideoListFragment : Fragment() {
             webView.webViewClient = object : android.webkit.WebViewClient() {
                 override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        val cookie = android.webkit.CookieManager.getInstance().getCookie(url)
-                        android.util.Log.d("CookieChallenge", "Cookie after page finish for $url: $cookie")
-                        if (cookie != null && cookie.contains("__test")) {
-                            android.util.Log.d("CookieChallenge", "Successfully obtained __test cookie!")
-                            onComplete()
-                            try {
-                                webView.destroy()
-                            } catch (e: Exception) {
-                                // ignore
+                    // Check every 500ms if cookie is set, up to 5 seconds
+                    var checkCount = 0
+                    val checkRunnable = object : Runnable {
+                        override fun run() {
+                            val cookie = android.webkit.CookieManager.getInstance().getCookie(url)
+                            if (cookie != null && cookie.contains("__test")) {
+                                android.util.Log.d("CookieChallenge", "Successfully obtained __test cookie!")
+                                onComplete()
+                                try { webView.destroy() } catch (e: Exception) {}
+                            } else if (checkCount < 10) {
+                                checkCount++
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 500)
+                            } else {
+                                android.util.Log.e("CookieChallenge", "Timed out waiting for cookie")
+                                onComplete() // Proceed anyway
+                                try { webView.destroy() } catch (e: Exception) {}
                             }
-                        } else {
-                            // If cookie not found yet, maybe it's still redirecting
-                            android.util.Log.d("CookieChallenge", "Cookie __test not found yet, waiting...")
                         }
-                    }, 2000) // Increased delay
+                    }
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(checkRunnable, 500)
                 }
 
                 override fun onReceivedError(

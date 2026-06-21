@@ -34,16 +34,19 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
     var currentCategory = "all"
     var searchQuery = ""
 
-    fun fetchVideos(pageNo: Int) {
+    fun fetchVideos(pageNo: Int, isRefresh: Boolean = false) {
         // If loading first page or refreshing, set loading state
         if (pageNo == 1) {
             _isLoading.value = true
         }
 
-        val apiInterface = RestAdapter.createAPI(sharedPref.getBaseUrl())
+        val apiInterface = RestAdapter.createAPI(getApplication(), sharedPref.getBaseUrl())
+
+        val cacheControl = if (isRefresh) "no-cache" else null
 
         callbackCall =
                 apiInterface.getVideos(
+                        cacheControl,
                         "true",
                         "latest",
                         10,

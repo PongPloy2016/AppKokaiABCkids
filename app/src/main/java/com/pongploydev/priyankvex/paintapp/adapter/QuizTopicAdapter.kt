@@ -4,7 +4,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -27,7 +26,7 @@ class QuizTopicAdapter(
     class TopicViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val cardTopic: com.google.android.material.card.MaterialCardView =
                 view.findViewById(R.id.cardTopic)
-        val layoutBackground: LinearLayout = view.findViewById(R.id.layoutBackground)
+        val layoutBackground: View = view.findViewById(R.id.layoutBackground)
         val ivTopicIcon: ImageView = view.findViewById(R.id.ivTopicIcon)
         val tvTopicTitle: TextView = view.findViewById(R.id.tvTopicTitle)
         val tvTopicDescription: TextView = view.findViewById(R.id.tvTopicDescription)
@@ -47,17 +46,16 @@ class QuizTopicAdapter(
         holder.tvTopicDescription.text = topic.description
         holder.ivTopicIcon.setImageResource(topic.iconRes)
 
-        // Badge number
-        holder.tvBadgeNumber.text = "${position + 1}"
+        // Badge text
+        holder.tvBadgeNumber.text = "บทเรียนที่ ${position + 1}"
 
-        // Use gradient drawable if provided, otherwise fall back to flat color
-        if (topic.gradientRes != 0) {
-            holder.layoutBackground.background =
-                    ContextCompat.getDrawable(holder.itemView.context, topic.gradientRes)
-        } else {
-            val color = ContextCompat.getColor(holder.itemView.context, topic.colorRes)
-            holder.layoutBackground.setBackgroundColor(color)
-        }
+        // Set stripe color
+        val color = ContextCompat.getColor(holder.itemView.context, topic.colorRes)
+        holder.layoutBackground.setBackgroundColor(color)
+        
+        // Optional: set badge color or tint to match
+        holder.tvBadgeNumber.backgroundTintList = android.content.res.ColorStateList.valueOf(color).withAlpha(30)
+        holder.tvBadgeNumber.setTextColor(color)
 
         // Ripple click effect
         holder.cardTopic.setOnClickListener { onTopicClick(topic) }

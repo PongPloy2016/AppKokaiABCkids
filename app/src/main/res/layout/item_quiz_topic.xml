@@ -5,98 +5,57 @@
     android:id="@+id/cardTopic"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginVertical="7dp"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="8dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="10dp"
-    app:cardUseCompatPadding="true"
-    app:strokeWidth="0dp">
+    app:cardCornerRadius="20dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/white"
+    app:strokeWidth="1dp"
+    app:strokeColor="#F0F0F0">
 
-    <!-- Gradient background controlled via adapter -->
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
-        <!-- Main gradient background (set via adapter) -->
-        <LinearLayout
+        <!-- Left color accent stripe -->
+        <View
             android:id="@+id/layoutBackground"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="18dp"
-            android:minHeight="100dp">
+            android:layout_width="8dp"
+            android:layout_height="match_parent"
+            android:background="@color/color_blue" />
 
-            <!-- Decorative blob bottom-right -->
-            <View
-                android:id="@+id/blobDecoRight"
-                android:layout_width="130dp"
-                android:layout_height="130dp"
-                android:background="@drawable/quiz_header_bubble"
-                android:alpha="0.18"
-                android:layout_gravity="bottom|end" />
-
-        </LinearLayout>
-
-        <!-- Content overlay (on top of gradient) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="18dp"
-            android:minHeight="100dp">
+            android:padding="16dp">
 
-            <!-- Badge number + Icon column -->
+            <!-- Circular Icon Container -->
             <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_circle_button"
+                android:backgroundTint="#F8F9FA"
+                android:padding="10dp">
 
-                <!-- Circular icon bg -->
-                <FrameLayout
-                    android:layout_width="76dp"
-                    android:layout_height="76dp"
-                    android:layout_gravity="center">
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@drawable/quiz_topic_icon_bg" />
-
-                    <ImageView
-                        android:id="@+id/ivTopicIcon"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"
-                        android:layout_gravity="center"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/card_one"
-                        tools:src="@drawable/card_one" />
-                </FrameLayout>
-
-                <!-- Badge number top-left -->
-                <TextView
-                    android:id="@+id/tvBadgeNumber"
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
-                    android:layout_gravity="top|start"
-                    android:layout_marginStart="-4dp"
-                    android:layout_marginTop="-4dp"
-                    android:background="@drawable/quiz_badge_bg"
-                    android:gravity="center"
-                    android:text="1"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
+                <ImageView
+                    android:id="@+id/ivTopicIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/card_one"
+                    tools:src="@drawable/card_one" />
             </FrameLayout>
 
-            <!-- Title + Description -->
+            <!-- Text Content -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="18dp"
+                android:layout_marginStart="16dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -105,53 +64,48 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="หัวข้อแบบทดสอบ"
-                    android:textColor="@color/white"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.01"
-                    android:shadowColor="#50000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="3" />
+                    android:textColor="#2D3142"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvTopicDescription"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:text="คำอธิบายสั้นๆ"
-                    android:textColor="@color/white"
+                    android:layout_marginTop="4dp"
+                    android:text="คำอธิบายสั้นๆ เกี่ยวกับแบบทดสอบนี้"
+                    android:textColor="#9094A6"
                     android:textSize="13sp"
-                    android:alpha="0.88"
-                    android:maxLines="2" />
+                    android:maxLines="2"
+                    android:ellipsize="end" />
 
-                <!-- Chip-style tag -->
+                <!-- Badge/Tag -->
                 <TextView
-                    android:id="@+id/tvTopicTag"
+                    android:id="@+id/tvBadgeNumber"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/quiz_badge_bg"
+                    android:background="@drawable/bg_rounded_kids"
+                    android:backgroundTint="#F0F4FF"
                     android:paddingHorizontal="10dp"
-                    android:paddingVertical="3dp"
-                    android:text="เริ่มทำแบบทดสอบ ▶"
-                    android:textColor="@color/white"
+                    android:paddingVertical="4dp"
+                    android:text="บทเรียนที่ 1"
+                    android:textColor="#4A69FF"
                     android:textSize="11sp"
                     android:textStyle="bold" />
 
             </LinearLayout>
 
-            <!-- Arrow icon -->
+            <!-- Play Icon -->
             <ImageView
-                android:layout_width="30dp"
-                android:layout_height="30dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="8dp"
-                android:src="@drawable/ic_arrow_forward"
-                android:alpha="0.85"
+                android:src="@drawable/ic_play_circle_kids"
+                app:tint="#D1D5DB"
                 android:contentDescription="@null" />
 
         </LinearLayout>
-
-    </FrameLayout>
+    </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

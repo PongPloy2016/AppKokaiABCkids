@@ -1,8 +1,10 @@
 package com.pongploydev.videowatchfeature.rests;
 
+import android.content.Context;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import android.util.Log;
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +12,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 
+import okhttp3.Cache;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
@@ -21,16 +24,21 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 @SuppressWarnings("WriteOnlyObject")
 public class RestAdapter {
 
+    private static ApiInterface apiInterface;
+
     public static ApiInterface createAPI(String api_url) {
+        return createAPI(null, api_url);
+    }
+
+    public static ApiInterface createAPI(Context context, String api_url) {
+        if (apiInterface != null) {
+            return apiInterface;
+        }
 
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-//        Gson gson = new GsonBuilder()
-//                .registerTypeAdapter(CallbackListVideo.class, new CallbackListVideoCreator())
-//                .create();
-
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+        OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .writeTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
@@ -81,6 +89,11 @@ public class RestAdapter {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
                         Response response = chain.proceed(chain.request());
+                        if (response.code() == 403) {
+                            // Cookie might be expired/invalid, clear cookies to force re-solve challenge
+                            Log.w("CookieChallenge", "HTTP 403 detected. Clearing WebView cookies.");
+                            android.webkit.CookieManager.getInstance().removeAllCookies(null);
+                        }
                         if (response.body() != null) {
                             try {
                                 String bodyString = response.peekBody(1024 * 1024).string();
@@ -103,10 +116,45 @@ public class RestAdapter {
                         }
                         return HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, session);
                     }
-                })
-                .build();
+                });
 
+        // Configure OkHttp Cache if context is provided
+        if (context != null) {
+            try {
+                File cacheDir = new File(context.getCacheDir(), "http_cache");
+                Cache cache = new Cache(cacheDir, 10 * 1024 * 1024); // 10 MB
+                okHttpClientBuilder.cache(cache);
+            } catch (Exception e) {
+                Log.e("RestAdapter", "Could not create OkHttp Cache", e);
+            }
+        }
 
+        // Add a network interceptor to override server Cache-Control headers for InfinityFree
+        okHttpClientBuilder.addNetworkInterceptor(new Interceptor() {
+            @Override
+            public Response intercept(Chain chain) throws IOException {
+                Response originalResponse = chain.proceed(chain.request());
+                String url = chain.request().url().toString();
+                
+                // Do not cache views count or specific analytic endpoints
+                if (url.contains("get_total_views")) {
+                    return originalResponse;
+                }
+
+                String cacheControl = originalResponse.header("Cache-Control");
+                if (cacheControl == null || cacheControl.contains("no-store") || cacheControl.contains("no-cache") || 
+                    cacheControl.contains("must-revalidate") || cacheControl.contains("max-age=0")) {
+                    // Rewrite cache control header to store response for 5 minutes (300 seconds)
+                    return originalResponse.newBuilder()
+                            .header("Cache-Control", "public, max-age=300")
+                            .removeHeader("Pragma")
+                            .build();
+                }
+                return originalResponse;
+            }
+        });
+
+        OkHttpClient okHttpClient = okHttpClientBuilder.build();
 
         Gson gson = new GsonBuilder()
                 .setLenient()
@@ -121,8 +169,7 @@ public class RestAdapter {
                 .client(okHttpClient)
                 .build();
 
-        return retrofit.create(ApiInterface.class);
-
+        apiInterface = retrofit.create(ApiInterface.class);
+        return apiInterface;
     }
-
 }

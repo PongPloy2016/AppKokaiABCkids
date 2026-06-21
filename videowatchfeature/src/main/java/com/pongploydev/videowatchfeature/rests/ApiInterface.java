@@ -9,6 +9,7 @@ import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetail;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.Headers;
 import retrofit2.http.Query;
 
@@ -17,9 +18,10 @@ public interface ApiInterface {
     String CACHE = "Cache-Control: max-age=0";
     String AGENT = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-    @Headers({CACHE, AGENT})
+    @Headers({AGENT})
     @GET("api/api.php")
     Call<CallbackListVideo> getVideos(
+            @Header("Cache-Control") String cacheControl,
             @Query("get_videos") String get_videos,
             @Query("sort") String sort,
             @Query("count") int count,
