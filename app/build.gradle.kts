@@ -19,8 +19,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         targetSdk = 35
-        versionCode = 37
-        versionName = "2.0.0"
+        versionCode = 38
+        versionName = "2.1.0"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
@@ -68,6 +68,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(project(":videowatchfeature"))
+    implementation(project(":livefeature"))
+
 
     // AndroidX
     implementation("androidx.core:core-ktx:1.12.0")

@@ -118,10 +118,11 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         public TextView videoTitle;
         public TextView videoDuration;
         public ImageView videoThumbnail;
-        public ConstraintLayout lytParent;
+        public View lytParent;
         public ImageButton overflow;
         public android.widget.FrameLayout lytYouTubeContainer;
         public ImageView imgPlay;
+        public TextView txtAgeBadge;
 
         @SuppressLint("WrongViewCast")
         public OriginalViewHolder(View v) {
@@ -134,6 +135,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             overflow = v.findViewById(R.id.overflow);
             lytYouTubeContainer = v.findViewById(R.id.lyt_youtube_container);
             imgPlay = v.findViewById(R.id.img_play);
+            txtAgeBadge = v.findViewById(R.id.txt_age_badge);
         }
 
     }
@@ -176,6 +178,27 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             vItem.videoTitle.setText(video.video_title);
             vItem.videoTitle.setSelected(true);
             vItem.videoDuration.setText(video.video_duration);
+
+            if (vItem.txtAgeBadge != null) {
+                if (video.age_rating != null && !video.age_rating.isEmpty()) {
+                    vItem.txtAgeBadge.setVisibility(View.VISIBLE);
+                    vItem.txtAgeBadge.setText(video.age_rating);
+                    
+                    // Set color based on age
+                    String age = video.age_rating.toLowerCase();
+                    if (age.contains("all") || age.contains("0+")) {
+                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_green), PorterDuff.Mode.SRC_IN);
+                    } else if (age.contains("3+")) {
+                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_blue), PorterDuff.Mode.SRC_IN);
+                    } else if (age.contains("6+")) {
+                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_accent), PorterDuff.Mode.SRC_IN);
+                    } else {
+                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_secondary), PorterDuff.Mode.SRC_IN);
+                    }
+                } else {
+                    vItem.txtAgeBadge.setVisibility(View.GONE);
+                }
+            }
 
             // Reset preview states to prevent flickering from recycled views
             vItem.lytYouTubeContainer.setVisibility(View.GONE);
@@ -226,19 +249,21 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 return false;
             });
 
-            if (sharedPref.getIsDarkTheme()) {
-                vItem.overflow.setColorFilter(ContextCompat.getColor(context, R.color.color_dark_icon),
-                        PorterDuff.Mode.SRC_IN);
-            } else {
-                vItem.overflow.setColorFilter(ContextCompat.getColor(context, R.color.color_light_icon),
-                        PorterDuff.Mode.SRC_IN);
-            }
-
-            vItem.overflow.setOnClickListener(view -> {
-                if (mOnItemOverflowClickListener != null) {
-                    mOnItemOverflowClickListener.onItemOverflowClick(view, video, position);
+            if (vItem.overflow != null) {
+                if (sharedPref.getIsDarkTheme()) {
+                    vItem.overflow.setColorFilter(ContextCompat.getColor(context, R.color.color_dark_icon),
+                            PorterDuff.Mode.SRC_IN);
+                } else {
+                    vItem.overflow.setColorFilter(ContextCompat.getColor(context, R.color.color_light_icon),
+                            PorterDuff.Mode.SRC_IN);
                 }
-            });
+
+                vItem.overflow.setOnClickListener(view -> {
+                    if (mOnItemOverflowClickListener != null) {
+                        mOnItemOverflowClickListener.onItemOverflowClick(view, video, position);
+                    }
+                });
+            }
 
             // Set Entrance Animation
             setAnimation(vItem.itemView, position);

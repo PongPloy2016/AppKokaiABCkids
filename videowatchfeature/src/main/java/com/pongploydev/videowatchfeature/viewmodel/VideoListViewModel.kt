@@ -1,17 +1,16 @@
 package com.pongploydev.videowatchfeature.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.pongploydev.videowatchfeature.callbacks.CallbackListVideo
+import androidx.lifecycle.viewModelScope
+import com.pongploydev.videowatchfeature.data.repository.VideoListRepositoryImpl
 import com.pongploydev.videowatchfeature.databases.prefs.SharedPref
+import com.pongploydev.videowatchfeature.domain.usecase.GetVideoListUseCase
 import com.pongploydev.videowatchfeature.model.Video
 import com.pongploydev.videowatchfeature.rests.RestAdapter
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.launch
 
 class VideoListViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -29,10 +28,17 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Internal State
     private var originalVideos = mutableListOf<Video>()
-    private var callbackCall: Call<CallbackListVideo?>? = null
     var postTotal = 0
     var currentCategory = "all"
     var searchQuery = ""
+
+    private val getVideoListUseCase: GetVideoListUseCase
+
+    init {
+        val apiInterfaceV1 = RestAdapter.createAPIV1(application, sharedPref.baseUrl)
+        val videoListRepo = VideoListRepositoryImpl(apiInterfaceV1)
+        getVideoListUseCase = GetVideoListUseCase(videoListRepo)
+    }
 
     fun fetchVideos(pageNo: Int, isRefresh: Boolean = false) {
         // If loading first page or refreshing, set loading state
@@ -40,58 +46,34 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
             _isLoading.value = true
         }
 
-        val apiInterface = RestAdapter.createAPI(getApplication(), sharedPref.getBaseUrl())
-
         val cacheControl = if (isRefresh) "no-cache" else null
 
-        callbackCall =
-                apiInterface.getVideos(
-                        cacheControl,
-                        "true",
-                        "latest",
-                        10,
-                        pageNo
-                )
+        viewModelScope.launch {
+            val result = getVideoListUseCase(cacheControl, "latest", 10, pageNo)
+            
+            // Only hide loading if first page or when request finishes
+            if (pageNo == 1) {
+                _isLoading.value = false
+            }
+            
+            result.onSuccess { response ->
+                postTotal = response.countTotal
+                val posts = response.posts
 
-        callbackCall?.enqueue(
-                object : Callback<CallbackListVideo?> {
-                    override fun onResponse(
-                            call: Call<CallbackListVideo?>,
-                            response: Response<CallbackListVideo?>
-                    ) {
-                        if (response.isSuccessful && response.body() != null) {
-                            val videoListResponse = response.body()!!
-                            postTotal = videoListResponse.count_total
-
-                            val posts = videoListResponse.posts.filterNotNull()
-
-                            if (pageNo == 1) {
-                                originalVideos.clear()
-                                originalVideos.addAll(posts)
-                            } else {
-                                originalVideos.addAll(posts)
-                            }
-
-                            // Apply filters if any
-                            filterVideos(searchQuery, currentCategory)
-
-                            _isLoading.value = false
-                            _errorMessage.value = null // Clear error
-                        } else {
-                            _isLoading.value = false
-                            _errorMessage.value = "Error: ${response.message()}"
-                        }
-                    }
-
-                    override fun onFailure(call: Call<CallbackListVideo?>, t: Throwable) {
-                        if (!call.isCanceled) {
-                            Log.e("onFailure getVideos", t.message ?: "")
-                            _isLoading.value = false
-                            _errorMessage.value = t.message
-                        }
-                    }
+                if (pageNo == 1) {
+                    originalVideos.clear()
+                    originalVideos.addAll(posts)
+                } else {
+                    originalVideos.addAll(posts)
                 }
-        )
+
+                // Apply filters if any
+                filterVideos(searchQuery, currentCategory)
+                _errorMessage.value = null // Clear error
+            }.onFailure { exception ->
+                _errorMessage.value = exception.message ?: "Failed to load videos"
+            }
+        }
     }
 
     fun filterVideos(query: String, category: String) {
@@ -99,27 +81,14 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
         currentCategory = category
 
         if (originalVideos.isEmpty()) {
-            // If data not loaded yet, maybe trigger load?
-            // But usually fetchVideos is called first.
             _videoList.value = emptyList()
             return
         }
 
-        val filtered =
-                originalVideos.filter { video ->
-                    val matchesSearch =
-                            query.isEmpty() ||
-                                    video.video_title?.contains(query, ignoreCase = true) == true ||
-                                    video.video_description?.contains(query, ignoreCase = true) ==
-                                            true
-
-                    val matchesCategory =
-                            category == "all" ||
-                                    video.category_name?.contains(category, ignoreCase = true) ==
-                                            true
-
-                    matchesSearch && matchesCategory
-                }
+        // Use the Video model's robust filtering logic
+        val filtered = originalVideos.filter {
+            it.matchesFilters(query, category, false, 0f)
+        }
 
         _videoList.value = filtered
     }
@@ -127,10 +96,5 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
     fun resetData() {
         originalVideos.clear()
         _videoList.value = emptyList()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        callbackCall?.cancel()
     }
 }

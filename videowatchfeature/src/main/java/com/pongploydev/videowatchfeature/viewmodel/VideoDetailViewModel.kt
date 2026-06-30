@@ -5,10 +5,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetailV1
+import com.pongploydev.videowatchfeature.data.repository.VideoDetailRepositoryImpl
 import com.pongploydev.videowatchfeature.databases.room.AppDatabase
 import com.pongploydev.videowatchfeature.databases.room.FavoriteEntity
+import com.pongploydev.videowatchfeature.domain.usecase.GetVideoDetailUseCase
 import com.pongploydev.videowatchfeature.model.Video
 import com.pongploydev.videowatchfeature.repository.FavoriteRepository
+import com.pongploydev.videowatchfeature.rests.RestAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -19,9 +23,41 @@ class VideoDetailViewModel(application: Application) : AndroidViewModel(applicat
     private val _isFavorite = MutableLiveData<Boolean>()
     val isFavorite: LiveData<Boolean> = _isFavorite
 
+    // Clean Architecture LiveData
+    private val _videoDetail = MutableLiveData<CallbackVideoDetailV1?>()
+    val videoDetail: LiveData<CallbackVideoDetailV1?> = _videoDetail
+
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
+    private val getVideoDetailUseCase: GetVideoDetailUseCase
+
     init {
         val favoriteDao = AppDatabase.getDatabase(application).favoriteDao()
         repository = FavoriteRepository(favoriteDao)
+
+        // Initialize Clean Architecture layers manually
+        val sharedPref = com.pongploydev.videowatchfeature.databases.prefs.SharedPref(application)
+        val apiInterfaceV1 = RestAdapter.createAPIV1(application, sharedPref.baseUrl)
+        val videoDetailRepo = VideoDetailRepositoryImpl(apiInterfaceV1)
+        getVideoDetailUseCase = GetVideoDetailUseCase(videoDetailRepo)
+    }
+
+    fun loadVideoDetail(vid: String, isRefresh: Boolean = false) {
+        _isLoading.value = true
+        _error.value = null
+        viewModelScope.launch {
+            val result = getVideoDetailUseCase(vid, isRefresh)
+            _isLoading.value = false
+            result.onSuccess { detail ->
+                _videoDetail.value = detail
+            }.onFailure { exception ->
+                _error.value = exception.message ?: "Failed to load video details"
+            }
+        }
     }
 
     fun checkFavoriteStatus(vid: String) {

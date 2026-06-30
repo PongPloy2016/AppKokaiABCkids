@@ -69,6 +69,7 @@ class VideoListFragment : Fragment() {
     private lateinit var clearSearchBtn: ImageView
     private lateinit var sortButton: ImageView
     private lateinit var refreshButton: ImageView
+    private lateinit var switchViewButton: ImageView
     private lateinit var categoryContainer: LinearLayout
     private lateinit var categoryAll: TextView
     private lateinit var categoryCartoon: TextView
@@ -141,6 +142,7 @@ class VideoListFragment : Fragment() {
         setupSearch()
         setupCategories()
         setupObservers()
+        updateSwitchViewButtonIcon()
 
         adsPref.isTestMode = false
         adsPref.isFamiliesApp = true
@@ -222,6 +224,7 @@ class VideoListFragment : Fragment() {
             clearSearchBtn = findViewById(R.id.clear_search_btn)
             sortButton = findViewById(R.id.sort_button)
             refreshButton = findViewById(R.id.refresh_button)
+            switchViewButton = findViewById(R.id.switch_view_button)
             categoryContainer = findViewById(R.id.category_container)
             categoryAll = findViewById(R.id.category_all)
             categoryCartoon = findViewById(R.id.category_cartoon)
@@ -275,57 +278,96 @@ class VideoListFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        // Adjust padding for compact view
-        if (sharedPref.getVideoViewType() == Constant.VIDEO_LIST_COMPACT) {
-            val spacing = resources.getDimensionPixelOffset(R.dimen.spacing_small)
-            recyclerView.setPadding(0, spacing, 0, spacing)
-        }
-
-        val layoutManager = LinearLayoutManager(activityContext)
-        recyclerView.layoutManager = layoutManager
-
         // เพิ่มเพื่อลดการกระพริบ
         recyclerView.setHasFixedSize(true)
         recyclerView.itemAnimator = null // ปิด animation ชั่วคราวเพื่อทดสอบ
         recyclerView.isDrawingCacheEnabled = true
         recyclerView.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
-        // Initialize adapter
-        adapterVideo =
-                AdapterVideo(activityContext!!, recyclerView).apply {
-                    setOnItemClickListener { _, video, position ->
-                        Log.d("VideoClick", "Video clicked at position: $position")
-                        stopActivePreview()
-                        openVideoActivity(video)
-                    }
-
-                    setOnItemOverflowClickListener { _, video, position ->
-                        // Handle overflow menu click if needed
-                        Log.d("OverflowClick", "Overflow clicked for video: ${video?.id}")
-                    }
-
-                    setOnItemLongClickListener { _, video, position, holder ->
-                        if (video?.video_type?.lowercase() == "youtube") {
-                            showYouTubeInlinePreview(video, holder)
-                        } else {
-                            showToast("เฉพาะวิดีโอ YouTube เท่านั้นที่รองรับการพรีวิว")
-                        }
-                    }
-
-                    setOnLoadMoreListener { currentPage ->
-                        val totalItems = adapterVideo?.itemCount ?: 0
-                        if (viewModel.postTotal > totalItems) {
-                            adapterVideo?.setLoading()
-                            viewModel.fetchVideos(currentPage + 1)
-                        } else {
-                            adapterVideo?.setLoaded()
-                        }
-                    }
-                }
-
-        recyclerView.adapter = adapterVideo
+        
+        setupRecyclerViewLayoutManager()
+        setupRecyclerViewAdapter()
 
         // เพิ่ม Scroll Listener เพื่อซ่อน/แสดง ActionBar เมื่อ scroll
         setupScrollListener()
+    }
+
+    private fun setupRecyclerViewLayoutManager() {
+        val viewType = sharedPref.videoViewType
+        if (viewType == Constant.VIDEO_LIST_COMPACT) {
+            val spacing = resources.getDimensionPixelOffset(R.dimen.spacing_small)
+            recyclerView.setPadding(0, spacing, 0, spacing)
+            recyclerView.layoutManager = LinearLayoutManager(activityContext)
+        } else {
+            val spacing = resources.getDimensionPixelOffset(R.dimen.spacing_medium)
+            recyclerView.setPadding(spacing, spacing, spacing, spacing)
+            val gridLayoutManager = androidx.recyclerview.widget.GridLayoutManager(activityContext, 2)
+            gridLayoutManager.spanSizeLookup = object : androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int {
+                    return if (adapterVideo?.getItemViewType(position) == 0) { // VIEW_PROG is 0
+                        2
+                    } else {
+                        1
+                    }
+                }
+            }
+            recyclerView.layoutManager = gridLayoutManager
+        }
+    }
+
+    private fun setupRecyclerViewAdapter() {
+        val videos = viewModel.videoList.value ?: emptyList()
+        adapterVideo = AdapterVideo(activityContext!!, recyclerView, videos.toMutableList()).apply {
+            setOnItemClickListener { _, video, position ->
+                Log.d("VideoClick", "Video clicked at position: $position")
+                stopActivePreview()
+                openVideoActivity(video)
+            }
+
+            setOnItemOverflowClickListener { _, video, position ->
+                Log.d("OverflowClick", "Overflow clicked for video: ${video?.id}")
+            }
+
+            setOnItemLongClickListener { _, video, position, holder ->
+                if (video?.video_type?.lowercase() == "youtube") {
+                    showYouTubeInlinePreview(video, holder)
+                } else {
+                    showToast("เฉพาะวิดีโอ YouTube เท่านั้นที่รองรับการพรีวิว")
+                }
+            }
+
+            setOnLoadMoreListener { currentPage ->
+                val totalItems = adapterVideo?.itemCount ?: 0
+                if (viewModel.postTotal > totalItems) {
+                    adapterVideo?.setLoading()
+                    viewModel.fetchVideos(currentPage + 1)
+                } else {
+                    adapterVideo?.setLoaded()
+                }
+            }
+        }
+        recyclerView.adapter = adapterVideo
+    }
+
+    private fun updateSwitchViewButtonIcon() {
+        if (sharedPref.videoViewType == Constant.VIDEO_LIST_COMPACT) {
+            switchViewButton.setImageResource(R.drawable.ic_grid)
+        } else {
+            switchViewButton.setImageResource(R.drawable.ic_view)
+        }
+    }
+
+    private fun toggleViewType() {
+        val currentType = sharedPref.videoViewType
+        val newType = if (currentType == Constant.VIDEO_LIST_COMPACT) {
+            Constant.VIDEO_LIST_DEFAULT
+        } else {
+            Constant.VIDEO_LIST_COMPACT
+        }
+        sharedPref.updateVideoViewType(newType)
+
+        setupRecyclerViewLayoutManager()
+        updateSwitchViewButtonIcon()
+        setupRecyclerViewAdapter()
     }
 
     private fun setupScrollListener() {
@@ -422,6 +464,9 @@ class VideoListFragment : Fragment() {
         // ตั้งค่าปุ่มเรียงลำดับ
         sortButton.setOnClickListener { showSortMenu() }
 
+        // ตั้งค่าปุ่มสลับมุมมอง
+        switchViewButton.setOnClickListener { toggleViewType() }
+
         // ตั้งค่าเมื่อกด search บน keyboard
         searchInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -458,15 +503,32 @@ class VideoListFragment : Fragment() {
         // รีเซ็ตสไตล์ทั้งหมด
         val categories =
                 listOf(categoryAll, categoryCartoon, categoryMusic, categoryLearning, categoryStory)
-        categories.forEach { it.setBackgroundResource(R.drawable.bg_category_unselected) }
+        categories.forEach { 
+            it.setBackgroundResource(R.drawable.bg_category_unselected)
+            it.backgroundTintList = null // Clear any tint
+        }
 
-        // ตั้งค่าสไตล์สำหรับหมวดหมู่ที่เลือก
+        // ตั้งค่าสไตล์สำหรับหมวดหมู่ที่เลือก พร้อมสีสดใสสำหรับเด็ก
         when (category) {
-            "all" -> categoryAll.setBackgroundResource(R.drawable.bg_category_selected)
-            "cartoon" -> categoryCartoon.setBackgroundResource(R.drawable.bg_category_selected)
-            "music" -> categoryMusic.setBackgroundResource(R.drawable.bg_category_selected)
-            "learning" -> categoryLearning.setBackgroundResource(R.drawable.bg_category_selected)
-            "story" -> categoryStory.setBackgroundResource(R.drawable.bg_category_selected)
+            "all" -> {
+                categoryAll.setBackgroundResource(R.drawable.bg_category_selected)
+            }
+            "cartoon" -> {
+                categoryCartoon.setBackgroundResource(R.drawable.bg_category_selected)
+                categoryCartoon.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#2196F3"))
+            }
+            "music" -> {
+                categoryMusic.setBackgroundResource(R.drawable.bg_category_selected)
+                categoryMusic.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E91E63"))
+            }
+            "learning" -> {
+                categoryLearning.setBackgroundResource(R.drawable.bg_category_selected)
+                categoryLearning.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50"))
+            }
+            "story" -> {
+                categoryStory.setBackgroundResource(R.drawable.bg_category_selected)
+                categoryStory.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9C27B0"))
+            }
         }
 
         // กรองวิดีโอตามหมวดหมู่
@@ -1054,7 +1116,7 @@ class VideoListFragment : Fragment() {
         try {
             val intent =
                     createVideoIntent(video.video_type).apply {
-                        putExtra(Constant.EXTRA_OBJC, video)
+                        putExtra(Constant.KEY_VID, video.vid)
                     }
             startActivity(intent)
             Log.d("VideoOpen", "✅ Video activity started successfully")

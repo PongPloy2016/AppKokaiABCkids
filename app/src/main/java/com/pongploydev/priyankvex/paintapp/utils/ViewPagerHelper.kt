@@ -11,12 +11,14 @@ import androidx.viewpager.widget.ViewPager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
+import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
 import com.pongploydev.videowatchfeature.VideoListFragment
+import com.pongploydev.livefeature.LiveListFragment
 
 class ViewPagerHelper(var activity: AppCompatActivity) {
     var prevMenuItem: MenuItem? = null
-    var pagerNumber: Int = 3
+    var pagerNumber: Int = 4
 
     fun setupViewPagerDefault(
             viewPager: ViewPager,
@@ -38,6 +40,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 }
                 R.id.navigation_quiz -> {
                     viewPager.currentItem = 2
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
             }
@@ -72,6 +78,9 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             titleToolbar.text =
                                     activity.resources.getString(R.string.title_nav_quiz)
                             // (activity as MainActivity).showSortMenu(false)
+                        } else if (viewPager.currentItem == 3) {
+                            titleToolbar.text =
+                                    activity.resources.getString(R.string.title_nav_live)
                         }
                     }
 
@@ -100,6 +109,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 }
                 R.id.navigation_quiz -> {
                     viewPager.currentItem = 2
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
             }
@@ -138,6 +151,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                                         activity.resources.getString(R.string.title_nav_quiz)
                                 // (activity as MainActivity).showSortMenu(false)
                             }
+                            3 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_live)
+                            }
                         }
                     }
 
@@ -166,6 +183,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 }
                 R.id.navigation_quiz -> {
                     viewPager.currentItem = 2
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
             }
@@ -200,6 +221,9 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             titleToolbar.text =
                                     activity.resources.getString(R.string.title_nav_quiz)
                             // (activity as MainActivity).showSortMenu(false)
+                        } else if (viewPager.currentItem == 3) {
+                            titleToolbar.text =
+                                    activity.resources.getString(R.string.title_nav_live)
                         }
                     }
 
@@ -228,6 +252,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 }
                 R.id.navigation_quiz -> {
                     viewPager.currentItem = 2
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
             }
@@ -262,6 +290,9 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             titleToolbar.text =
                                     activity.resources.getString(R.string.title_nav_quiz)
                             // (activity as MainActivity).showSortMenu(false)
+                        } else if (viewPager.currentItem == 3) {
+                            titleToolbar.text =
+                                    activity.resources.getString(R.string.title_nav_live)
                         }
                     }
 
@@ -277,7 +308,8 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
             when (position) {
                 0 -> return ComposeFragment()
                 1 -> return VideoListFragment()
-                2 -> return QuizFragment()
+                2 -> return QuizComposeFragment()
+                3 -> return LiveListFragment()
             }
             return ComposeFragment()
         }
@@ -294,7 +326,8 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
             when (position) {
                 0 -> return ComposeFragment()
                 1 -> return VideoListFragment()
-                2 -> return QuizFragment()
+                2 -> return QuizComposeFragment()
+                3 -> return LiveListFragment()
             }
             return ComposeFragment()
         }

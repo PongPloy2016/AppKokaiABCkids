@@ -5,72 +5,84 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/lyt_player_parent"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/lyt_player_card_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        app:cardCornerRadius="24dp"
+        app:cardBackgroundColor="#000000"
+        app:cardElevation="8dp">
 
-        <RelativeLayout
-            android:id="@+id/lyt_player_container"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintDimensionRatio="H,2:1.1"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/lyt_player_parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-            <ImageView
-                android:id="@+id/video_thumbnail"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:foreground="?selectableItemBackground"
-                android:scaleType="centerCrop" />
+            <RelativeLayout
+                android:id="@+id/lyt_player_container"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintDimensionRatio="H,2:1.1"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-
-            <com.google.android.exoplayer2.ui.StyledPlayerView
-                android:id="@+id/exoPlayerView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone"
-                app:controller_layout_id="@layout/custom_controls" />
-
-            <TextView
-                android:id="@+id/video_duration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-                android:layout_margin="10dp"
-                android:background="@drawable/bg_rounded"
-                android:paddingLeft="5dp"
-                android:paddingTop="3dp"
-                android:paddingRight="5dp"
-                android:paddingBottom="3dp"
-                android:text="30:00"
-                android:textColor="@color/color_white"
-                android:textSize="12sp" />
-
-            <ImageView
-                android:id="@+id/icon_play"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_centerInParent="true"
-                android:alpha="0.9"
-                android:src="@drawable/ic_thumbnail_video" />
+                <ImageView
+                    android:id="@+id/video_thumbnail"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:foreground="?selectableItemBackground"
+                    android:scaleType="centerCrop" />
 
 
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:visibility="gone" />
+                <com.google.android.exoplayer2.ui.StyledPlayerView
+                    android:id="@+id/exoPlayerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    app:controller_layout_id="@layout/custom_controls" />
 
-        </RelativeLayout>
+                <TextView
+                    android:id="@+id/video_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/bg_rounded"
+                    android:paddingLeft="5dp"
+                    android:paddingTop="3dp"
+                    android:paddingRight="5dp"
+                    android:paddingBottom="3dp"
+                    android:text="30:00"
+                    android:textColor="@color/color_white"
+                    android:textSize="12sp" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+                <ImageView
+                    android:id="@+id/icon_play"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_centerInParent="true"
+                    android:alpha="0.9"
+                    android:src="@drawable/ic_thumbnail_video" />
+
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:visibility="gone" />
+
+            </RelativeLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
 
     <RelativeLayout
         android:id="@+id/lyt_head"
@@ -81,9 +93,26 @@
         android:layout_marginRight="12dp">
 
         <TextView
+            android:id="@+id/video_category_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_category_selected"
+            android:backgroundTint="#FF6B8E"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
+            android:text="Category"
+            android:textColor="@color/color_white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/video_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_below="@id/video_category_badge"
+            android:layout_marginTop="8dp"
             android:text="Lorem ipsum sit amet dolor Lorem ipsum"
             android:textAppearance="@style/Base.TextAppearance.AppCompat.Body2"
             android:textSize="@dimen/text_content_title_size"
@@ -103,6 +132,12 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_eye_kids"
+                    android:layout_marginEnd="6dp" />
 
                 <TextView
                     android:id="@+id/total_views"

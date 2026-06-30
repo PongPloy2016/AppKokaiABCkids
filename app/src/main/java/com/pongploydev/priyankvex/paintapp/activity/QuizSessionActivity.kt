@@ -471,17 +471,17 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val textView = getOptionTextView(index)
         val iconView = getOptionIconView(index)
 
-        if (isCorrect) {
-            cardView.setCardBackgroundColor(ContextCompat.getColor(this, R.color.green_light))
-            textView.setTextColor(Color.WHITE)
-            iconView.setImageResource(R.drawable.ic_check_24)
-            iconView.setColorFilter(ContextCompat.getColor(this, R.color.white))
+        val highlightColor = if (isCorrect) {
+            ContextCompat.getColor(this, R.color.green_light)
         } else {
-            cardView.setCardBackgroundColor(ContextCompat.getColor(this, R.color.red_light))
-            textView.setTextColor(Color.WHITE)
-            iconView.setImageResource(R.drawable.ic_close_24)
-            iconView.setColorFilter(ContextCompat.getColor(this, R.color.white))
+            ContextCompat.getColor(this, R.color.red_light)
         }
+
+        cardView.setCardBackgroundColor(highlightColor)
+        cardView.strokeColor = highlightColor
+        textView.setTextColor(Color.WHITE)
+        iconView.setImageResource(if (isCorrect) R.drawable.ic_check_24 else R.drawable.ic_close_24)
+        iconView.setColorFilter(Color.WHITE)
         iconView.visibility = View.VISIBLE
     }
 
@@ -490,27 +490,33 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val textView = getOptionTextView(correctAnswerIndex)
         val iconView = getOptionIconView(correctAnswerIndex)
 
-        cardView.setCardBackgroundColor(ContextCompat.getColor(this, R.color.green_light))
+        val greenColor = ContextCompat.getColor(this, R.color.green_light)
+        cardView.setCardBackgroundColor(greenColor)
+        cardView.strokeColor = greenColor
         textView.setTextColor(Color.WHITE)
         iconView.setImageResource(R.drawable.ic_check_24)
-        iconView.setColorFilter(ContextCompat.getColor(this, R.color.white))
+        iconView.setColorFilter(Color.WHITE)
         iconView.visibility = View.VISIBLE
     }
 
     private fun resetOptionsUI() {
         binding.cardOption1.setCardBackgroundColor(Color.WHITE)
+        binding.cardOption1.strokeColor = ContextCompat.getColor(this, R.color.color_red)
         binding.tvOption1.setTextColor(ContextCompat.getColor(this, R.color.color_red))
         binding.ivResult1.visibility = View.GONE
 
         binding.cardOption2.setCardBackgroundColor(Color.WHITE)
+        binding.cardOption2.strokeColor = ContextCompat.getColor(this, R.color.color_blue)
         binding.tvOption2.setTextColor(ContextCompat.getColor(this, R.color.color_blue))
         binding.ivResult2.visibility = View.GONE
 
         binding.cardOption3.setCardBackgroundColor(Color.WHITE)
+        binding.cardOption3.strokeColor = ContextCompat.getColor(this, R.color.color_green)
         binding.tvOption3.setTextColor(ContextCompat.getColor(this, R.color.color_green))
         binding.ivResult3.visibility = View.GONE
 
         binding.cardOption4.setCardBackgroundColor(Color.WHITE)
+        binding.cardOption4.strokeColor = ContextCompat.getColor(this, R.color.color_orange)
         binding.tvOption4.setTextColor(ContextCompat.getColor(this, R.color.color_orange))
         binding.ivResult4.visibility = View.GONE
     }

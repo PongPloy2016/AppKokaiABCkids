@@ -201,9 +201,26 @@
         android:layout_marginRight="12dp">
 
         <TextView
+            android:id="@+id/video_category_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_category_selected"
+            android:backgroundTint="#FF6B8E"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
+            android:text="Category"
+            android:textColor="@color/color_white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/video_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_below="@id/video_category_badge"
+            android:layout_marginTop="8dp"
             android:text="Lorem ipsum sit amet dolor Lorem ipsum"
             android:textAppearance="@style/Base.TextAppearance.AppCompat.Body2"
             android:textSize="@dimen/text_content_title_size"
@@ -223,6 +240,12 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_eye_kids"
+                    android:layout_marginEnd="6dp" />
 
                 <TextView
                     android:id="@+id/total_views"

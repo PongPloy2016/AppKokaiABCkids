@@ -21,18 +21,18 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
+import com.pongploydev.videowatchfeature.data.remote.ApiInterfaceV1;
+
 @SuppressWarnings("WriteOnlyObject")
 public class RestAdapter {
 
     private static ApiInterface apiInterface;
+    private static ApiInterfaceV1 apiInterfaceV1;
+    private static Retrofit retrofitInstance;
 
-    public static ApiInterface createAPI(String api_url) {
-        return createAPI(null, api_url);
-    }
-
-    public static ApiInterface createAPI(Context context, String api_url) {
-        if (apiInterface != null) {
-            return apiInterface;
+    private static synchronized Retrofit getRetrofit(Context context, String api_url) {
+        if (retrofitInstance != null) {
+            return retrofitInstance;
         }
 
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -160,7 +160,7 @@ public class RestAdapter {
                 .setLenient()
                 .create();
 
-        Retrofit retrofit = new Retrofit.Builder()
+        retrofitInstance = new Retrofit.Builder()
                 .baseUrl(api_url.endsWith("/") ? api_url : api_url + "/")
                 .addConverterFactory(ScalarsConverterFactory.create())
                 .addConverterFactory(
@@ -169,7 +169,28 @@ public class RestAdapter {
                 .client(okHttpClient)
                 .build();
 
+        return retrofitInstance;
+    }
+
+    public static ApiInterface createAPI(String api_url) {
+        return createAPI(null, api_url);
+    }
+
+    public static ApiInterface createAPI(Context context, String api_url) {
+        if (apiInterface != null) {
+            return apiInterface;
+        }
+        Retrofit retrofit = getRetrofit(context, api_url);
         apiInterface = retrofit.create(ApiInterface.class);
         return apiInterface;
+    }
+
+    public static ApiInterfaceV1 createAPIV1(Context context, String api_url) {
+        if (apiInterfaceV1 != null) {
+            return apiInterfaceV1;
+        }
+        Retrofit retrofit = getRetrofit(context, api_url);
+        apiInterfaceV1 = retrofit.create(ApiInterfaceV1.class);
+        return apiInterfaceV1;
     }
 }

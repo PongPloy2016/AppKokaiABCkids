@@ -16,9 +16,9 @@
         android:icon="@drawable/ic_quiz"
         android:title="@string/title_nav_quiz" />
 
-
-
-   
-
+    <item
+        android:id="@+id/navigation_live"
+        android:icon="@drawable/ic_live"
+        android:title="@string/title_nav_live" />
 
 </menu>
