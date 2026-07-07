@@ -2,11 +2,11 @@ package com.pongploydev.priyankvex.paintapp.compose
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,22 +21,49 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pongploydev.priyankvex.paintapp.R
+import com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity
 import com.pongploydev.priyankvex.paintapp.activity.QuizSessionActivity
 import com.pongploydev.priyankvex.paintapp.adapter.QuizTopic
+import kotlin.math.PI
+import kotlin.math.sin
 
+// ─────────────────────────────────────────────
+//  Color Palette
+// ─────────────────────────────────────────────
+private val KidDeepBlue   = Color(0xFF0288D1)
+private val KidPurple     = Color(0xFFAB47BC)
+
+private val topicGradients = listOf(
+    listOf(Color(0xFFE1F5FE), Color(0xFFF3E5F5)),
+    listOf(Color(0xFFFFF9C4), Color(0xFFFFE0B2)),
+    listOf(Color(0xFFE8F5E9), Color(0xFFE0F7FA)),
+    listOf(Color(0xFFFCE4EC), Color(0xFFEDE7F6)),
+    listOf(Color(0xFFF3E5F5), Color(0xFFE3F2FD)),
+)
+
+// Background components removed, using CommonComposeComponents.kt
+
+// ─────────────────────────────────────────────
+//  Main Screen
+// ─────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizComposeScreen() {
@@ -48,36 +75,48 @@ fun QuizComposeScreen() {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "คลังแบบทดสอบ",
+                        "🎯 คลังแบบทดสอบ",
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = Color.White,
+                        fontSize = 22.sp
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF4A69FF)
+                actions = {
+                    IconButton(onClick = {
+                        context.startActivity(Intent(context, QuizLeaderboardActivity::class.java))
+                    }) {
+                        Text("🏆", fontSize = 24.sp)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = KidDeepBlue
                 )
             )
-        },
-        containerColor = Color(0xFFF8F9FA)
+        }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                QuizHeader()
-            }
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            QuizBackground(modifier = Modifier.fillMaxSize())
 
-            itemsIndexed(topics) { index, topic ->
-                QuizTopicItem(topic, index) {
-                    val intent = Intent(context, QuizSessionActivity::class.java).apply {
-                        putExtra("EXTRA_TOPIC_ID", topic.id)
-                        putExtra("EXTRA_TOPIC_TITLE", topic.title)
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    QuizHeader()
+                }
+
+                itemsIndexed(topics) { index, topic ->
+                    QuizTopicItem(
+                        topic = topic,
+                        index = index,
+                        gradientColors = topicGradients[index % topicGradients.size]
+                    ) {
+                        val intent = Intent(context, QuizSessionActivity::class.java).apply {
+                            putExtra("EXTRA_TOPIC_ID", topic.id)
+                            putExtra("EXTRA_TOPIC_TITLE", topic.title)
+                        }
+                        context.startActivity(intent)
                     }
-                    context.startActivity(intent)
                 }
             }
         }
@@ -91,29 +130,27 @@ fun QuizHeader() {
             .fillMaxWidth()
             .padding(bottom = 8.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF4A69FF))
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Box(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.horizontalGradient(listOf(KidDeepBlue, KidPurple)))
+                .padding(20.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(60.dp),
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.2f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("🎯", fontSize = 32.sp)
-                    }
-                }
+                PulsingTargetDot()
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        "เลือกหัวข้อที่ชอบ",
+                        text = "เลือกหัวข้อที่ชอบ",
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "ฝึกฝนและท้าทายตัวเองกันเถอะ! 🌟",
+                        text = "ฝึกฝนและท้าทายตัวเองกันเถอะ! 🌟",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 14.sp
                     )
@@ -124,53 +161,78 @@ fun QuizHeader() {
 }
 
 @Composable
-fun QuizTopicItem(topic: QuizTopic, index: Int, onClick: () -> Unit) {
+fun PulsingTargetDot() {
+    val infiniteTransition = rememberInfiniteTransition(label = "targetDot")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.9f, targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = "dotScale"
+    )
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(60.dp).graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = CircleShape,
+            color = Color.White.copy(alpha = 0.25f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text("🎯", fontSize = 34.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun QuizTopicItem(
+    topic: QuizTopic,
+    index: Int,
+    gradientColors: List<Color>,
+    onClick: () -> Unit
+) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) + 
-                scaleIn(initialScale = 0.9f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        enter = fadeIn(animationSpec = tween(500)) + 
+                scaleIn(initialScale = 0.95f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() },
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = BorderStroke(1.dp, Color(0xFFECEEF2))
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(IntrinsicSize.Min)
+                    .background(Brush.horizontalGradient(gradientColors))
             ) {
-                // Left Color Stripe
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(8.dp)
-                        .background(colorResource(id = topic.colorRes))
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Icon
                     Surface(
-                        modifier = Modifier.size(64.dp),
-                        shape = CircleShape,
-                        color = Color(0xFFF8F9FA)
+                        modifier = Modifier.size(72.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White.copy(alpha = 0.6f),
+                        border = BorderStroke(2.dp, Color.White)
                     ) {
                         Image(
                             painter = painterResource(id = topic.iconRes),
                             contentDescription = null,
-                            modifier = Modifier.padding(10.dp),
+                            modifier = Modifier.padding(12.dp),
                             contentScale = ContentScale.Fit
                         )
                     }
@@ -182,37 +244,42 @@ fun QuizTopicItem(topic: QuizTopic, index: Int, onClick: () -> Unit) {
                             text = topic.title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2D3142)
+                            color = Color(0xFF1A1A2E)
                         )
                         Text(
                             text = topic.description,
                             fontSize = 13.sp,
-                            color = Color(0xFF9094A6),
+                            color = Color(0xFF444444),
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 18.sp
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        Surface(
-                            color = colorResource(id = topic.colorRes).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "บทเรียนที่ ${index + 1}",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorResource(id = topic.colorRes)
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                color = colorResource(id = topic.colorRes).copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "บทเรียนที่ ${index + 1}",
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = colorResource(id = topic.colorRes)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("👉 เริ่มเลย!", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = KidDeepBlue)
                         }
                     }
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        tint = Color(0xFFD1D5DB),
-                        modifier = Modifier.size(24.dp)
+                        tint = KidDeepBlue.copy(alpha = 0.6f),
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }

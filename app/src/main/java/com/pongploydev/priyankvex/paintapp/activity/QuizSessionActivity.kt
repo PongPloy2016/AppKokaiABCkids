@@ -5,16 +5,20 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.View
 import android.view.animation.AnimationUtils
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
+import com.google.firebase.firestore.FirebaseFirestore
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.confixdata.DataManager
 import com.pongploydev.priyankvex.paintapp.confixdata.File_Confix_Data
 import com.pongploydev.priyankvex.paintapp.confixdata.LearningCategory
 import com.pongploydev.priyankvex.paintapp.databinding.ActivityQuizSessionBinding
 import com.pongploydev.priyankvex.paintapp.model.LearningDataModel
+import com.pongploydev.priyankvex.paintapp.model.QuizScore
 import java.util.Locale
 import kotlin.random.Random
 
@@ -38,7 +42,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var binding: ActivityQuizSessionBinding
     private lateinit var currentItem: QuizItem
-    private lateinit var options: List<String>
+    private lateinit var options: List<QuizItem>
     private var correctAnswerIndex = 0
     private var currentQuestion = 0
     private val totalQuestions = 20
@@ -47,6 +51,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var selectedOption = -1
     private var tts: TextToSpeech? = null
     private var isAutoNavigating = false
+    private var startTime: Long = 0
 
     private var topicId = 1
     private var topicTitle = ""
@@ -67,6 +72,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         setupToolbar()
         setupClickListeners()
+        startTime = System.currentTimeMillis()
         loadNewQuestion()
     }
 
@@ -381,10 +387,17 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     else -> "ทายสิคืออะไร?"
                 }
 
-        binding.tvOption1.text = options[0]
-        binding.tvOption2.text = options[1]
-        binding.tvOption3.text = options[2]
-        binding.tvOption4.text = options[3]
+        binding.tvOption1.text = options[0].displayValue
+        binding.ivOption1.setImageResource(options[0].imageRes)
+        
+        binding.tvOption2.text = options[1].displayValue
+        binding.ivOption2.setImageResource(options[1].imageRes)
+
+        binding.tvOption3.text = options[2].displayValue
+        binding.ivOption3.setImageResource(options[2].imageRes)
+
+        binding.tvOption4.text = options[3].displayValue
+        binding.ivOption4.setImageResource(options[3].imageRes)
 
         resetOptionsUI()
 
@@ -397,14 +410,14 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         binding.root.postDelayed({ speakCurrentItem() }, 500)
     }
 
-    private fun generateOptions(correctItem: QuizItem, correctIndex: Int): List<String> {
+    private fun generateOptions(correctItem: QuizItem, correctIndex: Int): List<QuizItem> {
         val usedValues = mutableSetOf<String>()
         usedValues.add(correctItem.displayValue)
 
-        val tempList = mutableListOf<String>()
+        val tempList = mutableListOf<QuizItem>()
         for (i in 0 until 4) {
             if (i == correctIndex) {
-                tempList.add(correctItem.displayValue)
+                tempList.add(correctItem)
             } else {
                 var wrongItem: QuizItem
                 var attempts = 0
@@ -413,7 +426,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     attempts++
                 } while (usedValues.contains(wrongItem.displayValue) && attempts < 20)
                 usedValues.add(wrongItem.displayValue)
-                tempList.add(wrongItem.displayValue)
+                tempList.add(wrongItem)
             }
         }
         return tempList
@@ -469,7 +482,8 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun highlightSelectedOption(index: Int, isCorrect: Boolean) {
         val cardView = getOptionCard(index)
         val textView = getOptionTextView(index)
-        val iconView = getOptionIconView(index)
+        val imageView = getOptionImageView(index)
+        val resultIconView = getOptionIconView(index)
 
         val highlightColor = if (isCorrect) {
             ContextCompat.getColor(this, R.color.green_light)
@@ -480,44 +494,51 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         cardView.setCardBackgroundColor(highlightColor)
         cardView.strokeColor = highlightColor
         textView.setTextColor(Color.WHITE)
-        iconView.setImageResource(if (isCorrect) R.drawable.ic_check_24 else R.drawable.ic_close_24)
-        iconView.setColorFilter(Color.WHITE)
-        iconView.visibility = View.VISIBLE
+        imageView.setColorFilter(Color.WHITE)
+        resultIconView.setImageResource(if (isCorrect) R.drawable.ic_check_24 else R.drawable.ic_close_24)
+        resultIconView.setColorFilter(Color.WHITE)
+        resultIconView.visibility = View.VISIBLE
     }
 
     private fun highlightCorrectOption() {
         val cardView = getOptionCard(correctAnswerIndex)
         val textView = getOptionTextView(correctAnswerIndex)
-        val iconView = getOptionIconView(correctAnswerIndex)
+        val imageView = getOptionImageView(correctAnswerIndex)
+        val resultIconView = getOptionIconView(correctAnswerIndex)
 
         val greenColor = ContextCompat.getColor(this, R.color.green_light)
         cardView.setCardBackgroundColor(greenColor)
         cardView.strokeColor = greenColor
         textView.setTextColor(Color.WHITE)
-        iconView.setImageResource(R.drawable.ic_check_24)
-        iconView.setColorFilter(Color.WHITE)
-        iconView.visibility = View.VISIBLE
+        imageView.setColorFilter(Color.WHITE)
+        resultIconView.setImageResource(R.drawable.ic_check_24)
+        resultIconView.setColorFilter(Color.WHITE)
+        resultIconView.visibility = View.VISIBLE
     }
 
     private fun resetOptionsUI() {
         binding.cardOption1.setCardBackgroundColor(Color.WHITE)
         binding.cardOption1.strokeColor = ContextCompat.getColor(this, R.color.color_red)
         binding.tvOption1.setTextColor(ContextCompat.getColor(this, R.color.color_red))
+        binding.ivOption1.clearColorFilter()
         binding.ivResult1.visibility = View.GONE
 
         binding.cardOption2.setCardBackgroundColor(Color.WHITE)
         binding.cardOption2.strokeColor = ContextCompat.getColor(this, R.color.color_blue)
         binding.tvOption2.setTextColor(ContextCompat.getColor(this, R.color.color_blue))
+        binding.ivOption2.clearColorFilter()
         binding.ivResult2.visibility = View.GONE
 
         binding.cardOption3.setCardBackgroundColor(Color.WHITE)
         binding.cardOption3.strokeColor = ContextCompat.getColor(this, R.color.color_green)
         binding.tvOption3.setTextColor(ContextCompat.getColor(this, R.color.color_green))
+        binding.ivOption3.clearColorFilter()
         binding.ivResult3.visibility = View.GONE
 
         binding.cardOption4.setCardBackgroundColor(Color.WHITE)
         binding.cardOption4.strokeColor = ContextCompat.getColor(this, R.color.color_orange)
         binding.tvOption4.setTextColor(ContextCompat.getColor(this, R.color.color_orange))
+        binding.ivOption4.clearColorFilter()
         binding.ivResult4.visibility = View.GONE
     }
 
@@ -539,6 +560,15 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 else -> binding.tvOption1
             }
 
+    private fun getOptionImageView(index: Int): android.widget.ImageView =
+            when (index) {
+                0 -> binding.ivOption1
+                1 -> binding.ivOption2
+                2 -> binding.ivOption3
+                3 -> binding.ivOption4
+                else -> binding.ivOption1
+            }
+
     private fun getOptionIconView(index: Int): android.widget.ImageView =
             when (index) {
                 0 -> binding.ivResult1
@@ -549,6 +579,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
     private fun showResults() {
+        val duration = (System.currentTimeMillis() - startTime) / 1000
         val accuracy = (score * 100) / totalQuestions
         val message =
                 when {
@@ -558,20 +589,58 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     else -> "พยายามต่อไปนะ! 📚"
                 }
 
+        val input = EditText(this).apply {
+            hint = "ใส่ชื่อเล่นของคุณที่นี่"
+            setPadding(50, 40, 50, 40)
+        }
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 20, 60, 0)
+            addView(input)
+        }
+
         androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("สรุปผลคะแนน")
                 .setMessage(
-                        "$message\n\nคะแนน: ${score.toThai()}/${totalQuestions.toThai()}\nความถูกต้อง: ${accuracy.toThai()}%"
+                        "$message\n\nคะแนน: ${score.toThai()}/${totalQuestions.toThai()}\nความถูกต้อง: ${accuracy.toThai()}%\nใช้เวลา: ${duration.toInt().toThai()} วินาที"
                 )
-                .setPositiveButton("เล่นใหม่") { _, _ -> restartQuiz() }
-                .setNegativeButton("ออก") { _, _ -> finish() }
+                .setView(container)
+                .setPositiveButton("บันทึกคะแนน") { _, _ ->
+                    val name = input.text.toString().trim().ifEmpty { "ผู้เล่นนิรนาม" }
+                    saveScoreToFirestore(name, score, duration)
+                }
+                .setNegativeButton("เล่นใหม่") { _, _ -> restartQuiz() }
+                .setNeutralButton("ออก") { _, _ -> finish() }
                 .setCancelable(false)
                 .show()
+    }
+
+    private fun saveScoreToFirestore(name: String, finalScore: Int, duration: Long) {
+        val quizScore = QuizScore(
+            userName = name,
+            score = finalScore,
+            totalQuestions = totalQuestions,
+            topicTitle = topicTitle,
+            durationSeconds = duration
+        )
+
+        FirebaseFirestore.getInstance().collection("quiz_scores")
+            .add(quizScore)
+            .addOnSuccessListener {
+                Toast.makeText(this, "บันทึกคะแนนสำเร็จแล้ว! 🏆", Toast.LENGTH_SHORT).show()
+                restartQuiz()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "ไม่สามารถบันทึกได้ กรุณาลองใหม่", Toast.LENGTH_SHORT).show()
+                restartQuiz()
+            }
     }
 
     private fun restartQuiz() {
         currentQuestion = 0
         score = 0
+        startTime = System.currentTimeMillis()
         binding.tvScoreBadge.text = "⭐ ๐"
         loadNewQuestion()
     }

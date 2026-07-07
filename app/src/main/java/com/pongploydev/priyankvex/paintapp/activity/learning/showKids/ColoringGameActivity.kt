@@ -17,8 +17,11 @@ import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.View
+import com.daimajia.androidanimations.library.YoYo
+import com.daimajia.androidanimations.library.Techniques
 import android.widget.Button
 import android.widget.GridLayout
 import android.widget.ImageButton
@@ -38,10 +41,11 @@ import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener.BUTTON_POS
 import eltos.simpledialogfragment.color.SimpleColorDialog
 import eltos.simpledialogfragment.color.SimpleColorWheelDialog
 import java.io.OutputStream
+import java.util.Locale
 
 
 // <--- [เปลี่ยนแปลง] 2. เพิ่มการ implement OnDialogResultListener
-class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultListener {
+class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultListener, TextToSpeech.OnInitListener {
 
     // UI Components
     private lateinit var mDrawingView: DrawingView
@@ -51,6 +55,8 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
     private lateinit var seekBarBrush: SeekBar
     private lateinit var guideImage: ImageView
     private lateinit var textTips: TextView
+    private lateinit var layoutTips: View
+    private lateinit var imageMascot: ImageView
 
     // Control Buttons
     private lateinit var buttonBack: ImageButton
@@ -89,6 +95,7 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
     private var isLandscape = false
     private lateinit var timer: CountDownTimer
     private var currentColor = "#FF6B6B" // สีปัจจุบัน
+    private var tts: TextToSpeech? = null
 
     @ColorInt
     private  val color = -0x63d850
@@ -130,9 +137,20 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
         setupToolButtons()
         setupSeekBar()
         setupColorPicker()
+        tts = TextToSpeech(this, this)
         startTimer()
         showWelcomeMessage()
         setupBrushSizes()
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts?.language = Locale("th")
+        }
+    }
+
+    private fun speak(text: String) {
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
 
@@ -146,6 +164,8 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
         seekBarBrush = findViewById(R.id.seekbar_brush)
         guideImage = findViewById(R.id.guide_image)
         textTips = findViewById(R.id.text_tips)
+        layoutTips = findViewById(R.id.layout_tips)
+        imageMascot = findViewById(R.id.image_mascot)
 
         // Initialize control buttons
         buttonBack = findViewById(R.id.button_back)
@@ -421,7 +441,10 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
     }
 
     private fun selectInitialColor() {
-        selectColor(colorRed, "#FF6B6B")
+        currentColor = "#FF6B6B"
+        mDrawingView.setColor(currentColor)
+        updateColorSelection(colorRed)
+        updateColorPickerButton(Color.parseColor(currentColor))
     }
 
     private fun selectColor(selectedButton: ImageButton, colorHex: String) {
@@ -431,6 +454,11 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
         mDrawingView.setErase(false)
         isEraseMode = false
         //updateToolButtons()
+
+        // Animate button click for kids
+        YoYo.with(Techniques.Bounce)
+            .duration(400)
+            .playOn(selectedButton)
 
         // Update UI selection
         updateColorSelection(selectedButton)
@@ -464,26 +492,31 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
     private fun setupToolButtons() {
         // Back button
         buttonBack.setOnClickListener {
+            animateButtonClick(buttonBack)
             showExitConfirmation()
         }
 
         // Help button
         buttonHelp.setOnClickListener {
+            animateButtonClick(buttonHelp)
             showInteractiveHelp()
         }
 
         // Save button
         buttonSave.setOnClickListener {
+            animateButtonClick(buttonSave)
             showSaveOptions()
         }
 
         // New drawing button
         buttonNew.setOnClickListener {
+            animateButtonClick(buttonNew)
             startNewDrawing()
         }
 
         // Brush button
         buttonBrush.setOnClickListener {
+            animateButtonClick(buttonBrush)
             showSizeChooserDialog("เลือกขนาดแปรง", false)
 
             switchToBrushMode()
@@ -491,11 +524,18 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
 
         // Erase button
         buttonErase.setOnClickListener {
+            animateButtonClick(buttonErase)
             switchToEraserMode()
         }
 
         // Update initial button states
         //updateToolButtons()
+    }
+
+    private fun animateButtonClick(view: View) {
+        YoYo.with(Techniques.Pulse)
+            .duration(300)
+            .playOn(view)
     }
 
     private fun switchToBrushMode() {
@@ -628,6 +668,13 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
                 updateScoreDisplay()
 
                 showDrawingFeedback(isCorrect, accuracy, pointsEarned)
+                
+                // Voice feedback
+                if (accuracy > 0.8f) {
+                    speak("เก่งมากเลยค่ะ ศิลปินตัวน้อย")
+                } else {
+                    speak("ระบายสีสวยจังเลย")
+                }
 
                 // Show special reward occasionally
                 if (accuracy > 0.8f && (0..3).random() == 0) {
@@ -635,6 +682,7 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
                 }
             } else {
                 showDrawingFeedback(isCorrect, accuracy, 0)
+                speak("พยายามเข้านะคะ")
             }
         }
     }
@@ -660,26 +708,54 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
             "ไม่เป็นไร! 😊\nลองใหม่อีกครั้ง"
         }
 
+        // Animate score text
+        YoYo.with(Techniques.Tada)
+            .duration(700)
+            .playOn(textScore)
+
         showSuccessMessage(message)
     }
 
     private fun showColorSelection(colorHex: String) {
         val colorName = colorMap[colorHex] ?: "🎨 สีสวย"
         showQuickMessage(colorName)
+        
+        // Speak color name
+        val voiceName = colorName.replace("🔴 ", "").replace("🟠 ", "")
+            .replace("🟡 ", "").replace("🟢 ", "").replace("🔵 ", "")
+            .replace("🟣 ", "").replace("💖 ", "").replace("🟤 ", "")
+            .replace("⚫ ", "").replace("⚪ ", "")
+        speak("เลือก $voiceName")
     }
 
     private fun showWelcomeMessage() {
         Handler(Looper.getMainLooper()).postDelayed({
-            showQuickMessage("ยินดีต้อนรับ! 🎨 มาลองระบายสีกันเถอะ!")
+            showTemporaryTips("ยินดีต้อนรับ! 🎨 มาลองระบายสีกันเถอะ!")
+            
+            // Animate mascot to say hello
+            YoYo.with(Techniques.BounceInUp)
+                .duration(1000)
+                .playOn(imageMascot)
         }, 500)
     }
 
     private fun showTemporaryTips(message: String) {
         textTips.text = message
-        textTips.visibility = View.VISIBLE
+        layoutTips.visibility = View.VISIBLE
+        
+        YoYo.with(Techniques.Pulse)
+            .duration(1000)
+            .repeat(2)
+            .playOn(imageMascot)
+
         Handler(Looper.getMainLooper()).postDelayed({
-            textTips.visibility = View.GONE
-        }, 3000)
+            YoYo.with(Techniques.FadeOut)
+                .duration(500)
+                .playOn(layoutTips)
+            Handler(Looper.getMainLooper()).postDelayed({
+                layoutTips.visibility = View.GONE
+            }, 500)
+        }, 4000)
     }
 
     private fun showQuickMessage(message: String) {
@@ -699,7 +775,13 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
             "🚀 สุดยอดฝีมือ!",
             "⭐ ดาวเด่นแห่งศิลปะ!"
         )
-        showSuccessMessage(rewards.random())
+        
+        showTemporaryTips(rewards.random())
+        
+        // Extra celebration with mascot
+        YoYo.with(Techniques.Swing)
+            .duration(1000)
+            .playOn(imageMascot)
     }
 
     private fun updateScoreDisplay() {
@@ -923,6 +1005,8 @@ class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultLis
     override fun onDestroy() {
         super.onDestroy()
         timer.cancel()
+        tts?.stop()
+        tts?.shutdown()
         // Clean up resources
         mDrawingView.cleanup()
     }

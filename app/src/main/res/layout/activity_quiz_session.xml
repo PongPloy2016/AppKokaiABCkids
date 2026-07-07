@@ -176,20 +176,38 @@
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvOption1"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:paddingHorizontal="8dp"
-                        android:text="A"
-                        android:textColor="@color/color_red"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:maxLines="2"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="14sp"
-                        android:autoSizeMaxTextSize="28sp" />
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/ivOption1"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:scaleType="fitCenter"
+                            tools:src="@drawable/e_a" />
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <TextView
+                            android:id="@+id/tvOption1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:text="A"
+                            android:textColor="@color/color_red"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="12sp"
+                            android:autoSizeMaxTextSize="24sp" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/ivResult1"
@@ -230,20 +248,38 @@
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvOption2"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:paddingHorizontal="8dp"
-                        android:text="B"
-                        android:textColor="@color/color_blue"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:maxLines="2"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="14sp"
-                        android:autoSizeMaxTextSize="28sp" />
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/ivOption2"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:scaleType="fitCenter"
+                            tools:src="@drawable/e_b" />
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <TextView
+                            android:id="@+id/tvOption2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:text="B"
+                            android:textColor="@color/color_blue"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="12sp"
+                            android:autoSizeMaxTextSize="24sp" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/ivResult2"
@@ -293,20 +329,38 @@
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvOption3"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:paddingHorizontal="8dp"
-                        android:text="C"
-                        android:textColor="@color/color_green"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:maxLines="2"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="14sp"
-                        android:autoSizeMaxTextSize="28sp" />
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/ivOption3"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:scaleType="fitCenter"
+                            tools:src="@drawable/e_c" />
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <TextView
+                            android:id="@+id/tvOption3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:text="C"
+                            android:textColor="@color/color_green"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="12sp"
+                            android:autoSizeMaxTextSize="24sp" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/ivResult3"
@@ -347,20 +401,38 @@
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvOption4"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:paddingHorizontal="8dp"
-                        android:text="D"
-                        android:textColor="@color/color_orange"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:maxLines="2"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="14sp"
-                        android:autoSizeMaxTextSize="28sp" />
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/ivOption4"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:scaleType="fitCenter"
+                            tools:src="@drawable/e_d" />
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <TextView
+                            android:id="@+id/tvOption4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:text="D"
+                            android:textColor="@color/color_orange"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="12sp"
+                            android:autoSizeMaxTextSize="24sp" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/ivResult4"
@@ -380,7 +452,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="32dp"
         android:background="@drawable/quiz_btn_next_bg"
         android:paddingVertical="14dp"
         android:text="ข้อถัดไป ▶"

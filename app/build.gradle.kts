@@ -19,8 +19,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         targetSdk = 35
-        versionCode = 38
-        versionName = "2.1.0"
+        versionCode = 39
+        versionName = "2.2.0"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
@@ -99,6 +99,7 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
     // Ads
     implementation("com.google.android.gms:play-services-ads:23.1.0")

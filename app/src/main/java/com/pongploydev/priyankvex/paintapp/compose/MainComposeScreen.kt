@@ -21,6 +21,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -83,14 +84,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.pongploydev.priyankvex.paintapp.R
+import com.pongploydev.priyankvex.paintapp.activity.AbcMatchGameActivity
 import com.pongploydev.priyankvex.paintapp.activity.KidsWebViewActivity
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.QuizActivity
+import com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
 import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
 import com.pongploydev.videowatchfeature.utils.ads.InterstitialAdManager
+import com.pongploydev.livefeature.LiveListActivity
 import kotlinx.coroutines.delay
 
 // สีสันสำหรับเด็กๆ
@@ -922,6 +926,17 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
                     translationY = floatOffset
                     rotationZ = if (isClicked) 2f else 0f
                 }
+                .then(
+                    if (item.isLive) {
+                        Modifier.border(
+                            width = 4.dp,
+                            brush = Brush.sweepGradient(
+                                listOf(Color.Red, Color.White, Color.Blue, Color.Red)
+                            ),
+                            shape = RoundedCornerShape(32.dp)
+                        )
+                    } else Modifier
+                )
                 .clickable {
                     isClicked = true
                     onClick()
@@ -943,20 +958,35 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         border = androidx.compose.foundation.BorderStroke(4.dp, Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            PulsingImage(
-                painter = painterResource(id = item.iconRes),
-                contentDescription = item.title,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = 24.dp,
-                                topEnd = 24.dp
+            Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                if (item.isLive) {
+                    KidsTvThailandLogo(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF2D3047))
+                    )
+                    LiveBadge(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                    )
+                } else {
+                    PulsingImage(
+                        painter = painterResource(id = item.iconRes),
+                        contentDescription = item.title,
+                        modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = 24.dp,
+                                    topEnd = 24.dp
+                                )
                             )
-                        )
-            )
+                    )
+                }
+            }
 
             Text(
                 text = item.title,
@@ -1041,6 +1071,17 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
                     translationX = slideOffset.value + pressOffset.value
                     translationY = pressOffset.value * 0.5f
                 }
+                .then(
+                    if (item.isLive) {
+                        Modifier.border(
+                            width = 2.dp,
+                            brush = Brush.linearGradient(
+                                listOf(Color.Red, Color.White, Color.Blue)
+                            ),
+                            shape = RoundedCornerShape(32.dp)
+                        )
+                    } else Modifier
+                )
                 .clickable {
                     isClicked = true
                     onClick()
@@ -1062,20 +1103,35 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
         border = androidx.compose.foundation.BorderStroke(4.dp, Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            FadeInImage(
-                painter = painterResource(id = item.iconRes),
-                contentDescription = item.title,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = 24.dp,
-                                topEnd = 24.dp
+            Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                if (item.isLive) {
+                    KidsTvThailandLogo(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF2D3047))
+                    )
+                    LiveBadge(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                    )
+                } else {
+                    FadeInImage(
+                        painter = painterResource(id = item.iconRes),
+                        contentDescription = item.title,
+                        modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = 24.dp,
+                                    topEnd = 24.dp
+                                )
                             )
-                        )
-            )
+                    )
+                }
+            }
 
             Text(
                 text = item.title,
@@ -1180,6 +1236,148 @@ fun FadeInImage(painter: Painter, contentDescription: String?, modifier: Modifie
     }
 }
 
+@Composable
+fun KidsTvThailandLogo(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "logo animation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -5f,
+        targetValue = 5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logo rotation"
+    )
+
+    Box(
+        modifier = modifier.graphicsLayer {
+            rotationY = rotation
+            cameraDistance = 12f * density
+        },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // "Kids" Row with 3D blocks
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                LogoBlock(char = "K", color = Color(0xFF0055AA))
+                LogoBlock(char = "i", color = Color(0xFF0055AA))
+                LogoBlock(char = "d", color = Color(0xFF0055AA))
+                LogoBlock(char = "s", color = Color(0xFF0055AA))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // "tv" blocks
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                LogoBlock(
+                    char = "t",
+                    color = Color.White,
+                    bgColor = Color(0xFF003388),
+                    size = 45.dp
+                )
+                LogoBlock(
+                    char = "v",
+                    color = Color.White,
+                    bgColor = Color(0xFF003388),
+                    size = 45.dp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // "CHANNEL Thailand" banner
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.White, Color(0xFFE0E0E0))
+                        )
+                    )
+                    .border(2.dp, Color(0xFF003388), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "CHANNEL Thailand",
+                    color = Color(0xFF003388),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LogoBlock(
+    char: String,
+    color: Color,
+    bgColor: Color = Color.White,
+    size: androidx.compose.ui.unit.Dp = 40.dp
+) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .graphicsLayer {
+                shadowElevation = 8f
+                shape = RoundedCornerShape(8.dp)
+                clip = true
+            }
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color.Red, bgColor)
+                )
+            )
+            .border(2.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = char,
+            color = color,
+            fontSize = (size.value * 0.7f).sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun LiveBadge(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "live badge")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.Red.copy(alpha = alpha))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Color.White)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "LIVE",
+            color = Color.White,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
 fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
     this.then(
         Modifier.clickable(
@@ -1188,7 +1386,13 @@ fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
         ) { onClick() }
     )
 
-data class MenuItem(val id: Int, val title: String, val iconRes: Int, val targetActivity: Int)
+data class MenuItem(
+    val id: Int,
+    val title: String,
+    val iconRes: Int,
+    val targetActivity: Int,
+    val isLive: Boolean = false
+)
 
 enum class ViewMode {
     GRID,
@@ -1197,12 +1401,15 @@ enum class ViewMode {
 
 private fun getMenuItems(): List<MenuItem> {
     return listOf(
-        MenuItem(1, "ฝึกอ่าน", R.drawable.doing_learn_01, 0),
-        MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one, 1),
-        MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two, 2),
-        MenuItem(4, "กิจกรรมเสริม", R.drawable.card_three, 3),
-        MenuItem(5, "บทความน่ารู้", R.drawable.leraning_kid, 4),
-        MenuItem(6, "แบบทดสอบ", R.drawable.card_three_two, 5),
+        MenuItem(1, "ฝึกอ่าน",         R.drawable.doing_learn_01,  0),
+        MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one,        1),
+        MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two,        2),
+        MenuItem(4, "กิจกรรมเสริม",   R.drawable.card_three,      3),
+        MenuItem(5, "บทความน่ารู้",   R.drawable.leraning_kid,    4),
+        MenuItem(6, "แบบทดสอบ",      R.drawable.card_three_two,  5),
+        // ── เมนูใหม่ ──
+        MenuItem(7, "ดู DLTV Live",   R.drawable.card_four,       6, isLive = true),
+        MenuItem(8, "วาดระบายสี",    R.drawable.home_color,      7),
     )
 }
 
@@ -1244,6 +1451,18 @@ private fun handleItemClickDirectly(
             val intent = Intent(context, QuizActivity::class.java)
             context.startActivity(intent)
         }
+
+        // ── เมนูใหม่: ดู DLTV Live ──
+        6 -> {
+            val intent = Intent(context, LiveListActivity::class.java)
+            context.startActivity(intent)
+        }
+
+        // ── เมนูใหม่: วาดระบายสี (ColoringGameActivity) ──
+        7 -> {
+            val intent = Intent(context, ColoringGameActivity::class.java)
+            context.startActivity(intent)
+        }
     }
 }
 
@@ -1259,6 +1478,7 @@ private fun showKidsActivitiesDialog(context: Context) {
     val activities =
         listOf(
             "🎨 ระบายสีสร้างสรรค์" to { startColoringActivity(context) },
+            "🔤 เกมจับคู่ตัวอักษร" to { startAbcMatchGame(context) }
         )
 
     val layout =
@@ -1308,6 +1528,11 @@ private fun showKidsActivitiesDialog(context: Context) {
 
 private fun startColoringActivity(context: Context) {
     val intent = Intent(context, ColoringGameActivity::class.java)
+    context.startActivity(intent)
+}
+
+private fun startAbcMatchGame(context: Context) {
+    val intent = Intent(context, AbcMatchGameActivity::class.java)
     context.startActivity(intent)
 }
 

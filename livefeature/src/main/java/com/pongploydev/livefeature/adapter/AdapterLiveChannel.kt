@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.pongploydev.livefeature.R
 import com.pongploydev.livefeature.databinding.ItemLiveChannelBinding
 import com.pongploydev.livefeature.model.DltvChannel
 
@@ -20,6 +22,12 @@ class AdapterLiveChannel(
             binding.tvChannelName.text = channel.displayName
             binding.tvChannelGrade.text = channel.grade
             binding.tvChannelShortDesc.text = channel.shortDescription
+
+            // Load Channel Logo
+            Glide.with(binding.root.context)
+                .load(channel.logo)
+                .placeholder(R.drawable.ic_live)
+                .into(binding.imgChannelLogo)
 
             // Pulse animation for live dot
             val anim = AlphaAnimation(1.0f, 0.2f).apply {

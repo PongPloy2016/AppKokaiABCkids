@@ -137,13 +137,15 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_new"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="4dp"
                         android:text="ภาพใหม่"
-                        app:iconSize="40dp"
-                        app:icon="@drawable/ic_color_picker"
+                        android:textColor="@color/white"
+                        app:backgroundTint="@null"
+                        android:background="@drawable/button_cartoon_style"
+                        app:iconSize="32dp"
+                        app:icon="@drawable/ic_new"
                         app:iconGravity="top" />
 
                     <com.google.android.material.button.MaterialButtonToggleGroup
@@ -186,24 +188,28 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/button_color_picker"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="4dp"
-                            app:iconSize="20dp"
                             android:text="เลือกสี"
+                            android:textColor="@color/white"
+                            app:backgroundTint="@null"
+                            android:background="@drawable/button_cartoon_style"
+                            app:iconSize="20dp"
                             app:icon="@drawable/ic_color_picker"
                             app:iconGravity="start" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/button_save"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="4dp"
+                            android:text="บันทึก"
+                            android:textColor="@color/white"
+                            app:backgroundTint="@null"
+                            android:background="@drawable/button_green_cartoon"
                             app:iconSize="20dp"
-                            android:text="บันทึกรูป"
-                            app:icon="@drawable/ic_color_picker"
+                            app:icon="@drawable/ic_save"
                             app:iconGravity="start" />
                     </LinearLayout>
 
@@ -422,18 +428,35 @@
             android:contentDescription="ภาพตัวอย่าง" />
 
         <!-- Drawing Tips Overlay -->
-        <TextView
-            android:id="@+id/text_tips"
+        <LinearLayout
+            android:id="@+id/layout_tips"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🎨 วาดภาพให้สวยงาม!\nใช้สีต่างๆ ระบายให้เต็มภาพ"
-            android:textSize="16sp"
-            android:textColor="#60000000"
-            android:background="#80FFFFFF"
-            android:padding="12dp"
+            android:orientation="vertical"
             android:gravity="center"
             android:layout_gravity="center"
-            android:visibility="gone" />
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/image_mascot"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/painter"
+                android:contentDescription="Mascot" />
+
+            <TextView
+                android:id="@+id/text_tips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎨 วาดภาพให้สวยงาม!\nใช้สีต่างๆ ระบายให้เต็มภาพ"
+                android:textSize="18sp"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:background="@drawable/speech_bubble"
+                android:padding="16dp"
+                android:gravity="center"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
 
     </FrameLayout>
 

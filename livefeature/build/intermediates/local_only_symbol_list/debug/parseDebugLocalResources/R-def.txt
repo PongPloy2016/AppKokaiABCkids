@@ -1,0 +1,29 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_live
+drawable pulse_dot
+id btnBack
+id btnRefreshStream
+id btnRetry
+id cardHeader
+id cardInfo
+id cardPlayer
+id headerLiveDot
+id imgChannelLogo
+id layoutError
+id liveDot
+id liveIndicatorDot
+id playerView
+id progressBar
+id recyclerViewChannels
+id tvChannelGrade
+id tvChannelName
+id tvChannelShortDesc
+id tvChannelTitle
+id tvInfoDescription
+id tvInfoTitle
+id tvLiveLabel
+layout activity_detail_live
+layout fragment_live
+layout fragment_live_list
+layout item_live_channel

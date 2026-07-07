@@ -1,0 +1,26 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.pongploydev.livefeature" >
+4
+5    <uses-sdk android:minSdkVersion="21" />
+6
+7    <uses-permission android:name="android.permission.INTERNET" />
+7-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:3:5-67
+7-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:3:22-64
+8    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+8-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:4:5-79
+8-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:4:22-76
+9
+10    <application>
+10-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:5:5-10:19
+11        <activity
+11-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:6:9-9:51
+12            android:name="com.pongploydev.livefeature.DetailLiveActivity"
+12-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:7:13-47
+13            android:exported="false"
+13-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:8:13-37
+14            android:screenOrientation="portrait" />
+14-->/Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:9:13-49
+15    </application>
+16
+17</manifest>

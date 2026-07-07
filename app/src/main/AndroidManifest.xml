@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.pongploydev.priyankvex.paintapp">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
@@ -166,8 +167,34 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Material3.Light.NoActionBar" />
 
+        <!-- livefeature: รายการช่อง DLTV Live -->
+        <activity
+            android:name="com.pongploydev.livefeature.LiveListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+
+        <!-- livefeature: รายละเอียด/เล่นวิดีโอของแต่ละช่อง -->
+        <activity
+            android:name="com.pongploydev.livefeature.DetailLiveActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+
         <activity
             android:name=".activity.QuizSessionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+
+        <activity
+            android:name=".activity.QuizLeaderboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+
+        <activity
+            android:name=".activity.AbcMatchGameActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Material3.Light.NoActionBar" />
