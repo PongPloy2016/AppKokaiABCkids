@@ -13,9 +13,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.widget.NestedScrollView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.pongploydev.livefeature.R;
 import java.lang.NullPointerException;
 import java.lang.Override;
@@ -23,25 +30,28 @@ import java.lang.String;
 
 public final class ActivityDetailLiveBinding implements ViewBinding {
   @NonNull
-  private final ConstraintLayout rootView;
+  private final CoordinatorLayout rootView;
 
   @NonNull
-  public final ImageButton btnBack;
+  public final AppBarLayout appBar;
 
   @NonNull
-  public final Button btnRefreshStream;
+  public final ImageButton btnFullscreen;
+
+  @NonNull
+  public final ImageButton btnPip;
+
+  @NonNull
+  public final MaterialButton btnRefreshStream;
 
   @NonNull
   public final Button btnRetry;
 
   @NonNull
-  public final CardView cardHeader;
+  public final MaterialCardView infoCardView;
 
   @NonNull
-  public final CardView cardInfo;
-
-  @NonNull
-  public final CardView cardPlayer;
+  public final ShapeableImageView ivChannelLogo;
 
   @NonNull
   public final LinearLayout layoutError;
@@ -50,50 +60,79 @@ public final class ActivityDetailLiveBinding implements ViewBinding {
   public final View liveIndicatorDot;
 
   @NonNull
+  public final LinearLayout mainContent;
+
+  @NonNull
+  public final CardView playerCardView;
+
+  @NonNull
+  public final ConstraintLayout playerContainer;
+
+  @NonNull
   public final StyledPlayerView playerView;
 
   @NonNull
   public final ProgressBar progressBar;
 
   @NonNull
+  public final LinearLayout rootContentLayout;
+
+  @NonNull
+  public final NestedScrollView scrollView;
+
+  @NonNull
+  public final MaterialToolbar toolbar;
+
+  @NonNull
+  public final TextView tvChannelNum;
+
+  @NonNull
   public final TextView tvChannelTitle;
+
+  @NonNull
+  public final TextView tvGrade;
 
   @NonNull
   public final TextView tvInfoDescription;
 
-  @NonNull
-  public final TextView tvInfoTitle;
-
-  @NonNull
-  public final TextView tvLiveLabel;
-
-  private ActivityDetailLiveBinding(@NonNull ConstraintLayout rootView,
-      @NonNull ImageButton btnBack, @NonNull Button btnRefreshStream, @NonNull Button btnRetry,
-      @NonNull CardView cardHeader, @NonNull CardView cardInfo, @NonNull CardView cardPlayer,
+  private ActivityDetailLiveBinding(@NonNull CoordinatorLayout rootView,
+      @NonNull AppBarLayout appBar, @NonNull ImageButton btnFullscreen, @NonNull ImageButton btnPip,
+      @NonNull MaterialButton btnRefreshStream, @NonNull Button btnRetry,
+      @NonNull MaterialCardView infoCardView, @NonNull ShapeableImageView ivChannelLogo,
       @NonNull LinearLayout layoutError, @NonNull View liveIndicatorDot,
-      @NonNull StyledPlayerView playerView, @NonNull ProgressBar progressBar,
-      @NonNull TextView tvChannelTitle, @NonNull TextView tvInfoDescription,
-      @NonNull TextView tvInfoTitle, @NonNull TextView tvLiveLabel) {
+      @NonNull LinearLayout mainContent, @NonNull CardView playerCardView,
+      @NonNull ConstraintLayout playerContainer, @NonNull StyledPlayerView playerView,
+      @NonNull ProgressBar progressBar, @NonNull LinearLayout rootContentLayout,
+      @NonNull NestedScrollView scrollView, @NonNull MaterialToolbar toolbar,
+      @NonNull TextView tvChannelNum, @NonNull TextView tvChannelTitle, @NonNull TextView tvGrade,
+      @NonNull TextView tvInfoDescription) {
     this.rootView = rootView;
-    this.btnBack = btnBack;
+    this.appBar = appBar;
+    this.btnFullscreen = btnFullscreen;
+    this.btnPip = btnPip;
     this.btnRefreshStream = btnRefreshStream;
     this.btnRetry = btnRetry;
-    this.cardHeader = cardHeader;
-    this.cardInfo = cardInfo;
-    this.cardPlayer = cardPlayer;
+    this.infoCardView = infoCardView;
+    this.ivChannelLogo = ivChannelLogo;
     this.layoutError = layoutError;
     this.liveIndicatorDot = liveIndicatorDot;
+    this.mainContent = mainContent;
+    this.playerCardView = playerCardView;
+    this.playerContainer = playerContainer;
     this.playerView = playerView;
     this.progressBar = progressBar;
+    this.rootContentLayout = rootContentLayout;
+    this.scrollView = scrollView;
+    this.toolbar = toolbar;
+    this.tvChannelNum = tvChannelNum;
     this.tvChannelTitle = tvChannelTitle;
+    this.tvGrade = tvGrade;
     this.tvInfoDescription = tvInfoDescription;
-    this.tvInfoTitle = tvInfoTitle;
-    this.tvLiveLabel = tvLiveLabel;
   }
 
   @Override
   @NonNull
-  public ConstraintLayout getRoot() {
+  public CoordinatorLayout getRoot() {
     return rootView;
   }
 
@@ -118,14 +157,26 @@ public final class ActivityDetailLiveBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
-      id = R.id.btnBack;
-      ImageButton btnBack = ViewBindings.findChildViewById(rootView, id);
-      if (btnBack == null) {
+      id = R.id.appBar;
+      AppBarLayout appBar = ViewBindings.findChildViewById(rootView, id);
+      if (appBar == null) {
+        break missingId;
+      }
+
+      id = R.id.btnFullscreen;
+      ImageButton btnFullscreen = ViewBindings.findChildViewById(rootView, id);
+      if (btnFullscreen == null) {
+        break missingId;
+      }
+
+      id = R.id.btnPip;
+      ImageButton btnPip = ViewBindings.findChildViewById(rootView, id);
+      if (btnPip == null) {
         break missingId;
       }
 
       id = R.id.btnRefreshStream;
-      Button btnRefreshStream = ViewBindings.findChildViewById(rootView, id);
+      MaterialButton btnRefreshStream = ViewBindings.findChildViewById(rootView, id);
       if (btnRefreshStream == null) {
         break missingId;
       }
@@ -136,21 +187,15 @@ public final class ActivityDetailLiveBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.cardHeader;
-      CardView cardHeader = ViewBindings.findChildViewById(rootView, id);
-      if (cardHeader == null) {
+      id = R.id.infoCardView;
+      MaterialCardView infoCardView = ViewBindings.findChildViewById(rootView, id);
+      if (infoCardView == null) {
         break missingId;
       }
 
-      id = R.id.cardInfo;
-      CardView cardInfo = ViewBindings.findChildViewById(rootView, id);
-      if (cardInfo == null) {
-        break missingId;
-      }
-
-      id = R.id.cardPlayer;
-      CardView cardPlayer = ViewBindings.findChildViewById(rootView, id);
-      if (cardPlayer == null) {
+      id = R.id.ivChannelLogo;
+      ShapeableImageView ivChannelLogo = ViewBindings.findChildViewById(rootView, id);
+      if (ivChannelLogo == null) {
         break missingId;
       }
 
@@ -166,6 +211,24 @@ public final class ActivityDetailLiveBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.mainContent;
+      LinearLayout mainContent = ViewBindings.findChildViewById(rootView, id);
+      if (mainContent == null) {
+        break missingId;
+      }
+
+      id = R.id.playerCardView;
+      CardView playerCardView = ViewBindings.findChildViewById(rootView, id);
+      if (playerCardView == null) {
+        break missingId;
+      }
+
+      id = R.id.playerContainer;
+      ConstraintLayout playerContainer = ViewBindings.findChildViewById(rootView, id);
+      if (playerContainer == null) {
+        break missingId;
+      }
+
       id = R.id.playerView;
       StyledPlayerView playerView = ViewBindings.findChildViewById(rootView, id);
       if (playerView == null) {
@@ -178,9 +241,39 @@ public final class ActivityDetailLiveBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.rootContentLayout;
+      LinearLayout rootContentLayout = ViewBindings.findChildViewById(rootView, id);
+      if (rootContentLayout == null) {
+        break missingId;
+      }
+
+      id = R.id.scrollView;
+      NestedScrollView scrollView = ViewBindings.findChildViewById(rootView, id);
+      if (scrollView == null) {
+        break missingId;
+      }
+
+      id = R.id.toolbar;
+      MaterialToolbar toolbar = ViewBindings.findChildViewById(rootView, id);
+      if (toolbar == null) {
+        break missingId;
+      }
+
+      id = R.id.tvChannelNum;
+      TextView tvChannelNum = ViewBindings.findChildViewById(rootView, id);
+      if (tvChannelNum == null) {
+        break missingId;
+      }
+
       id = R.id.tvChannelTitle;
       TextView tvChannelTitle = ViewBindings.findChildViewById(rootView, id);
       if (tvChannelTitle == null) {
+        break missingId;
+      }
+
+      id = R.id.tvGrade;
+      TextView tvGrade = ViewBindings.findChildViewById(rootView, id);
+      if (tvGrade == null) {
         break missingId;
       }
 
@@ -190,21 +283,11 @@ public final class ActivityDetailLiveBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.tvInfoTitle;
-      TextView tvInfoTitle = ViewBindings.findChildViewById(rootView, id);
-      if (tvInfoTitle == null) {
-        break missingId;
-      }
-
-      id = R.id.tvLiveLabel;
-      TextView tvLiveLabel = ViewBindings.findChildViewById(rootView, id);
-      if (tvLiveLabel == null) {
-        break missingId;
-      }
-
-      return new ActivityDetailLiveBinding((ConstraintLayout) rootView, btnBack, btnRefreshStream,
-          btnRetry, cardHeader, cardInfo, cardPlayer, layoutError, liveIndicatorDot, playerView,
-          progressBar, tvChannelTitle, tvInfoDescription, tvInfoTitle, tvLiveLabel);
+      return new ActivityDetailLiveBinding((CoordinatorLayout) rootView, appBar, btnFullscreen,
+          btnPip, btnRefreshStream, btnRetry, infoCardView, ivChannelLogo, layoutError,
+          liveIndicatorDot, mainContent, playerCardView, playerContainer, playerView, progressBar,
+          rootContentLayout, scrollView, toolbar, tvChannelNum, tvChannelTitle, tvGrade,
+          tvInfoDescription);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

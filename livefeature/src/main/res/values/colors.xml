@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kid_primary">#4CAF50</color>
+    <color name="kid_secondary">#4FC3F7</color>
+    <color name="kid_background">#F5F5F5</color>
+    <color name="kid_live_red">#E53935</color>
+    <color name="kid_card_bg">#FFFFFF</color>
+    <color name="kid_text_primary">#212121</color>
+    <color name="kid_text_secondary">#757575</color>
+</resources>

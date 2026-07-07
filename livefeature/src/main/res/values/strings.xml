@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_detail_title">Live Detail</string>
+    <string name="live_label">LIVE</string>
+    <string name="about_live">เกี่ยวกับรายการนี้</string>
+    <string name="refresh_stream">รีเฟรชสัญญาณภาพ</string>
+    <string name="error_loading_live">ไม่สามารถโหลดการถ่ายทอดสดได้</string>
+    <string name="retry">ลองใหม่</string>
+    <string name="channel_details">รายละเอียดช่อง</string>
+    <string name="channel_number">Ch %1$d</string>
+</resources>
