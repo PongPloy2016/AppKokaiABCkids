@@ -10,11 +10,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
 import com.pongploydev.livefeature.R;
 import java.lang.NullPointerException;
 import java.lang.Override;
@@ -22,22 +23,13 @@ import java.lang.String;
 
 public final class FragmentLiveBinding implements ViewBinding {
   @NonNull
-  private final ConstraintLayout rootView;
+  private final CoordinatorLayout rootView;
 
   @NonNull
-  public final Button btnRefreshStream;
+  public final MaterialButton btnRefreshStream;
 
   @NonNull
   public final Button btnRetry;
-
-  @NonNull
-  public final CardView cardHeader;
-
-  @NonNull
-  public final CardView cardInfo;
-
-  @NonNull
-  public final CardView cardPlayer;
 
   @NonNull
   public final LinearLayout layoutError;
@@ -52,34 +44,30 @@ public final class FragmentLiveBinding implements ViewBinding {
   public final ProgressBar progressBar;
 
   @NonNull
-  public final TextView tvChannelTitle;
+  public final MaterialToolbar toolbar;
 
   @NonNull
-  public final TextView tvLiveLabel;
+  public final TextView tvChannelTitle;
 
-  private FragmentLiveBinding(@NonNull ConstraintLayout rootView, @NonNull Button btnRefreshStream,
-      @NonNull Button btnRetry, @NonNull CardView cardHeader, @NonNull CardView cardInfo,
-      @NonNull CardView cardPlayer, @NonNull LinearLayout layoutError,
-      @NonNull View liveIndicatorDot, @NonNull StyledPlayerView playerView,
-      @NonNull ProgressBar progressBar, @NonNull TextView tvChannelTitle,
-      @NonNull TextView tvLiveLabel) {
+  private FragmentLiveBinding(@NonNull CoordinatorLayout rootView,
+      @NonNull MaterialButton btnRefreshStream, @NonNull Button btnRetry,
+      @NonNull LinearLayout layoutError, @NonNull View liveIndicatorDot,
+      @NonNull StyledPlayerView playerView, @NonNull ProgressBar progressBar,
+      @NonNull MaterialToolbar toolbar, @NonNull TextView tvChannelTitle) {
     this.rootView = rootView;
     this.btnRefreshStream = btnRefreshStream;
     this.btnRetry = btnRetry;
-    this.cardHeader = cardHeader;
-    this.cardInfo = cardInfo;
-    this.cardPlayer = cardPlayer;
     this.layoutError = layoutError;
     this.liveIndicatorDot = liveIndicatorDot;
     this.playerView = playerView;
     this.progressBar = progressBar;
+    this.toolbar = toolbar;
     this.tvChannelTitle = tvChannelTitle;
-    this.tvLiveLabel = tvLiveLabel;
   }
 
   @Override
   @NonNull
-  public ConstraintLayout getRoot() {
+  public CoordinatorLayout getRoot() {
     return rootView;
   }
 
@@ -105,7 +93,7 @@ public final class FragmentLiveBinding implements ViewBinding {
     int id;
     missingId: {
       id = R.id.btnRefreshStream;
-      Button btnRefreshStream = ViewBindings.findChildViewById(rootView, id);
+      MaterialButton btnRefreshStream = ViewBindings.findChildViewById(rootView, id);
       if (btnRefreshStream == null) {
         break missingId;
       }
@@ -113,24 +101,6 @@ public final class FragmentLiveBinding implements ViewBinding {
       id = R.id.btnRetry;
       Button btnRetry = ViewBindings.findChildViewById(rootView, id);
       if (btnRetry == null) {
-        break missingId;
-      }
-
-      id = R.id.cardHeader;
-      CardView cardHeader = ViewBindings.findChildViewById(rootView, id);
-      if (cardHeader == null) {
-        break missingId;
-      }
-
-      id = R.id.cardInfo;
-      CardView cardInfo = ViewBindings.findChildViewById(rootView, id);
-      if (cardInfo == null) {
-        break missingId;
-      }
-
-      id = R.id.cardPlayer;
-      CardView cardPlayer = ViewBindings.findChildViewById(rootView, id);
-      if (cardPlayer == null) {
         break missingId;
       }
 
@@ -158,21 +128,20 @@ public final class FragmentLiveBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.toolbar;
+      MaterialToolbar toolbar = ViewBindings.findChildViewById(rootView, id);
+      if (toolbar == null) {
+        break missingId;
+      }
+
       id = R.id.tvChannelTitle;
       TextView tvChannelTitle = ViewBindings.findChildViewById(rootView, id);
       if (tvChannelTitle == null) {
         break missingId;
       }
 
-      id = R.id.tvLiveLabel;
-      TextView tvLiveLabel = ViewBindings.findChildViewById(rootView, id);
-      if (tvLiveLabel == null) {
-        break missingId;
-      }
-
-      return new FragmentLiveBinding((ConstraintLayout) rootView, btnRefreshStream, btnRetry,
-          cardHeader, cardInfo, cardPlayer, layoutError, liveIndicatorDot, playerView, progressBar,
-          tvChannelTitle, tvLiveLabel);
+      return new FragmentLiveBinding((CoordinatorLayout) rootView, btnRefreshStream, btnRetry,
+          layoutError, liveIndicatorDot, playerView, progressBar, toolbar, tvChannelTitle);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

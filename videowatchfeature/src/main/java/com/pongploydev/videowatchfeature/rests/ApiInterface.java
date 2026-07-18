@@ -19,7 +19,7 @@ public interface ApiInterface {
     String AGENT = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
     @Headers({AGENT})
-    @GET("api/api.php")
+    @GET("api/videolist")
     Call<CallbackListVideo> getVideos(
             @Header("Cache-Control") String cacheControl,
             @Query("get_videos") String get_videos,

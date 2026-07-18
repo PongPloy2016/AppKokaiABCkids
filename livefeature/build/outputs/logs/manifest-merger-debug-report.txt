@@ -1,7 +1,7 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:2:1-11:12
-INJECTED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:2:1-11:12
+ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:2:1-12:12
+INJECTED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:2:1-12:12
 	package
 		INJECTED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml
 	xmlns:android
@@ -15,13 +15,15 @@ ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/
 	android:name
 		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:4:22-76
 application
-ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:5:5-10:19
+ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:5:5-11:19
 activity#com.pongploydev.livefeature.DetailLiveActivity
-ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:6:9-9:51
-	android:screenOrientation
-		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:9:13-49
+ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:6:9-10:55
 	android:exported
-		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:8:13-37
+		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:9:13-37
+	android:supportsPictureInPicture
+		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:10:13-52
+	android:configChanges
+		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:8:13-91
 	android:name
 		ADDED from /Users/admin/androidproject2023/Paint-App-Android-master/livefeature/src/main/AndroidManifest.xml:7:13-47
 uses-sdk

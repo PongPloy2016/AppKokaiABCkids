@@ -108,12 +108,8 @@ public class RestAdapter {
                 .hostnameVerifier(new HostnameVerifier() {
                     @Override
                     public boolean verify(String hostname, SSLSession session) {
-                        // Allow both pongploydev.x10.mx and pongploydev.infinityfree.me
-                        if (hostname.equalsIgnoreCase("pongploydev.x10.mx") || 
-                            hostname.equalsIgnoreCase("www.pongploydev.x10.mx") ||
-                            hostname.equalsIgnoreCase("pongploydev.infinityfree.me")) {
-                            return true;
-                        }
+                        // Allow both pongploydev.x10.mx and pongploydev.infinityfree.me and render.com
+
                         return HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, session);
                     }
                 });

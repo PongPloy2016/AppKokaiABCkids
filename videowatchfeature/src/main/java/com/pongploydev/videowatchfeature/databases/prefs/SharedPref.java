@@ -55,7 +55,7 @@ public class SharedPref {
     }
 
     public String getBaseUrl() {
-        return sharedPreferences.getString("base_url", "https://pongploydev.infinityfree.me");
+        return sharedPreferences.getString("base_url", "https://php-laravel-app-hslg.onrender.com");
     }
 
 

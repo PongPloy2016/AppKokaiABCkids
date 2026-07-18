@@ -1465,6 +1465,13 @@ color foreground_material_dark
 color foreground_material_light
 color highlighted_text_material_dark
 color highlighted_text_material_light
+color kid_background
+color kid_card_bg
+color kid_live_red
+color kid_primary
+color kid_secondary
+color kid_text_primary
+color kid_text_secondary
 color m3_appbar_overlay_color
 color m3_assist_chip_icon_tint_color
 color m3_assist_chip_stroke_color
@@ -3039,6 +3046,7 @@ drawable abc_textfield_search_material
 drawable abc_vector_test
 drawable avd_hide_password
 drawable avd_show_password
+drawable bg_kid_gradient
 drawable btn_checkbox_checked_mtrl
 drawable btn_checkbox_checked_to_unchecked_mtrl_animation
 drawable btn_checkbox_unchecked_mtrl
@@ -3303,6 +3311,7 @@ id animateToEnd
 id animateToStart
 id antiClockwise
 id anticipate
+id appBar
 id arc
 id asConfigured
 id async
@@ -3316,16 +3325,14 @@ id bestChoice
 id blocking
 id bottom
 id bounce
-id btnBack
+id btnFullscreen
+id btnPip
 id btnRefreshStream
 id btnRetry
 id buttonPanel
 id callMeasure
 id cancel_action
 id cancel_button
-id cardHeader
-id cardInfo
-id cardPlayer
 id carryVelocity
 id center
 id centerCrop
@@ -3482,6 +3489,7 @@ id immediateStop
 id included
 id indeterminate
 id info
+id infoCardView
 id inspection_slot_table_set
 id invisible
 id inward
@@ -3491,6 +3499,7 @@ id item2
 id item3
 id item4
 id item_touch_helper_previous_elevation
+id ivChannelLogo
 id jumpToEnd
 id jumpToStart
 id labeled
@@ -3507,6 +3516,7 @@ id list_item
 id liveDot
 id liveIndicatorDot
 id m3_side_sheet
+id mainContent
 id marquee
 id masked
 id match_constraint
@@ -3615,6 +3625,8 @@ id path
 id pathRelative
 id percent
 id pin
+id playerCardView
+id playerContainer
 id playerView
 id position
 id postLayout
@@ -3631,6 +3643,7 @@ id right
 id rightToLeft
 id right_icon
 id right_side
+id rootContentLayout
 id rounded
 id row_index_key
 id save_non_transition_alpha
@@ -3721,6 +3734,7 @@ id time
 id title
 id titleDividerNoCustom
 id title_template
+id toolbar
 id top
 id topPanel
 id touch_outside
@@ -3732,11 +3746,11 @@ id transition_transform
 id triangle
 id tvChannelGrade
 id tvChannelName
+id tvChannelNum
 id tvChannelShortDesc
 id tvChannelTitle
+id tvGrade
 id tvInfoDescription
-id tvInfoTitle
-id tvLiveLabel
 id unchecked
 id uniform
 id unlabeled
@@ -4013,6 +4027,7 @@ string abc_searchview_description_voice
 string abc_shareactionprovider_share_with
 string abc_shareactionprovider_share_with_application
 string abc_toolbar_collapse_description
+string about_live
 string appbar_scrolling_view_behavior
 string bottom_sheet_behavior
 string bottomsheet_action_collapse
@@ -4027,6 +4042,8 @@ string call_notification_hang_up_action
 string call_notification_incoming_text
 string call_notification_ongoing_text
 string call_notification_screening_text
+string channel_details
+string channel_number
 string character_counter_content_description
 string character_counter_overflowed_content_description
 string character_counter_pattern
@@ -4038,6 +4055,7 @@ string default_popup_window_title
 string dropdown_menu
 string error_a11y_label
 string error_icon_content_description
+string error_loading_live
 string exo_controls_cc_disabled_description
 string exo_controls_cc_enabled_description
 string exo_controls_custom_playback_speed
@@ -4099,6 +4117,8 @@ string icon_content_description
 string in_progress
 string indeterminate
 string item_view_role_description
+string live_detail_title
+string live_label
 string m3_exceed_max_badge_text_suffix
 string m3_ref_typeface_brand_medium
 string m3_ref_typeface_brand_regular
@@ -4266,6 +4286,8 @@ string path_password_eye_mask_visible
 string path_password_strike_through
 string range_end
 string range_start
+string refresh_stream
+string retry
 string search_menu_title
 string searchbar_scrolling_view_behavior
 string searchview_clear_text_content_description

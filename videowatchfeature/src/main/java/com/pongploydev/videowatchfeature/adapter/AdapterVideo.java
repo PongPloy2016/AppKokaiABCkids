@@ -5,6 +5,7 @@ import static com.pongploydev.videowatchfeature.Constant.VIDEO_LIST_COMPACT;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.PorterDuff;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -205,8 +206,8 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             vItem.lytYouTubeContainer.removeAllViews();
             vItem.imgPlay.setVisibility(View.VISIBLE);
 
-            if (video.video_type != null && video.video_type.equals("youtube")) {
-                if (video.video_thumbnail.equals("")) {
+            if (video.video_type != null && video.video_type.equalsIgnoreCase("youtube")) {
+                if (video.video_thumbnail == null || video.video_thumbnail.equals("")) {
                     if (sharedPref.getVideoViewType() == VIDEO_LIST_COMPACT) {
                         Glide.with(context)
                                 .load(Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_MQ)
@@ -221,18 +222,41 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                                 .into(vItem.videoThumbnail);
                     }
                 } else {
+                    String thumbnailUrl = video.video_thumbnail;
+                    if (!thumbnailUrl.startsWith("http")) {
+                        String baseUrl = sharedPref.getBaseUrl();
+                        if (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                        thumbnailUrl = baseUrl + "/video_image/" + Uri.encode(thumbnailUrl);
+                    } else {
+                        // Handle spaces and special characters in absolute URL
+                        thumbnailUrl = Uri.parse(thumbnailUrl).toString();
+                    }
+                    
                     Glide.with(context)
-                            .load(sharedPref.getBaseUrl() + "/upload/video_image/" + video.video_thumbnail)
+                            .load(thumbnailUrl)
                             .placeholder(R.drawable.ic_thumbnail)
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(vItem.videoThumbnail);
                 }
             } else {
-                Glide.with(context)
-                        .load(sharedPref.getBaseUrl() + "/upload/video_image/" + video.video_thumbnail)
-                        .placeholder(R.drawable.ic_thumbnail)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .into(vItem.videoThumbnail);
+                String thumbnailUrl = video.video_thumbnail;
+                if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
+                    if (!thumbnailUrl.startsWith("http")) {
+                        String baseUrl = sharedPref.getBaseUrl();
+                        if (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                        thumbnailUrl = baseUrl + "/video_image/" + Uri.encode(thumbnailUrl);
+                    } else {
+                        thumbnailUrl = Uri.parse(thumbnailUrl).toString();
+                    }
+
+                    Glide.with(context)
+                            .load(thumbnailUrl)
+                            .placeholder(R.drawable.ic_thumbnail)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .into(vItem.videoThumbnail);
+                } else {
+                    vItem.videoThumbnail.setImageResource(R.drawable.ic_thumbnail);
+                }
             }
 
             vItem.lytParent.setOnClickListener(view -> {

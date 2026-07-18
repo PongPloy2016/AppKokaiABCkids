@@ -12,7 +12,7 @@ class VideoDetailRepositoryImpl(
         return try {
             val cacheControl = if (isRefresh) "no-cache" else null
             val detail = apiInterfaceV1.getVideoDetailV1(cacheControl, id)
-            if (detail.status == 200 && detail.body?.post != null) {
+            if (detail.status == "ok" && (detail.post != null || detail.posts.isNotEmpty())) {
                 Result.success(detail)
             } else {
                 Result.failure(Exception("API returned invalid status or empty data"))

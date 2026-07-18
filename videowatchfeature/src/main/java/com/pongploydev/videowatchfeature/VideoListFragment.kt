@@ -1315,6 +1315,11 @@ class VideoListFragment : Fragment() {
 
     private fun ensureCookieChallengeSolved(onComplete: () -> Unit) {
         val baseUrl = sharedPref.baseUrl
+        if (baseUrl.contains("onrender.com")) {
+            // Render doesn't need cookie challenge
+            onComplete()
+            return
+        }
         val cookie = android.webkit.CookieManager.getInstance().getCookie(baseUrl)
         if (cookie != null && cookie.contains("__test")) {
             android.util.Log.d("CookieChallenge", "Cookie already exists, proceeding directly")

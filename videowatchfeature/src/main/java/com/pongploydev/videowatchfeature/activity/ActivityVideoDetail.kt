@@ -259,7 +259,8 @@ class ActivityVideoDetail : AppCompatActivity() {
     }
 
     private fun displayAllData(responseHome: CallbackVideoDetailV1) {
-        responseHome.body?.post?.let {
+        val detailVideo = responseHome.post ?: responseHome.posts.firstOrNull()
+        detailVideo?.let {
             this.video = it
             displayData(it)
         }
@@ -291,10 +292,13 @@ class ActivityVideoDetail : AppCompatActivity() {
             lytDate.visibility = View.GONE
         }
 
-        val thumbnailUrl = if (video.video_type == "youtube" && video.video_thumbnail.isEmpty()) {
+        val thumbnailUrl = if (video.video_type != null && video.video_type.lowercase() == "youtube" && video.video_thumbnail.isEmpty()) {
             Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_HQ
+        } else if (video.video_thumbnail.startsWith("http")) {
+            Uri.parse(video.video_thumbnail).toString()
         } else {
-            sharedPref.baseUrl + "/api/upload/" + video.video_thumbnail
+            val base = if (sharedPref.baseUrl.endsWith("/")) sharedPref.baseUrl.substring(0, sharedPref.baseUrl.length - 1) else sharedPref.baseUrl
+            base + "/video_image/" + Uri.encode(video.video_thumbnail)
         }
 
         Glide.with(this).load(thumbnailUrl).placeholder(R.drawable.ic_thumbnail).diskCacheStrategy(DiskCacheStrategy.ALL).into(videoThumbnail)
@@ -313,7 +317,7 @@ class ActivityVideoDetail : AppCompatActivity() {
             return
         }
 
-        val videoUrl = if (video.video_type == "Upload") sharedPref.baseUrl + "/upload/video/" + video.video_url else video.video_url
+        val videoUrl = if (video.video_type != null && video.video_type.equals("Upload", ignoreCase = true)) sharedPref.baseUrl + "/upload/video/" + video.video_url else video.video_url
         if (videoUrl != null && video.video_type != "youtube") {
             val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl))
             exoPlayer?.setMediaItem(mediaItem)

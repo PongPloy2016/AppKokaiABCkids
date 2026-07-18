@@ -406,10 +406,11 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
     private fun setupViewModelObservers() {
         viewModel.videoDetail.observe(this) { responseHome ->
-            responseHome?.body?.post?.let { updatedVideo ->
-                this.video = updatedVideo
-                displayAllData(responseHome)
-                youTubePlayer?.let { playOrSetupVideo(updatedVideo, it) }
+            val updatedVideo = responseHome?.post ?: responseHome?.posts?.firstOrNull()
+            updatedVideo?.let { v ->
+                this.video = v
+                displayAllData(responseHome!!)
+                youTubePlayer?.let { playOrSetupVideo(v, it) }
             }
         }
         viewModel.isLoading.observe(this) { isLoading -> swipeProgress(isLoading) }
@@ -448,9 +449,10 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     }
 
     private fun displayAllData(responseHome: CallbackVideoDetailV1) {
-        responseHome.body?.post?.let { responseVideo ->
-            this.video = responseVideo
-            displayData(responseVideo)
+        val responseVideo = responseHome.post ?: responseHome.posts.firstOrNull()
+        responseVideo?.let {
+            this.video = it
+            displayData(it)
         }
     }
 
@@ -483,10 +485,13 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         }
 
         var thumbnailUrl = video.video_thumbnail
-        if (video.video_type.equals("youtube", ignoreCase = true) && thumbnailUrl.isEmpty()) {
+        if (video.video_type != null && video.video_type.equals("youtube", ignoreCase = true) && thumbnailUrl.isEmpty()) {
             thumbnailUrl = Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_HQ
+        } else if (thumbnailUrl.startsWith("http")) {
+            thumbnailUrl = Uri.parse(thumbnailUrl).toString()
         } else {
-            thumbnailUrl = sharedPref.baseUrl + "/api/upload/" + thumbnailUrl
+            val base = if (sharedPref.baseUrl.endsWith("/")) sharedPref.baseUrl.substring(0, sharedPref.baseUrl.length - 1) else sharedPref.baseUrl
+            thumbnailUrl = base + "/video_image/" + Uri.encode(thumbnailUrl)
         }
 
         Glide.with(this).load(thumbnailUrl).placeholder(R.drawable.ic_thumbnail).diskCacheStrategy(DiskCacheStrategy.ALL).into(videoThumbnail)

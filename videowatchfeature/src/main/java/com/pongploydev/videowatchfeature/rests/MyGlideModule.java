@@ -38,7 +38,8 @@ public class MyGlideModule extends AppGlideModule {
                 .hostnameVerifier(new HostnameVerifier() {
                     @Override
                     public boolean verify(String hostname, SSLSession session) {
-                        if (hostname.equalsIgnoreCase("pongploydev.infinityfree.me") || 
+                        if (hostname.equalsIgnoreCase("php-laravel-app-hslg.onrender.com") ||
+                            hostname.equalsIgnoreCase("pongploydev.infinityfree.me") || 
                             hostname.equalsIgnoreCase("www.pongploydev.x10.mx") ||
                             hostname.equalsIgnoreCase("pongploydev.x10.mx")) {
                             return true;

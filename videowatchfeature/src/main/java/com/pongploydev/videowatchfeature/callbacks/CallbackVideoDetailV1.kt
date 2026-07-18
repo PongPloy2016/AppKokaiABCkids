@@ -2,19 +2,11 @@ package com.pongploydev.videowatchfeature.callbacks
 
 import com.google.gson.annotations.SerializedName
 import com.pongploydev.videowatchfeature.model.Video
+import java.io.Serializable
 
-class CallbackVideoDetailV1 {
-    @SerializedName("status")
-    var status: Int = 0
-
-    @SerializedName("message")
-    var message: String = ""
-
-    @SerializedName("body")
-    var body: BodyData? = null
-
-    class BodyData {
-        @SerializedName("post")
-        var post: Video? = null
-    }
-}
+data class CallbackVideoDetailV1(
+    val status: String = "",
+    val post: Video? = null,
+    // Keep posts for compatibility if needed, though detail API returns 'post'
+    val posts: List<Video> = emptyList()
+) : Serializable

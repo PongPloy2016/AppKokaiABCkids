@@ -6,20 +6,35 @@ import android.text.TextUtils;
 
 import java.util.Locale;
 
+import com.google.gson.annotations.SerializedName;
+
 public class Video implements Parcelable {
     public int id;
-    public String cat_id = "";
+    @SerializedName("cat_id")
+    public int cat_id;
+    @SerializedName("category_name")
     public String category_name = "";
+    @SerializedName("vid")
     public String vid = "";
+    @SerializedName("video_title")
     public String video_title = "";
+    @SerializedName("video_url")
     public String video_url = "";
+    @SerializedName("video_id")
     public String video_id = "";
+    @SerializedName("video_thumbnail")
     public String video_thumbnail = "";
+    @SerializedName("video_duration")
     public String video_duration = "";
+    @SerializedName("video_description")
     public String video_description = "";
+    @SerializedName("video_type")
     public String video_type = "";
+    @SerializedName("size")
     public String size = "";
+    @SerializedName("total_views")
     public long total_views;
+    @SerializedName("date_time")
     public String date_time = "";
 
     // ฟิลด์เพิ่มเติมสำหรับการค้นหาและแสดงผล
@@ -88,7 +103,7 @@ public class Video implements Parcelable {
     // 🧱 Parcelable implementation
     protected Video(Parcel in) {
         id = in.readInt();
-        cat_id = in.readString();
+        cat_id = in.readInt();
         category_name = in.readString();
         vid = in.readString();
         video_title = in.readString();
@@ -132,7 +147,7 @@ public class Video implements Parcelable {
     @Override
     public void writeToParcel(Parcel parcel, int flags) {
         parcel.writeInt(id);
-        parcel.writeString(cat_id);
+        parcel.writeInt(cat_id);
         parcel.writeString(category_name);
         parcel.writeString(vid);
         parcel.writeString(video_title);
@@ -418,11 +433,11 @@ public class Video implements Parcelable {
         this.id = id;
     }
 
-    public String getCat_id() {
+    public int getCat_id() {
         return cat_id;
     }
 
-    public void setCat_id(String cat_id) {
+    public void setCat_id(int cat_id) {
         this.cat_id = cat_id;
     }
 

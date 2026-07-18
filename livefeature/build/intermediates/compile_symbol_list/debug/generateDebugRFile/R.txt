@@ -1464,6 +1464,13 @@ int color foreground_material_dark 0x0
 int color foreground_material_light 0x0
 int color highlighted_text_material_dark 0x0
 int color highlighted_text_material_light 0x0
+int color kid_background 0x0
+int color kid_card_bg 0x0
+int color kid_live_red 0x0
+int color kid_primary 0x0
+int color kid_secondary 0x0
+int color kid_text_primary 0x0
+int color kid_text_secondary 0x0
 int color m3_appbar_overlay_color 0x0
 int color m3_assist_chip_icon_tint_color 0x0
 int color m3_assist_chip_stroke_color 0x0
@@ -3038,6 +3045,7 @@ int drawable abc_textfield_search_material 0x0
 int drawable abc_vector_test 0x0
 int drawable avd_hide_password 0x0
 int drawable avd_show_password 0x0
+int drawable bg_kid_gradient 0x0
 int drawable btn_checkbox_checked_mtrl 0x0
 int drawable btn_checkbox_checked_to_unchecked_mtrl_animation 0x0
 int drawable btn_checkbox_unchecked_mtrl 0x0
@@ -3302,6 +3310,7 @@ int id animateToEnd 0x0
 int id animateToStart 0x0
 int id antiClockwise 0x0
 int id anticipate 0x0
+int id appBar 0x0
 int id arc 0x0
 int id asConfigured 0x0
 int id async 0x0
@@ -3315,16 +3324,14 @@ int id bestChoice 0x0
 int id blocking 0x0
 int id bottom 0x0
 int id bounce 0x0
-int id btnBack 0x0
+int id btnFullscreen 0x0
+int id btnPip 0x0
 int id btnRefreshStream 0x0
 int id btnRetry 0x0
 int id buttonPanel 0x0
 int id callMeasure 0x0
 int id cancel_action 0x0
 int id cancel_button 0x0
-int id cardHeader 0x0
-int id cardInfo 0x0
-int id cardPlayer 0x0
 int id carryVelocity 0x0
 int id center 0x0
 int id centerCrop 0x0
@@ -3481,6 +3488,7 @@ int id immediateStop 0x0
 int id included 0x0
 int id indeterminate 0x0
 int id info 0x0
+int id infoCardView 0x0
 int id inspection_slot_table_set 0x0
 int id invisible 0x0
 int id inward 0x0
@@ -3490,6 +3498,7 @@ int id item2 0x0
 int id item3 0x0
 int id item4 0x0
 int id item_touch_helper_previous_elevation 0x0
+int id ivChannelLogo 0x0
 int id jumpToEnd 0x0
 int id jumpToStart 0x0
 int id labeled 0x0
@@ -3506,6 +3515,7 @@ int id list_item 0x0
 int id liveDot 0x0
 int id liveIndicatorDot 0x0
 int id m3_side_sheet 0x0
+int id mainContent 0x0
 int id marquee 0x0
 int id masked 0x0
 int id match_constraint 0x0
@@ -3614,6 +3624,8 @@ int id path 0x0
 int id pathRelative 0x0
 int id percent 0x0
 int id pin 0x0
+int id playerCardView 0x0
+int id playerContainer 0x0
 int id playerView 0x0
 int id position 0x0
 int id postLayout 0x0
@@ -3630,6 +3642,7 @@ int id right 0x0
 int id rightToLeft 0x0
 int id right_icon 0x0
 int id right_side 0x0
+int id rootContentLayout 0x0
 int id rounded 0x0
 int id row_index_key 0x0
 int id save_non_transition_alpha 0x0
@@ -3720,6 +3733,7 @@ int id time 0x0
 int id title 0x0
 int id titleDividerNoCustom 0x0
 int id title_template 0x0
+int id toolbar 0x0
 int id top 0x0
 int id topPanel 0x0
 int id touch_outside 0x0
@@ -3731,11 +3745,11 @@ int id transition_transform 0x0
 int id triangle 0x0
 int id tvChannelGrade 0x0
 int id tvChannelName 0x0
+int id tvChannelNum 0x0
 int id tvChannelShortDesc 0x0
 int id tvChannelTitle 0x0
+int id tvGrade 0x0
 int id tvInfoDescription 0x0
-int id tvInfoTitle 0x0
-int id tvLiveLabel 0x0
 int id unchecked 0x0
 int id uniform 0x0
 int id unlabeled 0x0
@@ -4012,6 +4026,7 @@ int string abc_searchview_description_voice 0x0
 int string abc_shareactionprovider_share_with 0x0
 int string abc_shareactionprovider_share_with_application 0x0
 int string abc_toolbar_collapse_description 0x0
+int string about_live 0x0
 int string appbar_scrolling_view_behavior 0x0
 int string bottom_sheet_behavior 0x0
 int string bottomsheet_action_collapse 0x0
@@ -4026,6 +4041,8 @@ int string call_notification_hang_up_action 0x0
 int string call_notification_incoming_text 0x0
 int string call_notification_ongoing_text 0x0
 int string call_notification_screening_text 0x0
+int string channel_details 0x0
+int string channel_number 0x0
 int string character_counter_content_description 0x0
 int string character_counter_overflowed_content_description 0x0
 int string character_counter_pattern 0x0
@@ -4037,6 +4054,7 @@ int string default_popup_window_title 0x0
 int string dropdown_menu 0x0
 int string error_a11y_label 0x0
 int string error_icon_content_description 0x0
+int string error_loading_live 0x0
 int string exo_controls_cc_disabled_description 0x0
 int string exo_controls_cc_enabled_description 0x0
 int string exo_controls_custom_playback_speed 0x0
@@ -4098,6 +4116,8 @@ int string icon_content_description 0x0
 int string in_progress 0x0
 int string indeterminate 0x0
 int string item_view_role_description 0x0
+int string live_detail_title 0x0
+int string live_label 0x0
 int string m3_exceed_max_badge_text_suffix 0x0
 int string m3_ref_typeface_brand_medium 0x0
 int string m3_ref_typeface_brand_regular 0x0
@@ -4265,6 +4285,8 @@ int string path_password_eye_mask_visible 0x0
 int string path_password_strike_through 0x0
 int string range_end 0x0
 int string range_start 0x0
+int string refresh_stream 0x0
+int string retry 0x0
 int string search_menu_title 0x0
 int string searchbar_scrolling_view_behavior 0x0
 int string searchview_clear_text_content_description 0x0
