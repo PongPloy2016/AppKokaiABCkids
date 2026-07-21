@@ -9,4 +9,8 @@ interface VideoListRepository {
         count: Int,
         page: Int
     ): Result<CallbackListVideoV1>
+
+    suspend fun getRandomVideos(
+        cacheControl: String?
+    ): Result<CallbackListVideoV1>
 }

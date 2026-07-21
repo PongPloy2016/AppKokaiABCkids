@@ -69,6 +69,7 @@ class VideoListFragment : Fragment() {
     private lateinit var clearSearchBtn: ImageView
     private lateinit var sortButton: ImageView
     private lateinit var refreshButton: ImageView
+    private lateinit var favoriteButton: ImageView
     private lateinit var switchViewButton: ImageView
     private lateinit var categoryContainer: LinearLayout
     private lateinit var categoryAll: TextView
@@ -95,7 +96,7 @@ class VideoListFragment : Fragment() {
 
     // ตัวแปรสำหรับนับรอบการแสดง Interstitial Ad
     private var videoClickCount = 0
-    private val INTERSTITIAL_AD_FREQUENCY = 3 // แสดงโฆษณาทุก 3 ครั้ง
+    private val INTERSTITIAL_AD_FREQUENCY = 1 // แสดงโฆษณาทุก 1 ครั้ง (เพื่อทดสอบ)
 
     // ตัวแปรเก็บวิดีโอปัจจุบัน
     private var currentVideo: Video? = null
@@ -146,12 +147,27 @@ class VideoListFragment : Fragment() {
 
         adsPref.isTestMode = false
         adsPref.isFamiliesApp = true
+        adsPref.isAdEnabled = true
+        adsPref.isInterstitialAdEnabled = true
+        adsPref.setPlacement(
+            isBannerHome = true,
+            isBannerPostDetails = true,
+            isBannerCategoryDetails = true,
+            isBannerSearch = true,
+            isInterstitialPostList = true,
+            isInterstitialPostDetails = true,
+            isNativeAdPostList = false,
+            isNativeAdPostDetails = false,
+            isNativeAdExitDialog = false,
+            isAppOpenAdOnStart = false,
+            isAppOpenAdOnResume = false
+        )
 
         // ซ่อน ActionBar เมื่อ Fragment ถูกสร้าง
         hideActionBar()
 
         // ตรวจสอบและโหลดโฆษณา
-        //initializeAds()
+        initializeAds()
 
         swipeProgress(true)
         ensureCookieChallengeSolved {
@@ -167,22 +183,27 @@ class VideoListFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.videoList.observe(viewLifecycleOwner) { videos ->
-            displaySearchResults(videos.toMutableList())
-            adapterVideo?.setLoaded()
-            showNoItemView(
+            if (videos != null) {
+                displaySearchResults(videos.toMutableList())
+                adapterVideo?.setLoaded()
+                showNoItemView(
                     videos.isEmpty() &&
-                            !viewModel.isLoading.value!! &&
+                            viewModel.isLoading.value != true &&
                             viewModel.searchQuery.isEmpty() &&
                             viewModel.currentCategory == "all"
-            )
+                )
+            }
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading -> swipeProgress(isLoading) }
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading != null) {
+                swipeProgress(isLoading)
+            }
+        }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             if (error != null) {
                 showFailedView(true, error)
-                // Or showToast(error)
             }
         }
     }
@@ -224,6 +245,7 @@ class VideoListFragment : Fragment() {
             clearSearchBtn = findViewById(R.id.clear_search_btn)
             sortButton = findViewById(R.id.sort_button)
             refreshButton = findViewById(R.id.refresh_button)
+            favoriteButton = findViewById(R.id.favorite_button)
             switchViewButton = findViewById(R.id.switch_view_button)
             categoryContainer = findViewById(R.id.category_container)
             categoryAll = findViewById(R.id.category_all)
@@ -409,6 +431,16 @@ class VideoListFragment : Fragment() {
         btnClearSearch.setOnClickListener { clearSearch() }
 
         refreshButton.setOnClickListener { refreshAll() }
+
+        favoriteButton.setOnClickListener { openFavoriteList() }
+    }
+
+    private fun openFavoriteList() {
+        val favoriteFragment = FavoriteListFragment.newInstance()
+        parentFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, favoriteFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun setupSearch() {
@@ -987,6 +1019,13 @@ class VideoListFragment : Fragment() {
 
             val adUnitId = getInterstitialAdUnitId()
             Log.d("InterstitialAd", "📝 Using ad unit ID: $adUnitId")
+            
+            // แจ้งเตือน ID ที่ใช้ (เฉพาะโหมด Debug)
+            if (AppConfig.DEBUG) {
+                activityContext?.let {
+                    Toast.makeText(it, "Loading Ad: $adUnitId", Toast.LENGTH_SHORT).show()
+                }
+            }
 
             InterstitialAd.load(
                     context,
@@ -1016,13 +1055,12 @@ class VideoListFragment : Fragment() {
                             )
                             Log.e("InterstitialAd", "Error code: ${loadAdError.code}")
                             Log.e("InterstitialAd", "Error domain: ${loadAdError.domain}")
-
-                            // สำหรับแอปครอบครัว: บันทึกเหตุการณ์
-                            if (adsPref.isFamiliesApp) {
-                                recordAdEvent(
-                                        "interstitial_load_failed",
-                                        "code_${loadAdError.code}"
-                                )
+                            
+                            // Toast เพื่อช่วย Debug (ลบออกได้ภายหลัง)
+                            if (adsPref.isTestMode || AppConfig.DEBUG) {
+                                activityContext?.let {
+                                    Toast.makeText(it, "Ad Error: ${loadAdError.code} - ${loadAdError.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
 
                             interstitialAd = null
@@ -1061,14 +1099,7 @@ class VideoListFragment : Fragment() {
 
     /** ดึง Interstitial Ad Unit ID */
     private fun getInterstitialAdUnitId(): String {
-        return if (adsPref.isTestMode) {
-            // Test ID สำหรับ Debug
-            "ca-app-pub-3940256099942544/1033173712" // Test interstitial ID
-        } else {
-            // Real Ad Unit ID สำหรับ Production
-            // ควรใช้จาก AdsPref หรือ config
-            "ca-app-pub-3279793802315716/8581063137"
-        }
+        return AppConfig.getInterstitialAdUnitId()
     }
 
     // ==================== Helper Functions for Families ====================
@@ -1230,7 +1261,7 @@ class VideoListFragment : Fragment() {
     private fun createVideoIntent(videoType: String?): Intent {
         return when (videoType?.lowercase()) {
             "youtube" -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
-            else -> Intent(activityContext, ActivityVideoDetail::class.java)
+            else -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
         }
     }
 

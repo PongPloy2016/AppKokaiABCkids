@@ -7,6 +7,7 @@ import android.util.Log;
 
 
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
 import com.onesignal.Continue;
 import com.onesignal.OneSignal;
 import com.onesignal.debug.LogLevel;
@@ -22,6 +23,11 @@ public class AppControl extends Application {
         super.onCreate();
         context=this;
 
+        RequestConfiguration configuration = new RequestConfiguration.Builder()
+                .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
+                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                .build();
+        MobileAds.setRequestConfiguration(configuration);
         MobileAds.initialize(this);
 
         Log.d("App", "MobileAds initialized");

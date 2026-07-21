@@ -38,6 +38,9 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.StyledPlayerView
 import com.google.android.exoplayer2.upstream.*
 import com.google.android.exoplayer2.util.Util
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.pongploydev.videowatchfeature.adapter.AdapterVideo
 import com.pongploydev.videowatchfeature.Constant
 import com.pongploydev.videowatchfeature.R
 import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetail
@@ -49,6 +52,7 @@ import com.pongploydev.videowatchfeature.model.Video
 import com.pongploydev.videowatchfeature.utils.Tools
 import com.pongploydev.videowatchfeature.viewmodel.VideoDetailViewModel
 import retrofit2.Call
+import android.content.Intent
 
 class ActivityVideoDetail : AppCompatActivity() {
 
@@ -73,6 +77,9 @@ class ActivityVideoDetail : AppCompatActivity() {
     private lateinit var btnShare: ImageButton
     private lateinit var adsPref: AdsPref
     private lateinit var tools: Tools
+
+    private lateinit var rvSuggested: RecyclerView
+    private var adapterSuggested: AdapterVideo? = null
 
     // ExoPlayer variables
     private var exoPlayer: ExoPlayer? = null
@@ -127,11 +134,13 @@ class ActivityVideoDetail : AppCompatActivity() {
         btnShare = findViewById(R.id.btn_share)
 
         lytSuggested = findViewById(R.id.lyt_suggested)
+        rvSuggested = findViewById(R.id.rv_suggested)
         cardPlayer = findViewById(R.id.cardPlayer)
         
         // Pulse Indicator
         liveIndicatorDot = findViewById(R.id.liveIndicatorDot)
         startPulseAnimation()
+        setupSuggestedRecyclerView()
 
         initExoPlayer()
         initLocalVideoViews()
@@ -140,9 +149,11 @@ class ActivityVideoDetail : AppCompatActivity() {
         setupListeners()
 
         requestAction()
+        viewModel.loadRandomVideos()
 
         swipeRefreshLayout.setOnRefreshListener {
             requestAction()
+            viewModel.loadRandomVideos()
         }
     }
 
@@ -213,8 +224,29 @@ class ActivityVideoDetail : AppCompatActivity() {
 
     private fun setupViewModelObservers() {
         viewModel.videoDetail.observe(this) { responseHome -> responseHome?.let { displayAllData(it) } }
+        viewModel.randomVideos.observe(this) { videos ->
+            if (videos.isNotEmpty()) {
+                lytSuggested.visibility = View.VISIBLE
+                adapterSuggested?.updateData(videos)
+            } else {
+                lytSuggested.visibility = View.GONE
+            }
+        }
         viewModel.isLoading.observe(this) { isLoading -> swipeProgress(isLoading) }
         viewModel.error.observe(this) { errorMsg -> if (errorMsg != null) onFailRequest() }
+    }
+
+    private fun setupSuggestedRecyclerView() {
+        rvSuggested.layoutManager = LinearLayoutManager(this)
+        adapterSuggested = AdapterVideo(this, rvSuggested, mutableListOf())
+        rvSuggested.adapter = adapterSuggested
+
+        adapterSuggested?.setOnItemClickListener { view, video, position ->
+            val intent = Intent(this, if (video.video_type?.lowercase() == "youtube") ActivityVideoAutoDetail::class.java else ActivityVideoDetail::class.java)
+            intent.putExtra(Constant.KEY_VID, video.vid)
+            startActivity(intent)
+            finish()
+        }
     }
 
     private fun setupFavorite() {
@@ -307,7 +339,9 @@ class ActivityVideoDetail : AppCompatActivity() {
         
         Handler(Looper.getMainLooper()).postDelayed({
             if (!isPlayerInitialized) { playVideo(video); isPlayerInitialized = true }
-            lytSuggested.visibility = View.VISIBLE
+            if (viewModel.randomVideos.value?.isNotEmpty() == true) {
+                lytSuggested.visibility = View.VISIBLE
+            }
         }, 1000)
     }
 

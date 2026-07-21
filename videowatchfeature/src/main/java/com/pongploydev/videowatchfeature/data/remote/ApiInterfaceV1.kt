@@ -25,4 +25,10 @@ interface ApiInterfaceV1 {
         @Query("count") count: Int,
         @Query("page") page: Int
     ): CallbackListVideoV1
+
+    @Headers("User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    @GET("api/videoListRandom")
+    suspend fun getVideosRandomV1(
+        @Header("Cache-Control") cacheControl: String?
+    ): CallbackListVideoV1
 }

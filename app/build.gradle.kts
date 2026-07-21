@@ -19,8 +19,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         targetSdk = 35
-        versionCode = 39
-        versionName = "2.2.0"
+        versionCode = 40
+        versionName = "2.2.1"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")

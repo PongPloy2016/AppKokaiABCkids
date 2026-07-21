@@ -66,6 +66,18 @@
                 android:padding="6dp"
                 android:contentDescription="รีเฟรชรายการ" />
 
+            <!-- ปุ่มรายการโปรด -->
+            <ImageView
+                android:id="@+id/favorite_button"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="@dimen/spacing_small"
+                android:src="@drawable/ic_kids_heart"
+                app:tint="@color/white"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:contentDescription="รายการโปรด" />
+
             <!-- ปุ่มสลับมุมมอง (List / Grid) -->
             <ImageView
                 android:id="@+id/switch_view_button"

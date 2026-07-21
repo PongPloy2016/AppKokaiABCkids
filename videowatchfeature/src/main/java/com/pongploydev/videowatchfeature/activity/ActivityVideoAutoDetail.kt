@@ -2,6 +2,7 @@ package com.pongploydev.videowatchfeature.activity
 
 import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
@@ -39,6 +40,9 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstan
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.pongploydev.videowatchfeature.adapter.AdapterVideo
 import com.pongploydev.videowatchfeature.Constant
 import com.pongploydev.videowatchfeature.R
 import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetail
@@ -82,6 +86,9 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private lateinit var btnShare: ImageButton
     private lateinit var adsPref: AdsPref
     private lateinit var tools: Tools
+    
+    private lateinit var rvSuggested: RecyclerView
+    private var adapterSuggested: AdapterVideo? = null
 
     // YouTube Player Variables
     private lateinit var youTubePlayerView: YouTubePlayerView
@@ -152,6 +159,8 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         lytView = findViewById(R.id.lyt_view_count)
         lytDate = findViewById(R.id.lyt_date)
         lytSuggested = findViewById(R.id.lyt_suggested)
+        rvSuggested = findViewById(R.id.rv_suggested)
+        setupSuggestedRecyclerView()
 
         // Initialize Player Views
         youTubePlayerView = findViewById(R.id.youtube_player_view)
@@ -183,9 +192,11 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         setupListeners()
 
         requestAction()
+        viewModel.loadRandomVideos()
 
         swipeRefreshLayout.setOnRefreshListener {
             requestAction()
+            viewModel.loadRandomVideos()
         }
 
         handleOnBackPressed()
@@ -197,13 +208,28 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             .duration(1000)
             .repeat(YoYo.INFINITE)
             .playOn(liveIndicatorDot)
+
+        // Animate Header and Title for Kids
+        YoYo.with(Techniques.BounceInDown)
+            .duration(1200)
+            .playOn(findViewById(R.id.cardHeader))
+
+        YoYo.with(Techniques.FadeInUp)
+            .duration(1000)
+            .playOn(txtTitle)
     }
 
     private fun setupListeners() {
-        btnShare.setOnClickListener { video?.let { v -> Tools.shareContentDetail(this, v) } }
+        btnShare.setOnClickListener { 
+            video?.let { v -> 
+                YoYo.with(Techniques.Tada).duration(500).playOn(btnShare)
+                Tools.shareContentDetail(this, v) 
+            } 
+        }
         viewPanel.setOnClickListener { toggleYouTubeControlsVisibility() }
         findViewById<View>(R.id.icon_play).setOnClickListener { 
             video?.let { v -> 
+                YoYo.with(Techniques.Bounce).duration(400).playOn(it)
                 if (v.video_type == "youtube") {
                     youTubePlayer?.loadVideo(v.video_id, 0f)
                 } else {
@@ -213,13 +239,17 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         }
         
         findViewById<Button>(R.id.btnRefreshStream).setOnClickListener {
+            YoYo.with(Techniques.RotateIn).duration(500).playOn(it)
             requestAction()
             Toast.makeText(this, "กำลังรีเฟรชสัญญาณ...", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun setupFavorite() {
-        btnFavorite.setOnClickListener { addToFavorite() }
+        btnFavorite.setOnClickListener { 
+            YoYo.with(Techniques.StandUp).duration(500).playOn(btnFavorite)
+            addToFavorite() 
+        }
         viewModel.checkFavoriteStatus(videoId)
         viewModel.isFavorite.observe(this) { isFav -> updateFavoriteIcon(isFav) }
     }
@@ -413,8 +443,29 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
                 youTubePlayer?.let { playOrSetupVideo(v, it) }
             }
         }
+        viewModel.randomVideos.observe(this) { videos ->
+            if (videos.isNotEmpty()) {
+                lytSuggested.visibility = View.VISIBLE
+                adapterSuggested?.updateData(videos)
+            } else {
+                lytSuggested.visibility = View.GONE
+            }
+        }
         viewModel.isLoading.observe(this) { isLoading -> swipeProgress(isLoading) }
         viewModel.error.observe(this) { errorMsg -> if (errorMsg != null) onFailRequest() }
+    }
+
+    private fun setupSuggestedRecyclerView() {
+        rvSuggested.layoutManager = LinearLayoutManager(this)
+        adapterSuggested = AdapterVideo(this, rvSuggested, mutableListOf())
+        rvSuggested.adapter = adapterSuggested
+        
+        adapterSuggested?.setOnItemClickListener { view, video, position ->
+            val intent = Intent(this, ActivityVideoAutoDetail::class.java)
+            intent.putExtra(Constant.KEY_VID, video.vid)
+            startActivity(intent)
+            finish() // Finish current to load new one
+        }
     }
 
     private fun requestAction() {
@@ -461,25 +512,27 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             videoCategoryBadge.visibility = View.GONE
         } else {
             videoCategoryBadge.visibility = View.VISIBLE
-            videoCategoryBadge.text = video.category_name
+            videoCategoryBadge.text = "🌟 " + video.category_name
             try {
-                video.getCategoryColor()?.let { colorStr ->
-                    videoCategoryBadge.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorStr))
-                }
+                val colorStr = video.getCategoryColor() ?: "#4CAF50"
+                videoCategoryBadge.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorStr))
+                videoCategoryBadge.setTextColor(android.graphics.Color.WHITE)
+                videoCategoryBadge.setPadding(32, 8, 32, 8)
             } catch (e: Exception) { e.printStackTrace() }
         }
 
         txtTitle.text = video.video_title
+        txtTitle.textSize = 20f
         txtDuration.text = video.video_duration
 
         if (AppConfig.ENABLE_VIEW_COUNT) {
-            txtTotalViews.text = Tools.withSuffix(video.total_views) + " " + getString(R.string.views_count)
+            txtTotalViews.text = "👀 " + Tools.withSuffix(video.total_views) + " " + getString(R.string.views_count)
         } else {
             lytView.visibility = View.GONE
         }
 
         if (AppConfig.ENABLE_DATE_DISPLAY) {
-            txtDateTime.text = if (AppConfig.DISPLAY_DATE_AS_TIME_AGO) Tools.getTimeAgo(video.date_time) else Tools.getFormatedDateSimple(video.date_time)
+            txtDateTime.text = "📅 " + (if (AppConfig.DISPLAY_DATE_AS_TIME_AGO) Tools.getTimeAgo(video.date_time) else Tools.getFormatedDateSimple(video.date_time))
         } else {
             lytDate.visibility = View.GONE
         }
@@ -497,7 +550,17 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         Glide.with(this).load(thumbnailUrl).placeholder(R.drawable.ic_thumbnail).diskCacheStrategy(DiskCacheStrategy.ALL).into(videoThumbnail)
 
         Tools.displayPostDescription(this, webView, video.video_description)
-        Handler(Looper.getMainLooper()).postDelayed({ lytSuggested.visibility = View.VISIBLE }, 1000)
+        
+        // Show content with a nice animation
+        lytMainContent.visibility = View.VISIBLE
+        YoYo.with(Techniques.FadeInUp).duration(800).playOn(lytMainContent)
+
+        Handler(Looper.getMainLooper()).postDelayed({ 
+            if (viewModel.randomVideos.value?.isNotEmpty() == true) {
+                lytSuggested.visibility = View.VISIBLE 
+                YoYo.with(Techniques.SlideInUp).duration(500).playOn(lytSuggested)
+            }
+        }, 1000)
     }
 
     fun addToFavorite() { video?.let { viewModel.toggleFavorite(it) } }

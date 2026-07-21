@@ -24,4 +24,17 @@ class VideoListRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun getRandomVideos(cacheControl: String?): Result<CallbackListVideoV1> {
+        return try {
+            val response = apiInterfaceV1.getVideosRandomV1(cacheControl)
+            if (response.status == "ok") {
+                Result.success(response)
+            } else {
+                Result.failure(Exception("API returned status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

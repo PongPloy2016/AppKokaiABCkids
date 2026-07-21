@@ -6,7 +6,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetailV1
+import com.pongploydev.videowatchfeature.callbacks.CallbackListVideoV1
 import com.pongploydev.videowatchfeature.data.repository.VideoDetailRepositoryImpl
+import com.pongploydev.videowatchfeature.data.repository.VideoListRepositoryImpl
 import com.pongploydev.videowatchfeature.databases.room.AppDatabase
 import com.pongploydev.videowatchfeature.databases.room.FavoriteEntity
 import com.pongploydev.videowatchfeature.domain.usecase.GetVideoDetailUseCase
@@ -27,6 +29,9 @@ class VideoDetailViewModel(application: Application) : AndroidViewModel(applicat
     private val _videoDetail = MutableLiveData<CallbackVideoDetailV1?>()
     val videoDetail: LiveData<CallbackVideoDetailV1?> = _videoDetail
 
+    private val _randomVideos = MutableLiveData<List<Video>>()
+    val randomVideos: LiveData<List<Video>> = _randomVideos
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
@@ -34,6 +39,7 @@ class VideoDetailViewModel(application: Application) : AndroidViewModel(applicat
     val error: LiveData<String?> = _error
 
     private val getVideoDetailUseCase: GetVideoDetailUseCase
+    private val videoListRepo: VideoListRepositoryImpl
 
     init {
         val favoriteDao = AppDatabase.getDatabase(application).favoriteDao()
@@ -44,6 +50,8 @@ class VideoDetailViewModel(application: Application) : AndroidViewModel(applicat
         val apiInterfaceV1 = RestAdapter.createAPIV1(application, sharedPref.baseUrl)
         val videoDetailRepo = VideoDetailRepositoryImpl(apiInterfaceV1)
         getVideoDetailUseCase = GetVideoDetailUseCase(videoDetailRepo)
+        
+        videoListRepo = VideoListRepositoryImpl(apiInterfaceV1)
     }
 
     fun loadVideoDetail(vid: String, isRefresh: Boolean = false) {
@@ -56,6 +64,15 @@ class VideoDetailViewModel(application: Application) : AndroidViewModel(applicat
                 _videoDetail.value = detail
             }.onFailure { exception ->
                 _error.value = exception.message ?: "Failed to load video details"
+            }
+        }
+    }
+
+    fun loadRandomVideos() {
+        viewModelScope.launch {
+            val result = videoListRepo.getRandomVideos(null)
+            result.onSuccess { response ->
+                _randomVideos.value = response.posts
             }
         }
     }

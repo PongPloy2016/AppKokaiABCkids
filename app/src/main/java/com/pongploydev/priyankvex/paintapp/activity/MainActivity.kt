@@ -110,12 +110,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         // 3. Initialize AdView ก่อน (เพียงครั้งเดียว)
-//        if (!isAdViewInitialized) {
-//            initializeAdViewWithDefaults()
-//        }
-//
-//        // 4. ตั้งค่า AdMob สำหรับเด็กและครอบครัวโดยเฉพาะ
-//        initializeAdMobForFamily()
+        if (!isAdViewInitialized) {
+            initializeAdViewWithDefaults()
+        }
+
+        // 4. ตั้งค่า AdMob สำหรับเด็กและครอบครัวโดยเฉพาะ
+        initializeAdMobForFamily()
 
         // 5. ตั้งค่า AppUpdateManager
         initializeAppUpdateManager()
@@ -948,7 +948,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     private fun handleOnBackPressed() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                //exitApp()
+                if (supportFragmentManager.backStackEntryCount > 0) {
+                    supportFragmentManager.popBackStack()
+                } else {
+                    // Original back behavior or finish
+                    finish()
+                }
             }
         })
     }

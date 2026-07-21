@@ -79,9 +79,12 @@
     <string name="title_nav_video">Video</string>
     <string name="title_nav_news">News</string>
     <string name="title_nav_category">Category</string>
-    <string name="title_nav_favorite">Favorite</string>
-    <string name="title_nav_settings">Settings</string>
-    <string name="title_nav_kids">KidsLean</string>
+    <string name="title_nav_favorite">ที่ฉันชอบ</string>
+    <string name="title_nav_settings">ตั้งค่า</string>
+    <string name="title_nav_kids">เรียนรู้</string>
+    <string name="msg_no_favorite">ยังไม่มีวิดีโอที่ชอบเลย ลองกดปุ่มหัวใจดูสิ!</string>
+    <string name="btn_go_to_videos">ไปดูวิดีโอกันเลย!</string>
+    <string name="title_favorite_list">วิดีโอที่ฉันชอบ ❤️</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
