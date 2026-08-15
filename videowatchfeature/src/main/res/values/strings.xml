@@ -168,5 +168,21 @@
     <string name="img_content_description">TODO</string>
     <string name="no_internet">internet</string>
 
-
+    <!-- UI Kids Updated -->
+    <string name="today_goal">Today\'s goal</string>
+    <string name="streak">Streak</string>
+    <string name="stars">Stars</string>
+    <string name="clips">Clips</string>
+    <string name="greeting_haya">Hi Haya! Tap a clip and start your first spark.</string>
+    <string name="clips_goal_progress">%1$d of %2$d clips</string>
+    <string name="search_hint_kids">ค้นหาวิดีโอสนุกๆ สำหรับเด็ก...</string>
+    <string name="category_all_sparks">All Sparks</string>
+    <string name="category_math_magic">Math Magic</string>
+    <string name="question_mark">&#63;</string>
+    <string name="streak_label">Streak</string>
+    <string name="stars_label">Stars</string>
+    <string name="clips_label">Clips</string>
+    <string name="all_sparks">🌈 All Sparks</string>
+    <string name="math_magic">🔢 Math Magic</string>
+    <string name="abc_sparks">🔤 ABC</string>
 </resources>

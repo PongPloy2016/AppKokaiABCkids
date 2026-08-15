@@ -93,13 +93,8 @@ class FavoriteListFragment : Fragment() {
         if (viewType == Constant.VIDEO_LIST_COMPACT) {
             recyclerView.layoutManager = LinearLayoutManager(activityContext)
         } else {
-            val gridLayoutManager = GridLayoutManager(activityContext, 2)
-            gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int): Int {
-                    return if (adapterVideo?.getItemViewType(position) == 0) 2 else 1
-                }
-            }
-            recyclerView.layoutManager = gridLayoutManager
+            // ปรับเป็น List (span 1) แทน Grid (span 2) ตามคำขอของผู้ใช้
+            recyclerView.layoutManager = LinearLayoutManager(activityContext)
         }
     }
 

@@ -231,8 +231,7 @@ public class Video implements Parcelable {
                 return true;
             }
 
-            // ตรวจสอบด้วยคำที่เกี่ยวข้อง
-            switch (category) {
+            switch (category.toLowerCase(Locale.getDefault())) {
                 case "cartoon":
                     return lowercaseCategoryName.contains("การ์ตูน") ||
                             lowercaseCategoryName.contains("cartoon") ||
@@ -242,10 +241,21 @@ public class Video implements Parcelable {
                             lowercaseCategoryName.contains("music") ||
                             lowercaseCategoryName.contains("song");
                 case "learning":
+                case "math":
                     return lowercaseCategoryName.contains("เรียนรู้") ||
                             lowercaseCategoryName.contains("learning") ||
                             lowercaseCategoryName.contains("education") ||
-                            lowercaseCategoryName.contains("สอน");
+                            lowercaseCategoryName.contains("สอน") ||
+                            lowercaseCategoryName.contains("math") ||
+                            lowercaseCategoryName.contains("คณิต");
+                case "abc":
+                case "english":
+                    return lowercaseCategoryName.contains("abc") ||
+                            lowercaseCategoryName.contains("english") ||
+                            lowercaseCategoryName.contains("ภาษาอังกฤษ") ||
+                            lowercaseCategoryName.contains("อักษร") ||
+                            lowercaseCategoryName.contains("ก ไก่") ||
+                            lowercaseCategoryName.contains("alphabet");
                 case "story":
                     return lowercaseCategoryName.contains("นิทาน") ||
                             lowercaseCategoryName.contains("story") ||

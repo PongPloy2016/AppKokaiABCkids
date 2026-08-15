@@ -43,6 +43,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -80,6 +82,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -168,7 +171,7 @@ fun DashboardSection(
                 color = Color(0xFF2D3047)
             )
             Text(
-                text = "View All >",
+                text = "ดูทั้งหมด >",
                 fontSize = 14.sp,
                 color = Color(0xFF8E78FF),
                 fontWeight = FontWeight.SemiBold,
@@ -180,13 +183,435 @@ fun DashboardSection(
     }
 }
 
+fun playSoundEffect(context: Context, soundResId: Int) {
+    try {
+        val mp = android.media.MediaPlayer.create(context, soundResId)
+        mp?.setOnCompletionListener { player ->
+            player.release()
+        }
+        mp?.start()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+@Composable
+fun RewardDialog(
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        playSoundEffect(context, R.raw.is_sound_success_sound)
+    }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .padding(16.dp),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val infiniteTransition = rememberInfiniteTransition(label = "trophy")
+                val scale by infiniteTransition.animateFloat(
+                    initialValue = 0.95f,
+                    targetValue = 1.1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(700, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "trophyScale"
+                )
+
+                Image(
+                    painter = painterResource(id = R.drawable.kids_quiz_3d),
+                    contentDescription = "รางวัล",
+                    modifier = Modifier
+                        .size(115.dp)
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "ยินดีด้วยจ้าคนเก่ง! 🎉",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2D3047),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "วันนี้หนูตั้งใจเรียนรู้มาก!\nรับรางวัลพิเศษประจำวันไปเลย:",
+                    fontSize = 15.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFFFF9E6),
+                        border = BorderStroke(1.5.dp, Color(0xFFFFD166))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "⭐ +10", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "ดาวทอง", fontSize = 13.sp, color = Color(0xFF2D3047))
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFE8F5E9),
+                        border = BorderStroke(1.5.dp, Color(0xFF81C784))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "🏆 เหรียญทอง", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clickable {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onDismiss()
+                        },
+                    shape = RoundedCornerShape(26.dp),
+                    color = Color(0xFF00C853),
+                    shadowElevation = 6.dp
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "รับรางวัลเลย! เย้! 🎈",
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+data class HomeBannerItem(
+    val id: Int,
+    val title: String,
+    val subtitle: String,
+    val tag: String,
+    val imageRes: Int,
+    val bgColors: List<Color>,
+    val buttonText: String,
+    val actionId: Int
+)
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun AutoSlideBannerCarousel(
+    banners: List<HomeBannerItem>,
+    onBannerClick: (HomeBannerItem) -> Unit
+) {
+    val context = LocalContext.current
+    val pagerState = rememberPagerState(pageCount = { banners.size })
+
+    // Auto-scroll loop
+    LaunchedEffect(pagerState) {
+        while (true) {
+            delay(3500)
+            if (!pagerState.isScrollInProgress) {
+                val nextPage = (pagerState.currentPage + 1) % banners.size
+                pagerState.animateScrollToPage(nextPage)
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = 4.dp),
+            pageSpacing = 12.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(152.dp)
+        ) { page ->
+            val banner = banners[page]
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        onBannerClick(banner)
+                    },
+                shape = RoundedCornerShape(26.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.horizontalGradient(colors = banner.bgColors)
+                        )
+                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            // Tag Badge
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White.copy(alpha = 0.3f)
+                            ) {
+                                Text(
+                                    text = banner.tag,
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Title
+                            Text(
+                                text = banner.title,
+                                color = Color.White,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+
+                            // Subtitle
+                            Text(
+                                text = banner.subtitle,
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 12.sp,
+                                maxLines = 1
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Action Button
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color.White,
+                                shadowElevation = 2.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = banner.buttonText,
+                                        color = banner.bgColors.first(),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // 3D Illustration Image
+                        Image(
+                            painter = painterResource(id = banner.imageRes),
+                            contentDescription = banner.title,
+                            modifier = Modifier
+                                .size(95.dp)
+                                .clip(RoundedCornerShape(16.dp)),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Page Indicator Dots
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(banners.size) { index ->
+                val isSelected = pagerState.currentPage == index
+                val dotWidth by animateFloatAsState(
+                    targetValue = if (isSelected) 22f else 7f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "dotWidth"
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .height(7.dp)
+                        .width(dotWidth.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) Color.White else Color.White.copy(alpha = 0.4f)
+                        )
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeHeader(
-    userName: String,
+    userName: String = "คนเก่ง",
+    isMusicEnabled: Boolean = true,
+    onMusicToggle: () -> Unit = {},
+    onBannerClick: (HomeBannerItem) -> Unit = {},
     onSearchChange: (String) -> Unit
 ) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    var starCount by remember { mutableStateOf(150) }
+    var messageIndex by remember { mutableStateOf(0) }
+    var showSpeechBubble by remember { mutableStateOf(false) }
+
+    val bannerItems = remember {
+        listOf(
+            HomeBannerItem(
+                id = 1,
+                title = "พยัญชนะไทย ก-ฮ",
+                subtitle = "ฝึกอ่าน คัดลายมือ เพลิดเพลิน",
+                tag = "🌟 ยอดนิยม",
+                imageRes = R.drawable.kids_thai_3d,
+                bgColors = listOf(Color(0xFFFF5E7E), Color(0xFFFF9966)),
+                buttonText = "เริ่มฝึกอ่านเลย >",
+                actionId = 2
+            ),
+            HomeBannerItem(
+                id = 2,
+                title = "นับเลขแสนสนุก 1-20",
+                subtitle = "บวกลบเลขง่ายๆ เสริมทักษะ",
+                tag = "🔢 ฝึกสมอง",
+                imageRes = R.drawable.kids_math_3d,
+                bgColors = listOf(Color(0xFF3A88E9), Color(0xFF00C6FF)),
+                buttonText = "ไปลุยกันเลย >",
+                actionId = 1
+            ),
+            HomeBannerItem(
+                id = 3,
+                title = "ภาษาอังกฤษ A-Z",
+                subtitle = "โฟนิกส์และคำศัพท์น่ารู้",
+                tag = "🔤 สนุกทุกวัน",
+                imageRes = R.drawable.kids_english_3d,
+                bgColors = listOf(Color(0xFF00B09B), Color(0xFF96C93D)),
+                buttonText = "เรียน A-Z เลย >",
+                actionId = 3
+            ),
+            HomeBannerItem(
+                id = 4,
+                title = "วาดภาพระบายสี",
+                subtitle = "แต่งแต้มสีสัน เสริมจินตนาการ",
+                tag = "🎨 ศิลปะแสนสนุก",
+                imageRes = R.drawable.kids_art_3d,
+                bgColors = listOf(Color(0xFFF857A6), Color(0xFFFF5858)),
+                buttonText = "ไปวาดรูปเลย >",
+                actionId = 8
+            ),
+            HomeBannerItem(
+                id = 5,
+                title = "ทีวีเพื่อการศึกษา",
+                subtitle = "ชมสดช่อง DLTV ทุกระดับชั้น",
+                tag = "📺 ชมสดออนไลน์",
+                imageRes = R.drawable.kids_tv_3d,
+                bgColors = listOf(Color(0xFF654EA3), Color(0xFFEAAFC8)),
+                buttonText = "รับชมตอนนี้ >",
+                actionId = 7
+            )
+        )
+    }
+
+    val encouragingMessages = remember {
+        listOf(
+            "สวัสดีจ้าคนเก่ง! วันนี้อยากเรียนรู้อะไรดีนะ? 🌟",
+            "หนูเก่งมากๆ เลย ฝึกอ่านทุกวันนะจ๊ะ! 💖",
+            "แตะที่การ์ดด้านล่างเพื่อเริ่มสนุกกันเลย! 🚀",
+            "ว้าว! วันนี้หนูพร้อมรับดาวทองหรือยัง? ⭐",
+            "สู้ๆ นะคนเก่ง มาเรียนให้ครบ 3 บทเรียนกัน! 🎉"
+        )
+    }
+
+    // Avatar bounce animation
+    var avatarBounceTrigger by remember { mutableStateOf(0) }
+    val avatarScale by animateFloatAsState(
+        targetValue = if (avatarBounceTrigger % 2 == 1) 1.25f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "avatarScale"
+    )
+
+    // Floating background stars animation
+    val infiniteTransition = rememberInfiniteTransition(label = "starFloat")
+    val starOffsetY by infiniteTransition.animateFloat(
+        initialValue = -6f,
+        targetValue = 6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "starY"
+    )
+
+    LaunchedEffect(avatarBounceTrigger) {
+        if (avatarBounceTrigger > 0) {
+            delay(250)
+            avatarBounceTrigger = 0
+        }
+    }
+
+    // Auto-hide speech bubble
+    LaunchedEffect(showSpeechBubble) {
+        if (showSpeechBubble) {
+            delay(4000)
+            showSpeechBubble = false
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -194,48 +619,167 @@ fun HomeHeader(
             .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF8E78FF), Color(0xFFB4A5FF))
+                    colors = listOf(Color(0xFF7F67FF), Color(0xFFB4A5FF))
                 )
             )
-            .padding(top = 24.dp, bottom = 40.dp)
-            .padding(horizontal = 24.dp)
+            .padding(top = 20.dp, bottom = 32.dp)
+            .padding(horizontal = 18.dp)
     ) {
         Column {
+            // Top badges row (Stars & Music Toggle)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                // Star Counter Badge
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White.copy(alpha = 0.25f),
+                    modifier = Modifier.clickable {
+                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        starCount += 5
+                        Toast.makeText(context, "🌟 คุณมี $starCount ดาวแล้ว! สะสมเพื่อแลกของขวัญ", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "⭐ $starCount",
+                            color = Color(0xFFFFD166),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.graphicsLayer(translationY = starOffsetY)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "ดาว",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Music Toggle Badge
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isMusicEnabled) Color(0xFF00C853).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.25f),
+                    modifier = Modifier.clickable {
+                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        onMusicToggle()
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isMusicEnabled) "🎵 เพลง: เปิด" else "🔇 เพลง: ปิด",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Greeting & Interactive Avatar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Hi, $userName!",
+                        text = "สวัสดี $userName! ✨",
                         color = Color.White,
-                        fontSize = 26.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Ready to learn and have fun?",
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontSize = 16.sp
+                        text = "พร้อมสนุกและเรียนรู้ไปด้วยกันหรือยัง? 🚀",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 14.sp
                     )
                 }
-                // Profile Image Placeholder
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Interactive Avatar (Click to speak & bounce!)
                 Surface(
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier
+                        .size(62.dp)
+                        .graphicsLayer(
+                            scaleX = avatarScale,
+                            scaleY = avatarScale,
+                            translationY = starOffsetY
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            avatarBounceTrigger = 1
+                            messageIndex = (messageIndex + 1) % encouragingMessages.size
+                            showSpeechBubble = true
+                        },
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.2f),
-                    border = BorderStroke(2.dp, Color.White)
+                    color = Color.White.copy(alpha = 0.3f),
+                    border = BorderStroke(2.5.dp, Color(0xFFFFD166)),
+                    shadowElevation = 6.dp
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.leraning_kid),
-                        contentDescription = "Profile",
+                        contentDescription = "แตะเพื่อคุยกับฉัน",
                         modifier = Modifier.fillMaxSize().padding(4.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Speech Bubble
+            if (showSpeechBubble) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showSpeechBubble = false }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "🐥", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = encouragingMessages[messageIndex],
+                            color = Color(0xFF2D3047),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Auto-Sliding Banner Carousel
+            AutoSlideBannerCarousel(
+                banners = bannerItems,
+                onBannerClick = onBannerClick
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Search Bar
             OutlinedTextField(
@@ -244,28 +788,30 @@ fun HomeHeader(
                     searchQuery = it
                     onSearchChange(it)
                 },
-                placeholder = { Text("Search anything", color = Color.Gray) },
+                placeholder = { Text("ค้นหาบทเรียนหรือคำศัพท์...", color = Color.Gray, fontSize = 14.sp) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = Color.White,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent
+                    .height(54.dp),
+                shape = RoundedCornerShape(27.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
                 ),
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
                 },
                 trailingIcon = {
                     Surface(
-                        modifier = Modifier.size(36.dp).padding(end = 4.dp),
+                        modifier = Modifier.size(34.dp).padding(end = 4.dp),
                         shape = CircleShape,
                         color = Color(0xFFF0F0F0)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_sort),
-                            contentDescription = "Filter",
+                            contentDescription = "ตัวกรอง",
                             modifier = Modifier.padding(8.dp),
                             tint = Color.DarkGray
                         )
@@ -285,34 +831,79 @@ fun CategoryCard(
     backgroundColor: Color,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.93f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "cardScale"
+    )
+
+    // Floating idle animation for 3D illustration
+    val infiniteTransition = rememberInfiniteTransition(label = "floatImg")
+    val floatOffset by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "floatY"
+    )
+
     Card(
         modifier = Modifier
-            .width(200.dp)
-            .height(240.dp)
-            .padding(start = 24.dp),
+            .width(185.dp)
+            .height(235.dp)
+            .padding(start = 20.dp)
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                isPressed = true
+                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                onClick()
+            },
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        onClick = onClick
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+        LaunchedEffect(isPressed) {
+            if (isPressed) {
+                delay(120)
+                isPressed = false
+            }
+        }
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp)
         ) {
             Text(
                 text = title,
-                fontSize = 20.sp,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3047)
+                color = Color(0xFF2D3047),
+                maxLines = 1
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
-                fontSize = 14.sp,
-                color = Color(0xFF2D3047).copy(alpha = 0.6f)
+                fontSize = 13.sp,
+                color = Color(0xFF2D3047).copy(alpha = 0.7f),
+                lineHeight = 17.sp,
+                maxLines = 2
             )
             Spacer(modifier = Modifier.weight(1f))
             Image(
                 painter = painterResource(id = imageRes),
-                contentDescription = null,
-                modifier = Modifier.size(100.dp).align(Alignment.End),
+                contentDescription = title,
+                modifier = Modifier
+                    .size(105.dp)
+                    .graphicsLayer(translationY = floatOffset)
+                    .clip(RoundedCornerShape(18.dp))
+                    .align(Alignment.End),
                 contentScale = ContentScale.Fit
             )
         }
@@ -320,36 +911,66 @@ fun CategoryCard(
 }
 
 @Composable
-fun ExploreCategoriesSection(onCategoryClick: (Int) -> Unit) {
-    DashboardSection(title = "Explore Categories") {
+fun ExploreCategoriesSection(
+    onCategoryClick: (Int) -> Unit,
+    onViewAllClick: () -> Unit = {}
+) {
+    DashboardSection(title = "หมวดหมู่การเรียนรู้", onViewAllClick = onViewAllClick) {
         LazyRow(
-            contentPadding = PaddingValues(end = 24.dp)
+            contentPadding = PaddingValues(end = 20.dp)
         ) {
             item {
                 CategoryCard(
-                    title = "Math",
-                    subtitle = "Numbers &\nProblem Solving",
-                    imageRes = R.drawable.card_one,
+                    title = "คณิตศาสตร์",
+                    subtitle = "ฝึกนับเลข 1-20\nและบวกลบเลข",
+                    imageRes = R.drawable.kids_math_3d,
                     backgroundColor = Color(0xFFE8E4FF),
                     onClick = { onCategoryClick(1) }
                 )
             }
             item {
                 CategoryCard(
-                    title = "English",
-                    subtitle = "Phonics &\nVocabulary",
-                    imageRes = R.drawable.card_two,
+                    title = "ภาษาอังกฤษ",
+                    subtitle = "โฟนิกส์ A-Z\nและคำศัพท์น่ารู้",
+                    imageRes = R.drawable.kids_english_3d,
                     backgroundColor = Color(0xFFE2F9E9),
                     onClick = { onCategoryClick(2) }
                 )
             }
             item {
                 CategoryCard(
-                    title = "Art",
-                    subtitle = "Coloring &\nDrawing",
-                    imageRes = R.drawable.home_color,
+                    title = "ภาษาไทย",
+                    subtitle = "ฝึกอ่าน-เขียน\nพยัญชนะ ก-ฮ",
+                    imageRes = R.drawable.kids_thai_3d,
+                    backgroundColor = Color(0xFFFFE8EC),
+                    onClick = { onCategoryClick(4) }
+                )
+            }
+            item {
+                CategoryCard(
+                    title = "ศิลปะระบายสี",
+                    subtitle = "วาดภาพระบายสี\nเสริมจินตนาการ",
+                    imageRes = R.drawable.kids_art_3d,
                     backgroundColor = Color(0xFFFFF0B4),
                     onClick = { onCategoryClick(3) }
+                )
+            }
+            item {
+                CategoryCard(
+                    title = "แบบทดสอบ",
+                    subtitle = "ตอบคำถามสนุกๆ\nสะสมคะแนน",
+                    imageRes = R.drawable.kids_quiz_3d,
+                    backgroundColor = Color(0xFFFFE2E2),
+                    onClick = { onCategoryClick(5) }
+                )
+            }
+            item {
+                CategoryCard(
+                    title = "ทีวีเพื่อการศึกษา",
+                    subtitle = "ช่องรายการสด\nDLTV ทุกระดับชั้น",
+                    imageRes = R.drawable.kids_tv_3d,
+                    backgroundColor = Color(0xFFE0F7FA),
+                    onClick = { onCategoryClick(6) }
                 )
             }
         }
@@ -366,35 +987,64 @@ fun LearningCard(
     progressColor: Color,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.93f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "learnScale"
+    )
+
     Card(
         modifier = Modifier
-            .width(160.dp)
-            .padding(start = 24.dp),
+            .width(170.dp)
+            .padding(start = 20.dp)
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                isPressed = true
+                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                onClick()
+            },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        onClick = onClick
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
+        LaunchedEffect(isPressed) {
+            if (isPressed) {
+                delay(120)
+                isPressed = false
+            }
+        }
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
                 text = subject,
                 fontSize = 12.sp,
-                color = Color.Gray
+                fontWeight = FontWeight.SemiBold,
+                color = progressColor
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = title,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2D3047),
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 19.sp
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Image(
                 painter = painterResource(id = imageRes),
                 contentDescription = null,
-                modifier = Modifier.size(60.dp).align(Alignment.CenterHorizontally)
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .align(Alignment.CenterHorizontally),
+                contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -424,17 +1074,20 @@ fun LearningCard(
 }
 
 @Composable
-fun ContinueLearningSection(onLessonClick: (Int) -> Unit) {
-    DashboardSection(title = "Continue Learning") {
+fun ContinueLearningSection(
+    onLessonClick: (Int) -> Unit,
+    onViewAllClick: () -> Unit = {}
+) {
+    DashboardSection(title = "เรียนรู้ต่อเนื่อง", onViewAllClick = onViewAllClick) {
         LazyRow(
-            contentPadding = PaddingValues(end = 24.dp)
+            contentPadding = PaddingValues(end = 20.dp)
         ) {
             item {
                 LearningCard(
-                    title = "Addition\nAdventure",
-                    subject = "Math",
+                    title = "ผจญภัยตัวเลข\n1 ถึง 20",
+                    subject = "คณิตศาสตร์",
                     progress = 0.65f,
-                    imageRes = R.drawable.card_one,
+                    imageRes = R.drawable.kids_math_3d,
                     backgroundColor = Color(0xFFE2F0FF),
                     progressColor = Color(0xFF0085FF),
                     onClick = { onLessonClick(1) }
@@ -442,10 +1095,10 @@ fun ContinueLearningSection(onLessonClick: (Int) -> Unit) {
             }
             item {
                 LearningCard(
-                    title = "Animal\nFriends",
-                    subject = "English",
+                    title = "เพื่อนสัตว์โลก\nแสนน่ารัก",
+                    subject = "ภาษาอังกฤษ",
                     progress = 0.77f,
-                    imageRes = R.drawable.card_three,
+                    imageRes = R.drawable.bear,
                     backgroundColor = Color(0xFFFFE2E2),
                     progressColor = Color(0xFFFF4B4B),
                     onClick = { onLessonClick(2) }
@@ -453,10 +1106,21 @@ fun ContinueLearningSection(onLessonClick: (Int) -> Unit) {
             }
             item {
                 LearningCard(
-                    title = "Plant Life\nCycle",
-                    subject = "Science",
+                    title = "พยัญชนะไทย\nก ไก่ ถึง ฮ นกฮูก",
+                    subject = "ภาษาไทย",
+                    progress = 0.85f,
+                    imageRes = R.drawable.kids_thai_3d,
+                    backgroundColor = Color(0xFFFFF4E0),
+                    progressColor = Color(0xFFFF9800),
+                    onClick = { onLessonClick(4) }
+                )
+            }
+            item {
+                LearningCard(
+                    title = "ต้นไม้และธรรมชาติ\nรอบตัวเรา",
+                    subject = "วิทยาศาสตร์",
                     progress = 0.46f,
-                    imageRes = R.drawable.leraning_kid,
+                    imageRes = R.drawable.sunflower,
                     backgroundColor = Color(0xFFE2FFF0),
                     progressColor = Color(0xFF00C853),
                     onClick = { onLessonClick(3) }
@@ -467,14 +1131,55 @@ fun ContinueLearningSection(onLessonClick: (Int) -> Unit) {
 }
 
 @Composable
-fun DailyGoalSection() {
-    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
-        Text(
-            text = "Daily Goal",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF2D3047)
-        )
+fun DailyGoalSection(
+    onGiftClick: () -> Unit = {}
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "giftWiggle")
+    val wiggleAngle by infiniteTransition.animateFloat(
+        initialValue = -7f,
+        targetValue = 7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(220, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "wAngle"
+    )
+    val giftScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "gScale"
+    )
+
+    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "เป้าหมายประจำวัน",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D3047)
+            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFFFE8EC),
+                modifier = Modifier.clickable { onGiftClick() }
+            ) {
+                Text(
+                    text = "🎁 แตะเปิดของขวัญ!",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFEF476F),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -486,20 +1191,23 @@ fun DailyGoalSection() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.card_one), // Placeholder for dino
+                    painter = painterResource(id = R.drawable.kids_thai_3d),
                     contentDescription = null,
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier
+                        .size(75.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(16.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Great job, Emma! 🎉",
+                        text = "เก่งมากเลยคนเก่ง! 🎉",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2D3047)
                     )
                     Text(
-                        text = "2 / 3 Lessons",
+                        text = "เรียนสำเร็จ 2 จาก 3 บทเรียนแล้ว",
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -512,15 +1220,34 @@ fun DailyGoalSection() {
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.card_four), // Placeholder for gift
-                    contentDescription = null,
-                    modifier = Modifier.size(60.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onGiftClick() }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.kids_quiz_3d),
+                        contentDescription = "กล่องของขวัญ",
+                        modifier = Modifier
+                            .size(62.dp)
+                            .graphicsLayer(
+                                rotationZ = wiggleAngle,
+                                scaleX = giftScale,
+                                scaleY = giftScale
+                            )
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
         }
     }
 }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainComposeScreen(navController: NavController? = null) {
     val context = LocalContext.current
     var isMusicEnabled by remember {
         mutableStateOf(
@@ -528,6 +1255,7 @@ fun DailyGoalSection() {
                 .isMusicEnabled(context)
         )
     }
+    var showRewardDialog by remember { mutableStateOf(false) }
     val viewMode = remember { mutableStateOf(ViewMode.GRID) }
     val menuItems = remember { getMenuItems() }
 
@@ -570,12 +1298,10 @@ fun DailyGoalSection() {
             interstitialAdManager.showInterstitialAd(
                 activity = activity,
                 onAdDismissed = {
-                    // โฆษณาปิดแล้ว - เปิด Activity ปลายทาง
                     showAdSuccessMessage(context)
                     handleItemClickDirectly(context, item, navController)
                 },
                 onAdFailed = {
-                    // โฆษณาแสดงไม่สำเร็จ - เปิด Activity ปลายทาง
                     showAdFailedMessage(context)
                     handleItemClickDirectly(context, item, navController)
                 }
@@ -587,28 +1313,20 @@ fun DailyGoalSection() {
 
     // ฟังก์ชันจัดการการคลิก
     val handleItemClick: (MenuItem) -> Unit = { item ->
-        // เพิ่มจำนวนรอบ
         visitCount++
-
-        // ตรวจสอบว่าถึงรอบที่ต้องแสดงโฆษณาหรือยัง
         val shouldShowAd =
             visitCount >= VISITS_BEFORE_AD && interstitialAdManager.isAdLoaded()
 
         if (shouldShowAd) {
-            // แสดงโฆษณาและรีเซ็ตนับรอบ
             showInterstitialAd(item)
             visitCount = 0
         } else {
-            // เปิดหน้าปกติ
             handleItemClickDirectly(context, item, navController)
-
-            // ถ้ายังไม่ถึงรอบแสดงโฆษณา แต่โฆษณาพร้อมอยู่แล้ว ให้โหลดใหม่เพื่อรอบถัดไป
             if (interstitialAdManager.isAdLoaded()) {
                 loadInterstitialAd(interstitialAdManager)
             }
         }
 
-        // พยายามโหลดโฆษณาใหม่ถ้ายังไม่พร้อม
         if (!interstitialAdManager.isAdLoaded()) {
             loadInterstitialAd(interstitialAdManager)
         }
@@ -619,11 +1337,13 @@ fun DailyGoalSection() {
 
     // Background Music
     val lifecycleOwner = LocalLifecycleOwner.current
+    val isPreview = LocalInspectionMode.current
     DisposableEffect(lifecycleOwner) {
         val musicManager =
             com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
 
         val observer = LifecycleEventObserver { _, event ->
+            if (isPreview) return@LifecycleEventObserver
             when (event) {
                 Lifecycle.Event.ON_RESUME -> musicManager.startMusic(context)
                 Lifecycle.Event.ON_PAUSE -> musicManager.pauseMusic()
@@ -634,146 +1354,94 @@ fun DailyGoalSection() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // Reward Celebration Dialog
+    if (showRewardDialog) {
+        RewardDialog(onDismiss = { showRewardDialog = false })
+    }
+
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Box(
-                        modifier =
-                            Modifier
-                                .background(
-                                    brush = RainbowGradient,
-                                    shape =
-                                        RoundedCornerShape(
-                                            50
-                                        ) // More rounded,
-                                    // pill/cloud
-                                    // shape
-                                )
-                                .padding(
-                                    horizontal = 24.dp,
-                                    vertical = 8.dp
-                                )
-                    ) {
-                        Text(
-                            text = "ฝึกเขียน ก ไก่-ABC",
-                            fontWeight = FontWeight.ExtraBold, // Bolder
-                            fontSize = 24.sp, // Larger font
-                            color = Color(0xFF2D3047)
-                        )
-                    }
-                },
-                colors =
-                    TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color(0xFF87CEEB)
-                    ),
-                actions = {
-                    // Animated Settings Button
-                    AnimatedIconButton(
-                        onClick = {
-                            showSettingsDialog(
-                                context,
-                                isMusicEnabled
-                            ) { enabled ->
-                                isMusicEnabled = enabled
-                                com.pongploydev.priyankvex.paintapp
-                                    .utils.MusicManager
-                                    .getInstance()
-                                    .setMusicEnabled(
-                                        context,
-                                        enabled
-                                    )
-                            }
-                        },
-                        icon = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        buttonColor = Color(0xFFFF6B6B),
-                        size = 48.dp // Larger button
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp)) // Add spacing
-
-                    // Animated Info Button
-                    AnimatedIconButton(
-                        onClick = { AboutDialog(context).show() },
-                        icon = Icons.Default.Info,
-                        contentDescription = "About",
-                        buttonColor = Color(0xFF4ECDC4),
-                        size = 48.dp // Larger button
-                    )
-                    Spacer(modifier = Modifier.width(8.dp)) // Add spacing end
-                }
-            )
-        },
-        //        bottomBar = {
-        //            // Banner Ad ใน bottomBar ของ Scaffold
-        //            ChildDirectedBannerAd(adUnitId =
-        // "ca-app-pub-3279793802315716/1117791498")
-        //        },
         content = { paddingValues ->
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(brush = GradientBackground)
-            ) {
-                Column(modifier = Modifier
+                modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)) {
-                    // แสดงจำนวนรอบจนกว่าจะถึงโฆษณา
-                    //                    VisitCounter(
-                    //                        currentCount = visitCount,
-                    //                        maxCount = VISITS_BEFORE_AD,
-                    //                        isAdLoaded =
-                    // interstitialAdManager.isAdLoaded()
-                    //                    )
-
-                    //                    ViewModeSelector(
-                    //                        currentMode = viewMode.value,
-                    //                        onModeSelected = { mode ->
-                    //                            viewMode.value = mode
-                    //                        }
-                    //                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // ใช้ Box กับ weight เพื่อให้เนื้อหาเต็มพื้นที่
-                    Box(modifier = Modifier.weight(1f)) {
-                        when (viewMode.value) {
-                            ViewMode.GRID -> {
-                                GridView(
-                                    items = menuItems,
-                                    onItemClick = { item ->
-                                        handleItemClick(
-                                            item
-                                        )
-                                    }
-                                )
-                            }
-
-                            ViewMode.LIST -> {
-                                ListView(
-                                    items = menuItems,
-                                    onItemClick = { item ->
-                                        handleItemClick(
-                                            item
-                                        )
-                                    }
-                                )
-                            }
-                        }
+                    .padding(paddingValues)
+                    .background(Color.White)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    item {
+                        HomeHeader(
+                            userName = "คนเก่ง",
+                            isMusicEnabled = isMusicEnabled,
+                            onMusicToggle = {
+                                isMusicEnabled = !isMusicEnabled
+                                com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
+                                    .setMusicEnabled(context, isMusicEnabled)
+                            },
+                            onBannerClick = { banner ->
+                                val item = menuItems.find { it.id == banner.actionId }
+                                item?.let { handleItemClick(it) }
+                            },
+                            onSearchChange = { /* Handle search */ }
+                        )
                     }
 
-                    // แสดงสถานะการโหลดโฆษณาเต็มจอ
-                    //                    AdLoadingStatus(
-                    //                        isAdLoading = isAdLoading,
-                    //                        isAdLoaded =
-                    // interstitialAdManager.isAdLoaded(),
-                    //                        adLoadAttempt = adLoadAttempt
-                    //                    )
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
-                    // เพิ่ม Spacer เล็กน้อยเพื่อไม่ให้เนื้อหาติดกับ Banner
-                    Spacer(modifier = Modifier.height(8.dp))
+                    item {
+                        ExploreCategoriesSection(
+                            onCategoryClick = { index ->
+                                val item = when (index) {
+                                    1 -> menuItems.find { it.id == 1 }
+                                    2 -> menuItems.find { it.id == 3 }
+                                    3 -> menuItems.find { it.id == 8 }
+                                    4 -> menuItems.find { it.id == 2 }
+                                    5 -> menuItems.find { it.id == 6 }
+                                    6 -> menuItems.find { it.id == 7 }
+                                    else -> null
+                                }
+                                item?.let { handleItemClick(it) }
+                            },
+                            onViewAllClick = {
+                                showKidsActivitiesDialog(context)
+                            }
+                        )
+                    }
+
+                    item {
+                        ContinueLearningSection(
+                            onLessonClick = { index ->
+                                val item = when (index) {
+                                    1 -> menuItems.find { it.id == 1 }
+                                    2 -> menuItems.find { it.id == 1 }
+                                    3 -> menuItems.find { it.id == 5 }
+                                    4 -> menuItems.find { it.id == 2 }
+                                    else -> null
+                                }
+                                item?.let { handleItemClick(it) }
+                            },
+                            onViewAllClick = {
+                                val item = menuItems.find { it.id == 1 }
+                                item?.let { handleItemClick(it) }
+                            }
+                        )
+                    }
+
+                    item {
+                        DailyGoalSection(
+                            onGiftClick = {
+                                showRewardDialog = true
+                            }
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
                 }
             }
         }
@@ -781,66 +1449,7 @@ fun DailyGoalSection() {
 }
 
 // ==================== Banner Ad Functions ====================
-//
-// @Composable
-// fun ChildDirectedBannerAd(
-//    adUnitId: String = "ca-app-pub-3940256099942544/6300978111",
-//    adSize: AdSize = AdSize.BANNER,
-//    modifier: Modifier = Modifier.fillMaxWidth().height(60.dp)
-// ) {
-//    val context = LocalContext.current
-//    var showFallback by remember { mutableStateOf(false) }
-//
-//    // ตั้งค่าสำหรับเด็ก
-//    LaunchedEffect(Unit) {
-//        try {
-//            MobileAds.setRequestConfiguration(
-//                RequestConfiguration.Builder()
-//
-// .setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE)
-//                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
-//                    .build()
-//            )
-//        } catch (e: Exception) {
-//            Log.w("ChildAd", "Failed to set child config: ${e.message}")
-//        }
-//    }
-//
-//    if (!adUnitId.startsWith("ca-app-pub-") || showFallback) {
-//        BannerAdFallback()
-//        return
-//    }
-//
-//    AndroidView(
-//        factory = { ctx ->
-//            AdView(ctx).apply {
-//                this.adUnitId = adUnitId
-//                setAdSize(adSize)
-//                setBackgroundColor(android.graphics.Color.TRANSPARENT)
-//
-//                adListener = object : AdListener() {
-//                    override fun onAdLoaded() {
-//                        showFallback = false
-//                        Log.d("ChildAd", "Ad loaded successfully")
-//                    }
-//
-//                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-//                        showFallback = true
-//                        Log.w("ChildAd", "Ad failed: ${loadAdError.message}")
-//                    }
-//                }
-//
-//                try {
-//                    loadAd(AdRequest.Builder().build())
-//                } catch (e: Exception) {
-//                    showFallback = true
-//                    Log.e("ChildAd", "Exception: ${e.message}")
-//                }
-//            }
-//        },
-//        modifier = modifier
-//    )
-// }
+
 @Composable
 fun BannerAdFallback() {
     val context = LocalContext.current

@@ -1,26 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/stat_card_root"
     android:layout_width="0dp"
     android:layout_height="wrap_content"
     android:layout_weight="1"
     android:layout_margin="4dp"
+    app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:strokeWidth="1dp"
-    app:strokeColor="#FFE0E0">
+    app:strokeColor="#F0F0F0">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="6dp">
 
         <ImageView
             android:id="@+id/stat_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
             android:src="@drawable/ic_fire" />
 
         <TextView
@@ -29,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="1"
-            android:textColor="#FF6B6B"
+            android:textColor="#FF5722"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -37,6 +40,7 @@
             android:id="@+id/stat_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="Streak"
             android:textColor="#9E9E9E"
             android:textSize="12sp" />

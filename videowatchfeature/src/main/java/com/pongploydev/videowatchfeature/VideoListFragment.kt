@@ -3,6 +3,7 @@ package com.pongploydev.videowatchfeature
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,6 +19,8 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +28,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.facebook.shimmer.ShimmerFrameLayout
+import com.google.android.material.card.MaterialCardView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
@@ -63,20 +67,21 @@ class VideoListFragment : Fragment() {
     private lateinit var btnClearSearch: Button
 
     // ตัวแปรสำหรับ Header และค้นหา
-    private lateinit var searchContainer: LinearLayout
+    private lateinit var searchContainer: MaterialCardView
     private lateinit var searchInput: EditText
     private lateinit var searchIcon: ImageView
-    private lateinit var clearSearchBtn: ImageView
-    private lateinit var sortButton: ImageView
-    private lateinit var refreshButton: ImageView
-    private lateinit var favoriteButton: ImageView
-    private lateinit var switchViewButton: ImageView
+    // private lateinit var clearSearchBtn: ImageView
+    // private lateinit var sortButton: ImageView
+    // private lateinit var refreshButton: ImageView
+    // private lateinit var favoriteButton: ImageView
+    // private lateinit var switchViewButton: ImageView
     private lateinit var categoryContainer: LinearLayout
-    private lateinit var categoryAll: TextView
-    private lateinit var categoryCartoon: TextView
-    private lateinit var categoryMusic: TextView
-    private lateinit var categoryLearning: TextView
-    private lateinit var categoryStory: TextView
+    private lateinit var categoryAll: MaterialCardView
+    private lateinit var categoryLearning: MaterialCardView
+    private lateinit var categoryAbc: MaterialCardView
+    private lateinit var txtCategoryAll: TextView
+    private lateinit var txtCategoryLearning: TextView
+    private lateinit var txtCategoryAbc: TextView
 
     // ตัวแปรสำหรับ Interstitial Ad
     private var interstitialAd: InterstitialAd? = null
@@ -230,30 +235,69 @@ class VideoListFragment : Fragment() {
             shimmerFrameLayout = findViewById(R.id.shimmer_view_container)
             lytNoItem = findViewById(R.id.lyt_no_item_home)
             lytFailed = findViewById(R.id.lyt_failed_home)
-            lytNoSearchResults = findViewById(R.id.lyt_no_search_results)
+            // lytNoSearchResults = findViewById(R.id.lyt_no_search_results)
             txtNoItemMessage = findViewById(R.id.no_item_message)
             txtFailedMessage = findViewById(R.id.failed_message)
-            txtNoSearchMessage = findViewById(R.id.txt_no_search_message)
-            txtSearchSuggest = findViewById(R.id.txt_search_suggest)
+            // txtNoSearchMessage = findViewById(R.id.txt_no_search_message)
+            // txtSearchSuggest = findViewById(R.id.txt_search_suggest)
             btnRetry = findViewById(R.id.failed_retry)
-            btnClearSearch = findViewById(R.id.btn_clear_search)
+            // btnClearSearch = findViewById(R.id.btn_clear_search)
 
             // ประกาศตัวแปรสำหรับ Header และค้นหา
             searchContainer = findViewById(R.id.search_container)
             searchInput = findViewById(R.id.search_input)
-            searchIcon = findViewById(R.id.search_icon)
-            clearSearchBtn = findViewById(R.id.clear_search_btn)
-            sortButton = findViewById(R.id.sort_button)
-            refreshButton = findViewById(R.id.refresh_button)
-            favoriteButton = findViewById(R.id.favorite_button)
-            switchViewButton = findViewById(R.id.switch_view_button)
+            // searchIcon = findViewById(R.id.search_icon)
+            // clearSearchBtn = findViewById(R.id.clear_search_btn)
+            // sortButton = findViewById(R.id.sort_button)
+            // refreshButton = findViewById(R.id.refresh_button)
+            // favoriteButton = findViewById(R.id.favorite_button)
+            // switchViewButton = findViewById(R.id.switch_view_button)
             categoryContainer = findViewById(R.id.category_container)
             categoryAll = findViewById(R.id.category_all)
-            categoryCartoon = findViewById(R.id.category_cartoon)
-            categoryMusic = findViewById(R.id.category_music)
             categoryLearning = findViewById(R.id.category_learning)
-            categoryStory = findViewById(R.id.category_story)
+            categoryAbc = findViewById(R.id.category_abc)
+            txtCategoryAll = findViewById(R.id.txt_category_all)
+            txtCategoryLearning = findViewById(R.id.txt_category_learning)
+            txtCategoryAbc = findViewById(R.id.txt_category_abc)
+
+            val greetingText = findViewById<TextView>(R.id.greeting_text)
+            greetingText.text = HtmlCompat.fromHtml(
+                "<font color='#FF5376'><b>Hi Haya!</b></font> <b>Tap a clip and start your first spark.</b>",
+                HtmlCompat.FROM_HTML_MODE_LEGACY
+            )
+
+            rootView?.findViewById<View>(R.id.btn_help)?.setOnClickListener {
+                Toast.makeText(activityContext, "Spark Clips", Toast.LENGTH_SHORT).show()
+            }
+
+            setupStatCards(this)
         }
+    }
+
+    private fun setupStatCards(view: View) {
+        // Streak Card
+        val cardStreak = view.findViewById<View>(R.id.card_streak)
+        cardStreak.findViewById<ImageView>(R.id.stat_icon).setImageResource(R.drawable.ic_fire)
+        cardStreak.findViewById<ImageView>(R.id.stat_icon).setColorFilter(ContextCompat.getColor(requireContext(), R.color.color_red))
+        cardStreak.findViewById<TextView>(R.id.stat_value).text = "1"
+        cardStreak.findViewById<TextView>(R.id.stat_label).text = getString(R.string.streak_label)
+        cardStreak.findViewById<TextView>(R.id.stat_value).setTextColor(ContextCompat.getColor(requireContext(), R.color.color_red))
+
+        // Stars Card
+        val cardStars = view.findViewById<View>(R.id.card_stars)
+        cardStars.findViewById<ImageView>(R.id.stat_icon).setImageResource(R.drawable.ic_title_star)
+        cardStars.findViewById<ImageView>(R.id.stat_icon).setColorFilter(ContextCompat.getColor(requireContext(), R.color.color_orange))
+        cardStars.findViewById<TextView>(R.id.stat_value).text = "50"
+        cardStars.findViewById<TextView>(R.id.stat_label).text = getString(R.string.stars_label)
+        cardStars.findViewById<TextView>(R.id.stat_value).setTextColor(ContextCompat.getColor(requireContext(), R.color.color_orange))
+
+        // Clips Card
+        val cardClips = view.findViewById<View>(R.id.card_clips)
+        cardClips.findViewById<ImageView>(R.id.stat_icon).setImageResource(R.drawable.ic_lightning)
+        cardClips.findViewById<ImageView>(R.id.stat_icon).setColorFilter(Color.parseColor("#7CB342"))
+        cardClips.findViewById<TextView>(R.id.stat_value).text = "10"
+        cardClips.findViewById<TextView>(R.id.stat_label).text = getString(R.string.clips_label)
+        cardClips.findViewById<TextView>(R.id.stat_value).setTextColor(Color.parseColor("#7CB342"))
     }
 
     private fun setupComponents() {
@@ -320,19 +364,10 @@ class VideoListFragment : Fragment() {
             recyclerView.setPadding(0, spacing, 0, spacing)
             recyclerView.layoutManager = LinearLayoutManager(activityContext)
         } else {
+            // ปรับเป็น List (span 1) แทน Grid (span 2) ตามคำขอของผู้ใช้
             val spacing = resources.getDimensionPixelOffset(R.dimen.spacing_medium)
             recyclerView.setPadding(spacing, spacing, spacing, spacing)
-            val gridLayoutManager = androidx.recyclerview.widget.GridLayoutManager(activityContext, 2)
-            gridLayoutManager.spanSizeLookup = object : androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int): Int {
-                    return if (adapterVideo?.getItemViewType(position) == 0) { // VIEW_PROG is 0
-                        2
-                    } else {
-                        1
-                    }
-                }
-            }
-            recyclerView.layoutManager = gridLayoutManager
+            recyclerView.layoutManager = LinearLayoutManager(activityContext)
         }
     }
 
@@ -371,11 +406,7 @@ class VideoListFragment : Fragment() {
     }
 
     private fun updateSwitchViewButtonIcon() {
-        if (sharedPref.videoViewType == Constant.VIDEO_LIST_COMPACT) {
-            switchViewButton.setImageResource(R.drawable.ic_grid)
-        } else {
-            switchViewButton.setImageResource(R.drawable.ic_view)
-        }
+        // Functionality removed for new UI
     }
 
     private fun toggleViewType() {
@@ -427,12 +458,6 @@ class VideoListFragment : Fragment() {
             }
             loadInterstitialAd()
         }
-
-        btnClearSearch.setOnClickListener { clearSearch() }
-
-        refreshButton.setOnClickListener { refreshAll() }
-
-        favoriteButton.setOnClickListener { openFavoriteList() }
     }
 
     private fun openFavoriteList() {
@@ -464,10 +489,6 @@ class VideoListFragment : Fragment() {
                             before: Int,
                             count: Int
                     ) {
-                        // แสดง/ซ่อนปุ่มล้าง
-                        clearSearchBtn.visibility =
-                                if (s.isNullOrEmpty()) View.GONE else View.VISIBLE
-
                         // ล้าง handler ก่อนหน้า
                         searchHandler?.removeCallbacksAndMessages(null)
 
@@ -490,14 +511,8 @@ class VideoListFragment : Fragment() {
                 }
         )
 
-        // ตั้งค่าปุ่มล้าง
-        clearSearchBtn.setOnClickListener { clearSearch() }
-
         // ตั้งค่าปุ่มเรียงลำดับ
-        sortButton.setOnClickListener { showSortMenu() }
-
-        // ตั้งค่าปุ่มสลับมุมมอง
-        switchViewButton.setOnClickListener { toggleViewType() }
+        rootView?.findViewById<View>(R.id.btn_sort_new)?.setOnClickListener { showSortMenu() }
 
         // ตั้งค่าเมื่อกด search บน keyboard
         searchInput.setOnEditorActionListener { _, actionId, _ ->
@@ -520,51 +535,59 @@ class VideoListFragment : Fragment() {
     }
 
     private fun setupCategories() {
-        // ตั้งค่า OnClickListener สำหรับแต่ละหมวดหมู่
         categoryAll.setOnClickListener { selectCategory("all") }
-        categoryCartoon.setOnClickListener { selectCategory("cartoon") }
-        categoryMusic.setOnClickListener { selectCategory("music") }
         categoryLearning.setOnClickListener { selectCategory("learning") }
-        categoryStory.setOnClickListener { selectCategory("story") }
-
-        // เริ่มต้นเลือกหมวดหมู่ทั้งหมด
-        // selectCategory("all") // ViewModel default is all
+        categoryAbc.setOnClickListener { selectCategory("abc") }
+        updateCategoryUI("all")
     }
 
     private fun selectCategory(category: String) {
-        // รีเซ็ตสไตล์ทั้งหมด
-        val categories =
-                listOf(categoryAll, categoryCartoon, categoryMusic, categoryLearning, categoryStory)
-        categories.forEach { 
-            it.setBackgroundResource(R.drawable.bg_category_unselected)
-            it.backgroundTintList = null // Clear any tint
-        }
-
-        // ตั้งค่าสไตล์สำหรับหมวดหมู่ที่เลือก พร้อมสีสดใสสำหรับเด็ก
-        when (category) {
-            "all" -> {
-                categoryAll.setBackgroundResource(R.drawable.bg_category_selected)
-            }
-            "cartoon" -> {
-                categoryCartoon.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryCartoon.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#2196F3"))
-            }
-            "music" -> {
-                categoryMusic.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryMusic.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E91E63"))
-            }
-            "learning" -> {
-                categoryLearning.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryLearning.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50"))
-            }
-            "story" -> {
-                categoryStory.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryStory.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9C27B0"))
-            }
-        }
-
-        // กรองวิดีโอตามหมวดหมู่
+        updateCategoryUI(category)
         viewModel.filterVideos(viewModel.searchQuery, category)
+    }
+
+    private fun updateCategoryUI(selectedCategory: String) {
+        val pinkColor = Color.parseColor("#FF6B8E")
+        val whiteColor = Color.parseColor("#FFFFFF")
+        val darkTextColor = Color.parseColor("#2D3047")
+        val strokeColor = Color.parseColor("#E0E0E0")
+        val strokeWidthPx = (1 * resources.displayMetrics.density).toInt()
+
+        // All Sparks
+        if (selectedCategory == "all") {
+            categoryAll.setCardBackgroundColor(pinkColor)
+            categoryAll.strokeWidth = 0
+            txtCategoryAll.setTextColor(whiteColor)
+        } else {
+            categoryAll.setCardBackgroundColor(whiteColor)
+            categoryAll.strokeColor = strokeColor
+            categoryAll.strokeWidth = strokeWidthPx
+            txtCategoryAll.setTextColor(darkTextColor)
+        }
+
+        // Math Magic
+        if (selectedCategory == "learning" || selectedCategory == "math") {
+            categoryLearning.setCardBackgroundColor(pinkColor)
+            categoryLearning.strokeWidth = 0
+            txtCategoryLearning.setTextColor(whiteColor)
+        } else {
+            categoryLearning.setCardBackgroundColor(whiteColor)
+            categoryLearning.strokeColor = strokeColor
+            categoryLearning.strokeWidth = strokeWidthPx
+            txtCategoryLearning.setTextColor(darkTextColor)
+        }
+
+        // ABC
+        if (selectedCategory == "abc" || selectedCategory == "english") {
+            categoryAbc.setCardBackgroundColor(pinkColor)
+            categoryAbc.strokeWidth = 0
+            txtCategoryAbc.setTextColor(whiteColor)
+        } else {
+            categoryAbc.setCardBackgroundColor(whiteColor)
+            categoryAbc.strokeColor = strokeColor
+            categoryAbc.strokeWidth = strokeWidthPx
+            txtCategoryAbc.setTextColor(darkTextColor)
+        }
     }
 
     private fun performSearch(query: String) {
@@ -584,22 +607,30 @@ class VideoListFragment : Fragment() {
                     "ไม่พบวิดีโอในหมวดหมู่นี้"
                 }
 
-        txtNoSearchMessage.text = message
-        txtSearchSuggest.text =
-                if (query.isNotEmpty()) {
-                    "ลองค้นหาด้วยคำอื่นดูสิ!"
-                } else {
-                    "ลองเลือกหมวดหมู่อื่นดูสิ!"
-                }
+        if (::txtNoSearchMessage.isInitialized) {
+            txtNoSearchMessage.text = message
+        }
+        if (::txtSearchSuggest.isInitialized) {
+            txtSearchSuggest.text =
+                    if (query.isNotEmpty()) {
+                        "ลองค้นหาด้วยคำอื่นดูสิ!"
+                    } else {
+                        "ลองเลือกหมวดหมู่อื่นดูสิ!"
+                    }
+        }
 
-        lytNoSearchResults.visibility = View.VISIBLE
+        if (::lytNoSearchResults.isInitialized) {
+            lytNoSearchResults.visibility = View.VISIBLE
+        }
         recyclerView.visibility = View.GONE
         lytNoItem.visibility = View.GONE
         lytFailed.visibility = View.GONE
     }
 
     private fun hideNoSearchResults() {
-        lytNoSearchResults.visibility = View.GONE
+        if (::lytNoSearchResults.isInitialized) {
+            lytNoSearchResults.visibility = View.GONE
+        }
         recyclerView.visibility = View.VISIBLE
     }
 
@@ -614,7 +645,6 @@ class VideoListFragment : Fragment() {
     private fun clearSearch() {
         searchInput.text.clear()
         searchQuery = ""
-        // isSearching = false // Removed
         hideKeyboard()
         selectCategory("all")
         hideNoSearchResults()
@@ -638,7 +668,8 @@ class VideoListFragment : Fragment() {
     }
 
     private fun showSortMenu() {
-        val popupMenu = PopupMenu(activityContext, sortButton)
+        val sortBtn = rootView?.findViewById<View>(R.id.btn_sort_new) ?: return
+        val popupMenu = PopupMenu(activityContext, sortBtn)
         popupMenu.menuInflater.inflate(R.menu.menu_video_sort, popupMenu.menu)
 
         // ติ๊กเลือกเมนูปัจจุบัน
@@ -1282,14 +1313,18 @@ class VideoListFragment : Fragment() {
     private fun showFailedView(show: Boolean, message: String?) {
         lytFailed.isVisible = show
         recyclerView.isVisible = !show
-        lytNoSearchResults.isVisible = false
+        if (::lytNoSearchResults.isInitialized) {
+            lytNoSearchResults.isVisible = false
+        }
         txtFailedMessage.text = message ?: getString(R.string.failed_text)
     }
 
     private fun showNoItemView(show: Boolean) {
         lytNoItem.isVisible = show
         recyclerView.isVisible = !show
-        lytNoSearchResults.isVisible = false
+        if (::lytNoSearchResults.isInitialized) {
+            lytNoSearchResults.isVisible = false
+        }
         txtNoItemMessage.setText(R.string.msg_no_item)
     }
 

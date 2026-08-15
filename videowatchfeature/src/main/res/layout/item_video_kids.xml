@@ -1,214 +1,195 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/lyt_parent"
+    android:id="@+id/card_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_card_kids"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground">
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="3dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#F0F0F0">
 
-    <!-- Card Container with Rounded Corners -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/card_view"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/lyt_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="12dp"
-        app:cardPreventCornerOverlap="true"
-        app:cardUseCompatPadding="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
 
-        <!-- Unified Content Layout using ConstraintLayout -->
+        <!-- Thumbnail Section (16:9 Aspect Ratio) -->
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/white">
+            android:id="@+id/lyt_thumbnail"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="#1A1A1A"
+            app:layout_constraintDimensionRatio="H,16:9"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-            <!-- Thumbnail Section (Top) -->
-            <RelativeLayout
-                android:id="@+id/lyt_thumbnail"
-                android:layout_width="0dp"
-                android:layout_height="180dp"
-                android:background="@color/kids_light_blue"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/video_thumbnail"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_kids_placeholder"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.CornerSize.Top16" />
-
-                <FrameLayout
-                    android:id="@+id/lyt_youtube_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="gone" />
-
-                <!-- Play Button Overlay -->
-                <ImageView
-                    android:id="@+id/img_play"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
-                    android:layout_centerInParent="true"
-                    android:background="@drawable/bg_play_button"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_play_circle_kids" />
-
-                <!-- Duration Badge -->
-                <TextView
-                    android:id="@+id/video_duration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_alignParentBottom="true"
-                    android:layout_margin="8dp"
-                    android:background="@drawable/bg_rounded_kids"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
-                    android:text="10:30"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <!-- Age Badge -->
-                <TextView
-                    android:id="@+id/txt_age_badge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:layout_margin="8dp"
-                    android:background="@drawable/bg_age_badge"
-                    android:gravity="center"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
-                    android:text="3+"
-                    android:textColor="@color/white"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-
-                <!-- Gradient Overlay Bottom -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_alignParentBottom="true"
-                    android:background="@drawable/bg_gradient_overlay_bottom" />
-
-            </RelativeLayout>
-
-            <!-- Video Title -->
             <ImageView
-                android:id="@+id/icon_title_star"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="12dp"
-                android:src="@drawable/ic_title_star"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/lyt_thumbnail"
-                app:tint="@color/cartoon_blue" />
+                android:id="@+id/video_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_thumbnail" />
 
-            <TextView
-                android:id="@+id/video_title"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:ellipsize="marquee"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:marqueeRepeatLimit="marquee_forever"
-                android:scrollHorizontally="true"
-                android:singleLine="true"
-                android:text="การผจญภัยของเจ้าหนูน้อย"
-                android:textColor="@color/kids_text_dark"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="@id/icon_title_star"
-                app:layout_constraintEnd_toStartOf="@+id/overflow"
-                app:layout_constraintStart_toEndOf="@id/icon_title_star"
-                app:layout_constraintTop_toTopOf="@id/icon_title_star" />
+            <FrameLayout
+                android:id="@+id/lyt_youtube_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
 
-            <!-- Overflow Menu Button (Restored) -->
-            <ImageButton
-                android:id="@+id/overflow"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="6dp"
-                android:src="@drawable/ic_dots_vertical"
-                app:layout_constraintBottom_toBottomOf="@id/video_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/video_title"
-                app:tint="@color/kids_text_light"
-                tools:ignore="ContentDescription" />
-
-            <!-- Category -->
+            <!-- Play Button Overlay -->
             <ImageView
-                android:id="@+id/icon_category"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginTop="8dp"
-                android:src="@drawable/ic_category"
-                app:layout_constraintEnd_toEndOf="@id/icon_title_star"
-                app:layout_constraintStart_toStartOf="@id/icon_title_star"
-                app:layout_constraintTop_toBottomOf="@id/icon_title_star"
-                app:tint="@color/kids_secondary" />
-
-            <TextView
-                android:id="@+id/category_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="16dp"
-                android:text="การ์ตูนสนุกๆ"
-                android:textColor="@color/kids_text_light"
-                android:textSize="14sp"
-                app:layout_constraintBottom_toBottomOf="@id/icon_category"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/icon_category"
-                app:layout_constraintTop_toTopOf="@id/icon_category" />
-
-            <!-- Progress Bar -->
-            <ProgressBar
-                android:id="@+id/progress_bar"
-                android:layout_width="0dp"
-                android:layout_height="4dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="12dp"
-                android:layout_marginHorizontal="16dp"
-                android:indeterminate="false"
-                android:max="100"
-                android:progress="0"
-                android:progressDrawable="@drawable/progress_bar_kids"
-                android:visibility="gone"
+                android:id="@+id/img_play"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_play_button"
+                android:padding="10dp"
+                android:src="@drawable/ic_play_circle_kids"
+                app:tint="@color/white"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/category_name" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="Play" />
 
-            <!-- Spacer for bottom padding if progress is GONE -->
-            <View
-                 android:layout_width="match_parent"
-                 android:layout_height="12dp"
-                 app:layout_constraintTop_toBottomOf="@id/category_name"
-                 app:layout_constraintStart_toStartOf="parent"
-                 android:id="@+id/bottom_spacer"
-                 android:visibility="invisible"/>
+            <!-- Age Badge (Top-Left) -->
+            <TextView
+                android:id="@+id/txt_age_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:background="@drawable/bg_age_badge"
+                android:gravity="center"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:text="3+"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
+            <!-- Duration Badge (Bottom-Right) -->
+            <TextView
+                android:id="@+id/video_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:background="@drawable/bg_rounded_kids"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="13:59"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </androidx.cardview.widget.CardView>
+        <!-- Video Title -->
+        <ImageView
+            android:id="@+id/icon_title_star"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/ic_title_star"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/lyt_thumbnail"
+            app:tint="@color/cartoon_blue" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/video_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="6dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="การผจญภัยของเจ้าหนูน้อย"
+            android:textColor="@color/kids_text_dark"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/icon_title_star"
+            app:layout_constraintEnd_toStartOf="@+id/overflow"
+            app:layout_constraintStart_toEndOf="@id/icon_title_star"
+            app:layout_constraintTop_toTopOf="@id/icon_title_star" />
+
+        <!-- Overflow Menu Button -->
+        <ImageButton
+            android:id="@+id/overflow"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="10dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_dots_vertical"
+            app:layout_constraintBottom_toBottomOf="@id/video_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/video_title"
+            app:tint="@color/kids_text_light"
+            tools:ignore="ContentDescription" />
+
+        <!-- Category -->
+        <ImageView
+            android:id="@+id/icon_category"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="6dp"
+            android:src="@drawable/ic_category"
+            app:layout_constraintEnd_toEndOf="@id/icon_title_star"
+            app:layout_constraintStart_toStartOf="@id/icon_title_star"
+            app:layout_constraintTop_toBottomOf="@id/icon_title_star"
+            app:tint="@color/kids_secondary" />
+
+        <TextView
+            android:id="@+id/category_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="14dp"
+            android:text="การ์ตูนสนุกๆ"
+            android:textColor="@color/kids_text_light"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toBottomOf="@id/icon_category"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/icon_category"
+            app:layout_constraintTop_toTopOf="@id/icon_category" />
+
+        <!-- Progress Bar (Optional) -->
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="12dp"
+            android:layout_marginHorizontal="14dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/progress_bar_kids"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/category_name" />
+
+        <!-- Bottom Spacing -->
+        <View
+            android:id="@+id/bottom_space"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            app:layout_constraintTop_toBottomOf="@id/category_name" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
