@@ -19,6 +19,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,13 +38,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,8 +56,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -141,9 +149,378 @@ val RainbowGradient =
             )
     )
 
+@Composable
+fun DashboardSection(
+    title: String,
+    onViewAllClick: () -> Unit = {},
+    content: @Composable () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D3047)
+            )
+            Text(
+                text = "View All >",
+                fontSize = 14.sp,
+                color = Color(0xFF8E78FF),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable { onViewAllClick() }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        content()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainComposeScreen(navController: NavController? = null) {
+fun HomeHeader(
+    userName: String,
+    onSearchChange: (String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF8E78FF), Color(0xFFB4A5FF))
+                )
+            )
+            .padding(top = 24.dp, bottom = 40.dp)
+            .padding(horizontal = 24.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Hi, $userName!",
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Ready to learn and have fun?",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 16.sp
+                    )
+                }
+                // Profile Image Placeholder
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.2f),
+                    border = BorderStroke(2.dp, Color.White)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.leraning_kid),
+                        contentDescription = "Profile",
+                        modifier = Modifier.fillMaxSize().padding(4.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = {
+                    searchQuery = it
+                    onSearchChange(it)
+                },
+                placeholder = { Text("Search anything", color = Color.Gray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = Color.White,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent
+                ),
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                },
+                trailingIcon = {
+                    Surface(
+                        modifier = Modifier.size(36.dp).padding(end = 4.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFF0F0F0)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_sort),
+                            contentDescription = "Filter",
+                            modifier = Modifier.padding(8.dp),
+                            tint = Color.DarkGray
+                        )
+                    }
+                },
+                singleLine = true
+            )
+        }
+    }
+}
+
+@Composable
+fun CategoryCard(
+    title: String,
+    subtitle: String,
+    imageRes: Int,
+    backgroundColor: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(200.dp)
+            .height(240.dp)
+            .padding(start = 24.dp),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Text(
+                text = title,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D3047)
+            )
+            Text(
+                text = subtitle,
+                fontSize = 14.sp,
+                color = Color(0xFF2D3047).copy(alpha = 0.6f)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = null,
+                modifier = Modifier.size(100.dp).align(Alignment.End),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+}
+
+@Composable
+fun ExploreCategoriesSection(onCategoryClick: (Int) -> Unit) {
+    DashboardSection(title = "Explore Categories") {
+        LazyRow(
+            contentPadding = PaddingValues(end = 24.dp)
+        ) {
+            item {
+                CategoryCard(
+                    title = "Math",
+                    subtitle = "Numbers &\nProblem Solving",
+                    imageRes = R.drawable.card_one,
+                    backgroundColor = Color(0xFFE8E4FF),
+                    onClick = { onCategoryClick(1) }
+                )
+            }
+            item {
+                CategoryCard(
+                    title = "English",
+                    subtitle = "Phonics &\nVocabulary",
+                    imageRes = R.drawable.card_two,
+                    backgroundColor = Color(0xFFE2F9E9),
+                    onClick = { onCategoryClick(2) }
+                )
+            }
+            item {
+                CategoryCard(
+                    title = "Art",
+                    subtitle = "Coloring &\nDrawing",
+                    imageRes = R.drawable.home_color,
+                    backgroundColor = Color(0xFFFFF0B4),
+                    onClick = { onCategoryClick(3) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LearningCard(
+    title: String,
+    subject: String,
+    progress: Float,
+    imageRes: Int,
+    backgroundColor: Color,
+    progressColor: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .padding(start = 24.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = subject,
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D3047),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = null,
+                modifier = Modifier.size(60.dp).align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${(progress * 100).toInt()}%",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = progressColor,
+                    modifier = Modifier.width(36.dp)
+                )
+                LinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    color = progressColor,
+                    trackColor = Color.White.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_play_circle_kids),
+                    contentDescription = null,
+                    tint = progressColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ContinueLearningSection(onLessonClick: (Int) -> Unit) {
+    DashboardSection(title = "Continue Learning") {
+        LazyRow(
+            contentPadding = PaddingValues(end = 24.dp)
+        ) {
+            item {
+                LearningCard(
+                    title = "Addition\nAdventure",
+                    subject = "Math",
+                    progress = 0.65f,
+                    imageRes = R.drawable.card_one,
+                    backgroundColor = Color(0xFFE2F0FF),
+                    progressColor = Color(0xFF0085FF),
+                    onClick = { onLessonClick(1) }
+                )
+            }
+            item {
+                LearningCard(
+                    title = "Animal\nFriends",
+                    subject = "English",
+                    progress = 0.77f,
+                    imageRes = R.drawable.card_three,
+                    backgroundColor = Color(0xFFFFE2E2),
+                    progressColor = Color(0xFFFF4B4B),
+                    onClick = { onLessonClick(2) }
+                )
+            }
+            item {
+                LearningCard(
+                    title = "Plant Life\nCycle",
+                    subject = "Science",
+                    progress = 0.46f,
+                    imageRes = R.drawable.leraning_kid,
+                    backgroundColor = Color(0xFFE2FFF0),
+                    progressColor = Color(0xFF00C853),
+                    onClick = { onLessonClick(3) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DailyGoalSection() {
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
+        Text(
+            text = "Daily Goal",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2D3047)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F7F9))
+        ) {
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.card_one), // Placeholder for dino
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "Great job, Emma! 🎉",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3047)
+                    )
+                    Text(
+                        text = "2 / 3 Lessons",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = 0.66f,
+                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                        color = Color(0xFF00C853),
+                        trackColor = Color.White.copy(alpha = 0.5f)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.card_four), // Placeholder for gift
+                    contentDescription = null,
+                    modifier = Modifier.size(60.dp)
+                )
+            }
+        }
+    }
+}
     val context = LocalContext.current
     var isMusicEnabled by remember {
         mutableStateOf(
