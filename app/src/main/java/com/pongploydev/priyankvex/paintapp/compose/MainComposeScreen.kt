@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -19,6 +20,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,6 +53,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -335,11 +341,65 @@ data class HomeBannerItem(
     val actionId: Int
 )
 
+fun getHomeBanners(): List<HomeBannerItem> = listOf(
+    HomeBannerItem(
+        id = 1,
+        title = "พยัญชนะไทย ก-ฮ",
+        subtitle = "ฝึกอ่าน คัดลายมือ เพลิดเพลิน",
+        tag = "🌟 ยอดนิยม",
+        imageRes = R.drawable.kids_thai_3d,
+        bgColors = listOf(Color(0xFFFF5E7E), Color(0xFFFF9966)),
+        buttonText = "เริ่มฝึกอ่านเลย >",
+        actionId = 2
+    ),
+    HomeBannerItem(
+        id = 2,
+        title = "นับเลขแสนสนุก 1-20",
+        subtitle = "บวกลบเลขง่ายๆ เสริมทักษะ",
+        tag = "🔢 ฝึกสมอง",
+        imageRes = R.drawable.kids_math_3d,
+        bgColors = listOf(Color(0xFF3A88E9), Color(0xFF00C6FF)),
+        buttonText = "ไปลุยกันเลย >",
+        actionId = 1
+    ),
+    HomeBannerItem(
+        id = 3,
+        title = "ภาษาอังกฤษ A-Z",
+        subtitle = "โฟนิกส์และคำศัพท์น่ารู้",
+        tag = "🔤 สนุกทุกวัน",
+        imageRes = R.drawable.kids_english_3d,
+        bgColors = listOf(Color(0xFF00B09B), Color(0xFF96C93D)),
+        buttonText = "เรียน A-Z เลย >",
+        actionId = 3
+    ),
+    HomeBannerItem(
+        id = 4,
+        title = "วาดภาพระบายสี",
+        subtitle = "แต่งแต้มสีสัน เสริมจินตนาการ",
+        tag = "🎨 ศิลปะแสนสนุก",
+        imageRes = R.drawable.kids_art_3d,
+        bgColors = listOf(Color(0xFFF857A6), Color(0xFFFF5858)),
+        buttonText = "ไปวาดรูปเลย >",
+        actionId = 8
+    ),
+    HomeBannerItem(
+        id = 5,
+        title = "ทีวีเพื่อการศึกษา",
+        subtitle = "ชมสดช่อง DLTV ทุกระดับชั้น",
+        tag = "📺 ชมสดออนไลน์",
+        imageRes = R.drawable.kids_tv_3d,
+        bgColors = listOf(Color(0xFF654EA3), Color(0xFFEAAFC8)),
+        buttonText = "รับชมตอนนี้ >",
+        actionId = 7
+    )
+)
+
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun AutoSlideBannerCarousel(
     banners: List<HomeBannerItem>,
-    onBannerClick: (HomeBannerItem) -> Unit
+    onBannerClick: (HomeBannerItem) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { banners.size })
@@ -356,12 +416,12 @@ fun AutoSlideBannerCarousel(
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         HorizontalPager(
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 4.dp),
+            contentPadding = PaddingValues(horizontal = 0.dp),
             pageSpacing = 12.dp,
             modifier = Modifier
                 .fillMaxWidth()
@@ -471,7 +531,7 @@ fun AutoSlideBannerCarousel(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Page Indicator Dots
+        // Page Indicator Dots (Visible on light/white background)
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
@@ -490,7 +550,7 @@ fun AutoSlideBannerCarousel(
                         .width(dotWidth.dp)
                         .clip(CircleShape)
                         .background(
-                            if (isSelected) Color.White else Color.White.copy(alpha = 0.4f)
+                            if (isSelected) Color(0xFF7F67FF) else Color(0xFF7F67FF).copy(alpha = 0.25f)
                         )
                 )
             }
@@ -504,69 +564,15 @@ fun HomeHeader(
     userName: String = "คนเก่ง",
     isMusicEnabled: Boolean = true,
     onMusicToggle: () -> Unit = {},
-    onBannerClick: (HomeBannerItem) -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     onSearchChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    var isSearchVisible by remember { mutableStateOf(false) }
     var starCount by remember { mutableStateOf(150) }
     var messageIndex by remember { mutableStateOf(0) }
     var showSpeechBubble by remember { mutableStateOf(false) }
-
-    val bannerItems = remember {
-        listOf(
-            HomeBannerItem(
-                id = 1,
-                title = "พยัญชนะไทย ก-ฮ",
-                subtitle = "ฝึกอ่าน คัดลายมือ เพลิดเพลิน",
-                tag = "🌟 ยอดนิยม",
-                imageRes = R.drawable.kids_thai_3d,
-                bgColors = listOf(Color(0xFFFF5E7E), Color(0xFFFF9966)),
-                buttonText = "เริ่มฝึกอ่านเลย >",
-                actionId = 2
-            ),
-            HomeBannerItem(
-                id = 2,
-                title = "นับเลขแสนสนุก 1-20",
-                subtitle = "บวกลบเลขง่ายๆ เสริมทักษะ",
-                tag = "🔢 ฝึกสมอง",
-                imageRes = R.drawable.kids_math_3d,
-                bgColors = listOf(Color(0xFF3A88E9), Color(0xFF00C6FF)),
-                buttonText = "ไปลุยกันเลย >",
-                actionId = 1
-            ),
-            HomeBannerItem(
-                id = 3,
-                title = "ภาษาอังกฤษ A-Z",
-                subtitle = "โฟนิกส์และคำศัพท์น่ารู้",
-                tag = "🔤 สนุกทุกวัน",
-                imageRes = R.drawable.kids_english_3d,
-                bgColors = listOf(Color(0xFF00B09B), Color(0xFF96C93D)),
-                buttonText = "เรียน A-Z เลย >",
-                actionId = 3
-            ),
-            HomeBannerItem(
-                id = 4,
-                title = "วาดภาพระบายสี",
-                subtitle = "แต่งแต้มสีสัน เสริมจินตนาการ",
-                tag = "🎨 ศิลปะแสนสนุก",
-                imageRes = R.drawable.kids_art_3d,
-                bgColors = listOf(Color(0xFFF857A6), Color(0xFFFF5858)),
-                buttonText = "ไปวาดรูปเลย >",
-                actionId = 8
-            ),
-            HomeBannerItem(
-                id = 5,
-                title = "ทีวีเพื่อการศึกษา",
-                subtitle = "ชมสดช่อง DLTV ทุกระดับชั้น",
-                tag = "📺 ชมสดออนไลน์",
-                imageRes = R.drawable.kids_tv_3d,
-                bgColors = listOf(Color(0xFF654EA3), Color(0xFFEAAFC8)),
-                buttonText = "รับชมตอนนี้ >",
-                actionId = 7
-            )
-        )
-    }
 
     val encouragingMessages = remember {
         listOf(
@@ -622,11 +628,11 @@ fun HomeHeader(
                     colors = listOf(Color(0xFF7F67FF), Color(0xFFB4A5FF))
                 )
             )
-            .padding(top = 20.dp, bottom = 32.dp)
-            .padding(horizontal = 18.dp)
+            .padding(top = 20.dp, bottom = 24.dp)
+            .padding(horizontal = 20.dp)
     ) {
         Column {
-            // Top badges row (Stars & Music Toggle)
+            // Top badges row (Stars on Left, Search / Music / Settings on Right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -663,25 +669,86 @@ fun HomeHeader(
                     }
                 }
 
-                // Music Toggle Badge
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = if (isMusicEnabled) Color(0xFF00C853).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.25f),
-                    modifier = Modifier.clickable {
-                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                        onMusicToggle()
-                    }
+                // Right Action Buttons (Search Toggle, Music Toggle, Settings)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // 1. Search Toggle Button
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSearchVisible) Color(0xFFFFD166) else Color.White.copy(alpha = 0.25f),
+                        modifier = Modifier.clickable {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            isSearchVisible = !isSearchVisible
+                            if (!isSearchVisible) {
+                                searchQuery = ""
+                                onSearchChange("")
+                            }
+                        }
                     ) {
-                        Text(
-                            text = if (isMusicEnabled) "🎵 เพลง: เปิด" else "🔇 เพลง: ปิด",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = if (isSearchVisible) "ปิดค้นหา" else "ค้นหา",
+                                tint = if (isSearchVisible) Color(0xFF2D3047) else Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isSearchVisible) "ปิดค้นหา" else "ค้นหา",
+                                color = if (isSearchVisible) Color(0xFF2D3047) else Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // 2. Music Toggle Badge
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isMusicEnabled) Color(0xFF00C853).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.25f),
+                        modifier = Modifier.clickable {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onMusicToggle()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isMusicEnabled) "🎵 เพลง" else "🔇 ปิด",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // 3. Settings Button (ปุ่ม Set)
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.25f),
+                        modifier = Modifier.clickable {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onSettingsClick()
+                        }
+                    ) {
+                        Box(
+                            modifier = Modifier.size(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "ตั้งค่า",
+                                tint = Color.White,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -771,54 +838,53 @@ fun HomeHeader(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Auto-Sliding Banner Carousel
-            AutoSlideBannerCarousel(
-                banners = bannerItems,
-                onBannerClick = onBannerClick
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = {
-                    searchQuery = it
-                    onSearchChange(it)
-                },
-                placeholder = { Text("ค้นหาบทเรียนหรือคำศัพท์...", color = Color.Gray, fontSize = 14.sp) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(27.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    disabledContainerColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
-                },
-                trailingIcon = {
-                    Surface(
-                        modifier = Modifier.size(34.dp).padding(end = 4.dp),
-                        shape = CircleShape,
-                        color = Color(0xFFF0F0F0)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_sort),
-                            contentDescription = "ตัวกรอง",
-                            modifier = Modifier.padding(8.dp),
-                            tint = Color.DarkGray
-                        )
-                    }
-                },
-                singleLine = true
-            )
+            // Collapsible Search Bar
+            AnimatedVisibility(
+                visible = isSearchVisible,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            searchQuery = it
+                            onSearchChange(it)
+                        },
+                        placeholder = { Text("ค้นหาบทเรียนหรือคำศัพท์...", color = Color.Gray, fontSize = 14.sp) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(27.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            disabledContainerColor = Color.White,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                        ),
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                        },
+                        trailingIcon = {
+                            Surface(
+                                modifier = Modifier.size(34.dp).padding(end = 4.dp),
+                                shape = CircleShape,
+                                color = Color(0xFFF0F0F0)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_sort),
+                                    contentDescription = "ตัวกรอง",
+                                    modifier = Modifier.padding(8.dp),
+                                    tint = Color.DarkGray
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
+            }
         }
     }
 }
@@ -1380,11 +1446,26 @@ fun MainComposeScreen(navController: NavController? = null) {
                                 com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
                                     .setMusicEnabled(context, isMusicEnabled)
                             },
+                            onSettingsClick = {
+                                showKidsActivitiesDialog(context)
+                            },
+                            onSearchChange = { /* Handle search */ }
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+
+                    item {
+                        val banners = remember { getHomeBanners() }
+                        AutoSlideBannerCarousel(
+                            banners = banners,
                             onBannerClick = { banner ->
                                 val item = menuItems.find { it.id == banner.actionId }
                                 item?.let { handleItemClick(it) }
                             },
-                            onSearchChange = { /* Handle search */ }
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
 
@@ -2411,12 +2492,16 @@ private fun handleItemClickDirectly(
         }
 
         1 -> {
-            val intent = Intent(context, MenuThaiLettersActivity::class.java)
+            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
+            }
             context.startActivity(intent)
         }
 
         2 -> {
-            val intent = Intent(context, MenuActivityAZ::class.java)
+            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
+            }
             context.startActivity(intent)
         }
 
