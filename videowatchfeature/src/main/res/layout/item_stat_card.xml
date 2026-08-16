@@ -9,7 +9,7 @@
     app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
-    app:strokeWidth="1dp"
+    app:strokeWidth="1.5dp"
     app:strokeColor="#F0F0F0">
 
     <LinearLayout
@@ -17,33 +17,33 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingVertical="12dp"
+        android:paddingVertical="10dp"
         android:paddingHorizontal="6dp">
 
         <ImageView
             android:id="@+id/stat_icon"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:src="@drawable/ic_fire" />
 
         <TextView
             android:id="@+id/stat_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="1"
+            android:layout_marginTop="3dp"
+            android:text="0"
             android:textColor="#FF5722"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/stat_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="1dp"
             android:text="Streak"
             android:textColor="#9E9E9E"
-            android:textSize="12sp" />
+            android:textSize="11.5sp" />
 
     </LinearLayout>
 

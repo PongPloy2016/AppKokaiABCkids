@@ -275,29 +275,48 @@ class VideoListFragment : Fragment() {
     }
 
     private fun setupStatCards(view: View) {
-        // Streak Card
-        val cardStreak = view.findViewById<View>(R.id.card_streak)
-        cardStreak.findViewById<ImageView>(R.id.stat_icon).setImageResource(R.drawable.ic_fire)
-        cardStreak.findViewById<ImageView>(R.id.stat_icon).setColorFilter(ContextCompat.getColor(requireContext(), R.color.color_red))
-        cardStreak.findViewById<TextView>(R.id.stat_value).text = "1"
-        cardStreak.findViewById<TextView>(R.id.stat_label).text = getString(R.string.streak_label)
-        cardStreak.findViewById<TextView>(R.id.stat_value).setTextColor(ContextCompat.getColor(requireContext(), R.color.color_red))
+        try {
+            // Streak Card
+            val cardStreak = view.findViewById<View?>(R.id.card_streak)
+            cardStreak?.findViewById<ImageView>(R.id.stat_icon)?.apply {
+                setImageResource(R.drawable.ic_fire)
+                setColorFilter(Color.parseColor("#FF5722"))
+            }
+            cardStreak?.findViewById<TextView>(R.id.stat_value)?.apply {
+                text = "0"
+                setTextColor(Color.parseColor("#FF5722"))
+            }
+            cardStreak?.findViewById<TextView>(R.id.stat_label)?.text = getString(R.string.streak_label)
+            (cardStreak as? MaterialCardView)?.setStrokeColor(Color.parseColor("#FFEBEE"))
 
-        // Stars Card
-        val cardStars = view.findViewById<View>(R.id.card_stars)
-        cardStars.findViewById<ImageView>(R.id.stat_icon).setImageResource(R.drawable.ic_title_star)
-        cardStars.findViewById<ImageView>(R.id.stat_icon).setColorFilter(ContextCompat.getColor(requireContext(), R.color.color_orange))
-        cardStars.findViewById<TextView>(R.id.stat_value).text = "50"
-        cardStars.findViewById<TextView>(R.id.stat_label).text = getString(R.string.stars_label)
-        cardStars.findViewById<TextView>(R.id.stat_value).setTextColor(ContextCompat.getColor(requireContext(), R.color.color_orange))
+            // Stars Card
+            val cardStars = view.findViewById<View?>(R.id.card_stars)
+            cardStars?.findViewById<ImageView>(R.id.stat_icon)?.apply {
+                setImageResource(R.drawable.ic_title_star)
+                setColorFilter(Color.parseColor("#FFA000"))
+            }
+            cardStars?.findViewById<TextView>(R.id.stat_value)?.apply {
+                text = "0"
+                setTextColor(Color.parseColor("#FFA000"))
+            }
+            cardStars?.findViewById<TextView>(R.id.stat_label)?.text = getString(R.string.stars_label)
+            (cardStars as? MaterialCardView)?.setStrokeColor(Color.parseColor("#FFF8E1"))
 
-        // Clips Card
-        val cardClips = view.findViewById<View>(R.id.card_clips)
-        cardClips.findViewById<ImageView>(R.id.stat_icon).setImageResource(R.drawable.ic_lightning)
-        cardClips.findViewById<ImageView>(R.id.stat_icon).setColorFilter(Color.parseColor("#7CB342"))
-        cardClips.findViewById<TextView>(R.id.stat_value).text = "10"
-        cardClips.findViewById<TextView>(R.id.stat_label).text = getString(R.string.clips_label)
-        cardClips.findViewById<TextView>(R.id.stat_value).setTextColor(Color.parseColor("#7CB342"))
+            // Clips Card
+            val cardClips = view.findViewById<View?>(R.id.card_clips)
+            cardClips?.findViewById<ImageView>(R.id.stat_icon)?.apply {
+                setImageResource(R.drawable.ic_lightning)
+                setColorFilter(Color.parseColor("#7CB342"))
+            }
+            cardClips?.findViewById<TextView>(R.id.stat_value)?.apply {
+                text = "0"
+                setTextColor(Color.parseColor("#7CB342"))
+            }
+            cardClips?.findViewById<TextView>(R.id.stat_label)?.text = getString(R.string.clips_label)
+            (cardClips as? MaterialCardView)?.setStrokeColor(Color.parseColor("#E8F5E9"))
+        } catch (e: Exception) {
+            Log.e("VideoListFragment", "Error setting up stat cards", e)
+        }
     }
 
     private fun setupComponents() {
@@ -547,46 +566,50 @@ class VideoListFragment : Fragment() {
     }
 
     private fun updateCategoryUI(selectedCategory: String) {
-        val pinkColor = Color.parseColor("#FF6B8E")
-        val whiteColor = Color.parseColor("#FFFFFF")
-        val darkTextColor = Color.parseColor("#2D3047")
-        val strokeColor = Color.parseColor("#E0E0E0")
-        val strokeWidthPx = (1 * resources.displayMetrics.density).toInt()
+        try {
+            val pinkColor = Color.parseColor("#FF6B8E")
+            val whiteColor = Color.parseColor("#FFFFFF")
+            val darkTextColor = Color.parseColor("#2D3047")
+            val strokeColor = Color.parseColor("#E0E0E0")
+            val strokeWidthPx = (1 * resources.displayMetrics.density).toInt()
 
-        // All Sparks
-        if (selectedCategory == "all") {
-            categoryAll.setCardBackgroundColor(pinkColor)
-            categoryAll.strokeWidth = 0
-            txtCategoryAll.setTextColor(whiteColor)
-        } else {
-            categoryAll.setCardBackgroundColor(whiteColor)
-            categoryAll.strokeColor = strokeColor
-            categoryAll.strokeWidth = strokeWidthPx
-            txtCategoryAll.setTextColor(darkTextColor)
-        }
+            // All Sparks
+            if (selectedCategory == "all") {
+                categoryAll.setCardBackgroundColor(pinkColor)
+                categoryAll.strokeWidth = 0
+                txtCategoryAll.setTextColor(whiteColor)
+            } else {
+                categoryAll.setCardBackgroundColor(whiteColor)
+                categoryAll.setStrokeColor(strokeColor)
+                categoryAll.strokeWidth = strokeWidthPx
+                txtCategoryAll.setTextColor(darkTextColor)
+            }
 
-        // Math Magic
-        if (selectedCategory == "learning" || selectedCategory == "math") {
-            categoryLearning.setCardBackgroundColor(pinkColor)
-            categoryLearning.strokeWidth = 0
-            txtCategoryLearning.setTextColor(whiteColor)
-        } else {
-            categoryLearning.setCardBackgroundColor(whiteColor)
-            categoryLearning.strokeColor = strokeColor
-            categoryLearning.strokeWidth = strokeWidthPx
-            txtCategoryLearning.setTextColor(darkTextColor)
-        }
+            // Math Magic
+            if (selectedCategory == "learning" || selectedCategory == "math") {
+                categoryLearning.setCardBackgroundColor(pinkColor)
+                categoryLearning.strokeWidth = 0
+                txtCategoryLearning.setTextColor(whiteColor)
+            } else {
+                categoryLearning.setCardBackgroundColor(whiteColor)
+                categoryLearning.setStrokeColor(strokeColor)
+                categoryLearning.strokeWidth = strokeWidthPx
+                txtCategoryLearning.setTextColor(darkTextColor)
+            }
 
-        // ABC
-        if (selectedCategory == "abc" || selectedCategory == "english") {
-            categoryAbc.setCardBackgroundColor(pinkColor)
-            categoryAbc.strokeWidth = 0
-            txtCategoryAbc.setTextColor(whiteColor)
-        } else {
-            categoryAbc.setCardBackgroundColor(whiteColor)
-            categoryAbc.strokeColor = strokeColor
-            categoryAbc.strokeWidth = strokeWidthPx
-            txtCategoryAbc.setTextColor(darkTextColor)
+            // ABC
+            if (selectedCategory == "abc" || selectedCategory == "english") {
+                categoryAbc.setCardBackgroundColor(pinkColor)
+                categoryAbc.strokeWidth = 0
+                txtCategoryAbc.setTextColor(whiteColor)
+            } else {
+                categoryAbc.setCardBackgroundColor(whiteColor)
+                categoryAbc.setStrokeColor(strokeColor)
+                categoryAbc.strokeWidth = strokeWidthPx
+                txtCategoryAbc.setTextColor(darkTextColor)
+            }
+        } catch (e: Exception) {
+            Log.e("VideoListFragment", "Error updating category UI", e)
         }
     }
 

@@ -77,6 +77,7 @@
 
     <!--bottom navigation title-->
     <string name="title_nav_home">หน้าแรก</string>
+    <string name="title_nav_web">ท่องเว็บสนุก</string>
     <string name="title_nav_video">วิดีโอ</string>
     <string name="title_nav_live">ถ่ายทอดสด</string>
     <string name="title_nav_news">ข่าวสาร</string>

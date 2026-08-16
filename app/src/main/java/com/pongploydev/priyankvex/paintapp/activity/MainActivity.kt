@@ -916,8 +916,8 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         // ฟังก์ชันช่วยจัดการความคล่องตัวของ Toolbar
         val updateToolbarVisibility = { position: Int ->
-            // ซ่อน Toolbar สำหรับหน้า Home (0), Video (1) และ Live (3) เพราะมี Toolbar/Header ภายในตัวเองอยู่แล้ว
-            if (position == 0 || position == 1 || position == 3) {
+            // ซ่อน Toolbar สำหรับหน้า Home (0), Web (1), Video (2) และ Live (4) เพราะมี Toolbar/Header ภายในตัวเองอยู่แล้ว
+            if (position == 0 || position == 1 || position == 2 || position == 4) {
                 appBarLayout.visibility = View.GONE
             } else {
                 appBarLayout.visibility = View.VISIBLE

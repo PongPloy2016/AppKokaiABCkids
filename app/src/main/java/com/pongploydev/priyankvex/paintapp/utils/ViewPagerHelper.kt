@@ -11,6 +11,7 @@ import androidx.viewpager.widget.ViewPager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
+import com.pongploydev.priyankvex.paintapp.fragment.KidsWebComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
 import com.pongploydev.videowatchfeature.VideoListFragment
@@ -18,7 +19,7 @@ import com.pongploydev.livefeature.LiveListFragment
 
 class ViewPagerHelper(var activity: AppCompatActivity) {
     var prevMenuItem: MenuItem? = null
-    var pagerNumber: Int = 4
+    var pagerNumber: Int = 5
 
     fun setupViewPagerDefault(
             viewPager: ViewPager,
@@ -34,85 +35,20 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_video -> {
+                R.id.navigation_web -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_quiz -> {
-                    viewPager.currentItem = 2
-                    return@setOnItemSelectedListener true
-                }
-                R.id.navigation_live -> {
-                    viewPager.currentItem = 3
-                    return@setOnItemSelectedListener true
-                }
-            }
-            false
-        }
-
-        viewPager.addOnPageChangeListener(
-                object : ViewPager.OnPageChangeListener {
-                    override fun onPageScrolled(
-                            position: Int,
-                            positionOffset: Float,
-                            positionOffsetPixels: Int
-                    ) {}
-
-                    override fun onPageSelected(position: Int) {
-                        if (prevMenuItem != null) {
-                            prevMenuItem!!.setChecked(false)
-                        } else {
-                            navigation.menu.getItem(0).setChecked(false)
-                        }
-                        navigation.menu.getItem(position).setChecked(true)
-                        prevMenuItem = navigation.menu.getItem(position)
-
-                        if (viewPager.currentItem == 0) {
-                            titleToolbar.text = activity.resources.getString(R.string.app_name)
-                            // (activity as MainActivity).showSortMenu(true)
-                        } else if (viewPager.currentItem == 1) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_video)
-                            // (activity as MainActivity).showSortMenu(false)
-                        } else if (viewPager.currentItem == 2) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_quiz)
-                            // (activity as MainActivity).showSortMenu(false)
-                        } else if (viewPager.currentItem == 3) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_live)
-                        }
-                    }
-
-                    override fun onPageScrollStateChanged(state: Int) {}
-                }
-        )
-    }
-
-    fun setupViewPagerCategory(
-            viewPager: ViewPager,
-            navigation: BottomNavigationView,
-            titleToolbar: TextView
-    ) {
-        viewPager.visibility = View.VISIBLE
-        viewPager.adapter = AdapterNavigationCategory(activity.supportFragmentManager)
-        viewPager.offscreenPageLimit = pagerNumber
-        navigation.setOnItemSelectedListener { item: MenuItem ->
-            when (item.itemId) {
-                R.id.navigation_home -> {
-                    viewPager.currentItem = 0
-                    return@setOnItemSelectedListener true
-                }
                 R.id.navigation_video -> {
-                    viewPager.currentItem = 1
-                    return@setOnItemSelectedListener true
-                }
-                R.id.navigation_quiz -> {
                     viewPager.currentItem = 2
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_quiz -> {
                     viewPager.currentItem = 3
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
             }
@@ -139,19 +75,99 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                         when (viewPager.currentItem) {
                             0 -> {
                                 titleToolbar.text = activity.resources.getString(R.string.app_name)
-                                // (activity as MainActivity).showSortMenu(false)
                             }
                             1 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_video)
-                                // (activity as MainActivity).showSortMenu(true)
+                                        activity.resources.getString(R.string.title_nav_web)
                             }
                             2 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_quiz)
-                                // (activity as MainActivity).showSortMenu(false)
+                                        activity.resources.getString(R.string.title_nav_video)
                             }
                             3 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_quiz)
+                            }
+                            4 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_live)
+                            }
+                        }
+                    }
+
+                    override fun onPageScrollStateChanged(state: Int) {}
+                }
+        )
+    }
+
+    fun setupViewPagerCategory(
+            viewPager: ViewPager,
+            navigation: BottomNavigationView,
+            titleToolbar: TextView
+    ) {
+        viewPager.visibility = View.VISIBLE
+        viewPager.adapter = AdapterNavigationCategory(activity.supportFragmentManager)
+        viewPager.offscreenPageLimit = pagerNumber
+        navigation.setOnItemSelectedListener { item: MenuItem ->
+            when (item.itemId) {
+                R.id.navigation_home -> {
+                    viewPager.currentItem = 0
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_web -> {
+                    viewPager.currentItem = 1
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_video -> {
+                    viewPager.currentItem = 2
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_quiz -> {
+                    viewPager.currentItem = 3
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 4
+                    return@setOnItemSelectedListener true
+                }
+            }
+            false
+        }
+
+        viewPager.addOnPageChangeListener(
+                object : ViewPager.OnPageChangeListener {
+                    override fun onPageScrolled(
+                            position: Int,
+                            positionOffset: Float,
+                            positionOffsetPixels: Int
+                    ) {}
+
+                    override fun onPageSelected(position: Int) {
+                        if (prevMenuItem != null) {
+                            prevMenuItem!!.setChecked(false)
+                        } else {
+                            navigation.menu.getItem(0).setChecked(false)
+                        }
+                        navigation.menu.getItem(position).setChecked(true)
+                        prevMenuItem = navigation.menu.getItem(position)
+
+                        when (viewPager.currentItem) {
+                            0 -> {
+                                titleToolbar.text = activity.resources.getString(R.string.app_name)
+                            }
+                            1 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_web)
+                            }
+                            2 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_video)
+                            }
+                            3 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_quiz)
+                            }
+                            4 -> {
                                 titleToolbar.text =
                                         activity.resources.getString(R.string.title_nav_live)
                             }
@@ -177,16 +193,20 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_video -> {
+                R.id.navigation_web -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_quiz -> {
+                R.id.navigation_video -> {
                     viewPager.currentItem = 2
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_quiz -> {
                     viewPager.currentItem = 3
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
             }
@@ -210,20 +230,26 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                         navigation.menu.getItem(position).setChecked(true)
                         prevMenuItem = navigation.menu.getItem(position)
 
-                        if (viewPager.currentItem == 0) {
-                            titleToolbar.text = activity.resources.getString(R.string.app_name)
-                            // (activity as MainActivity).showSortMenu(true)
-                        } else if (viewPager.currentItem == 1) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_news)
-                            // (activity as MainActivity).showSortMenu(false)
-                        } else if (viewPager.currentItem == 2) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_quiz)
-                            // (activity as MainActivity).showSortMenu(false)
-                        } else if (viewPager.currentItem == 3) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_live)
+                        when (viewPager.currentItem) {
+                            0 -> {
+                                titleToolbar.text = activity.resources.getString(R.string.app_name)
+                            }
+                            1 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_web)
+                            }
+                            2 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_video)
+                            }
+                            3 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_quiz)
+                            }
+                            4 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_live)
+                            }
                         }
                     }
 
@@ -246,16 +272,20 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_video -> {
+                R.id.navigation_web -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_quiz -> {
+                R.id.navigation_video -> {
                     viewPager.currentItem = 2
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_quiz -> {
                     viewPager.currentItem = 3
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_live -> {
+                    viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
             }
@@ -279,20 +309,26 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                         navigation.menu.getItem(position).setChecked(true)
                         prevMenuItem = navigation.menu.getItem(position)
 
-                        if (viewPager.currentItem == 0) {
-                            titleToolbar.text = activity.resources.getString(R.string.app_name)
-                            //  (activity as MainActivity).showSortMenu(false)
-                        } else if (viewPager.currentItem == 1) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_video)
-                            // (activity as MainActivity).showSortMenu(true)
-                        } else if (viewPager.currentItem == 2) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_quiz)
-                            // (activity as MainActivity).showSortMenu(false)
-                        } else if (viewPager.currentItem == 3) {
-                            titleToolbar.text =
-                                    activity.resources.getString(R.string.title_nav_live)
+                        when (viewPager.currentItem) {
+                            0 -> {
+                                titleToolbar.text = activity.resources.getString(R.string.app_name)
+                            }
+                            1 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_web)
+                            }
+                            2 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_video)
+                            }
+                            3 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_quiz)
+                            }
+                            4 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_live)
+                            }
                         }
                     }
 
@@ -307,9 +343,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
         override fun getItem(position: Int): Fragment {
             when (position) {
                 0 -> return ComposeFragment()
-                1 -> return VideoListFragment()
-                2 -> return QuizComposeFragment()
-                3 -> return LiveListFragment()
+                1 -> return KidsWebComposeFragment()
+                2 -> return VideoListFragment()
+                3 -> return QuizComposeFragment()
+                4 -> return LiveListFragment()
             }
             return ComposeFragment()
         }
@@ -325,9 +362,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
         override fun getItem(position: Int): Fragment {
             when (position) {
                 0 -> return ComposeFragment()
-                1 -> return VideoListFragment()
-                2 -> return QuizComposeFragment()
-                3 -> return LiveListFragment()
+                1 -> return KidsWebComposeFragment()
+                2 -> return VideoListFragment()
+                3 -> return QuizComposeFragment()
+                4 -> return LiveListFragment()
             }
             return ComposeFragment()
         }

@@ -1,6 +1,8 @@
 package com.pongploydev.priyankvex.paintapp.compose
 
 import android.os.Build
+import android.webkit.WebView
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,11 +47,25 @@ fun KidsWebViewScreen(
     title: String = "Youngciety",
     onBackClick: () -> Unit = {}
 ) {
+    var webView by remember { mutableStateOf<WebView?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var progress by remember { mutableIntStateOf(0) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var currentTitle by remember { mutableStateOf(title) }
     var pageTitle by remember { mutableStateOf(title) }
+
+    val handleBackPress = {
+        if (webView?.canGoBack() == true) {
+            webView?.goBack()
+        } else {
+            onBackClick()
+        }
+    }
+
+    // Intercept system back button / gesture
+    BackHandler(enabled = true) {
+        handleBackPress()
+    }
 
     // Handle JavaScript events
     val onJavaScriptEvent = { type: String, data: String ->
@@ -86,11 +103,15 @@ fun KidsWebViewScreen(
                 title = currentTitle,
                 isLoading = isLoading,
                 progress = progress,
-                onBackClick = onBackClick,
+                onBackClick = {
+                    handleBackPress()
+                },
+                onCloseClick = onBackClick,
                 onRefreshClick = {
                     isLoading = true
                     progress = 0
                     errorMessage = null
+                    webView?.reload()
                 }
             )
         }
@@ -104,6 +125,9 @@ fun KidsWebViewScreen(
             ComposeWebView(
                 url = url,
                 modifier = Modifier.fillMaxSize(),
+                onCreated = { instance ->
+                    webView = instance
+                },
                 onPageStarted = {
                     isLoading = true
                     progress = 0
@@ -126,7 +150,7 @@ fun KidsWebViewScreen(
                         isLoading = false
                     }
                 },
-                onUrlLoading = { url ->
+                onUrlLoading = { targetUrl ->
                     // Allow only youngciety.com domains and subdomains
                     val allowedDomains = listOf(
                         "youngciety.com",
@@ -135,7 +159,7 @@ fun KidsWebViewScreen(
                         "videos.youngciety.com"
                     )
                     val isAllowed = allowedDomains.any { domain ->
-                        url.contains(domain)
+                        targetUrl.contains(domain)
                     }
                     !isAllowed // Return true to block, false to allow
                 },
@@ -197,6 +221,7 @@ fun KidsWebViewScreen(
                                 isLoading = true
                                 progress = 0
                                 errorMessage = null
+                                webView?.reload() ?: webView?.loadUrl(url)
                             },
                             modifier = Modifier.padding(top = 16.dp),
                             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
@@ -222,6 +247,7 @@ fun KidsWebViewTopBar(
     isLoading: Boolean,
     progress: Int,
     onBackClick: () -> Unit,
+    onCloseClick: () -> Unit = onBackClick,
     onRefreshClick: () -> Unit
 ) {
     Column(
@@ -244,7 +270,7 @@ fun KidsWebViewTopBar(
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "กลับ",
+                        contentDescription = "ย้อนกลับ",
                         tint = Color.White
                     )
                 }
@@ -257,6 +283,15 @@ fun KidsWebViewTopBar(
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "รีเฟรช",
+                        tint = Color.White
+                    )
+                }
+                IconButton(
+                    onClick = onCloseClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "ปิด",
                         tint = Color.White
                     )
                 }

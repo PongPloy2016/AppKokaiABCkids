@@ -241,7 +241,10 @@ fun RewardDialog(
                     contentDescription = "รางวัล",
                     modifier = Modifier
                         .size(115.dp)
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -657,7 +660,7 @@ fun HomeHeader(
                             color = Color(0xFFFFD166),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.graphicsLayer(translationY = starOffsetY)
+                            modifier = Modifier.graphicsLayer { translationY = starOffsetY }
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -782,11 +785,11 @@ fun HomeHeader(
                 Surface(
                     modifier = Modifier
                         .size(62.dp)
-                        .graphicsLayer(
-                            scaleX = avatarScale,
-                            scaleY = avatarScale,
+                        .graphicsLayer {
+                            scaleX = avatarScale
+                            scaleY = avatarScale
                             translationY = starOffsetY
-                        )
+                        }
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
@@ -922,7 +925,10 @@ fun CategoryCard(
             .width(185.dp)
             .height(235.dp)
             .padding(start = 20.dp)
-            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -967,7 +973,7 @@ fun CategoryCard(
                 contentDescription = title,
                 modifier = Modifier
                     .size(105.dp)
-                    .graphicsLayer(translationY = floatOffset)
+                    .graphicsLayer { translationY = floatOffset }
                     .clip(RoundedCornerShape(18.dp))
                     .align(Alignment.End),
                 contentScale = ContentScale.Fit
@@ -1065,7 +1071,10 @@ fun LearningCard(
         modifier = Modifier
             .width(170.dp)
             .padding(start = 20.dp)
-            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -1298,11 +1307,11 @@ fun DailyGoalSection(
                         contentDescription = "กล่องของขวัญ",
                         modifier = Modifier
                             .size(62.dp)
-                            .graphicsLayer(
-                                rotationZ = wiggleAngle,
-                                scaleX = giftScale,
+                            .graphicsLayer {
+                                rotationZ = wiggleAngle
+                                scaleX = giftScale
                                 scaleY = giftScale
-                            )
+                            }
                             .clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Fit
                     )
@@ -1426,13 +1435,15 @@ fun MainComposeScreen(navController: NavController? = null) {
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         content = { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color.White)
             ) {
+                KidBackground(modifier = Modifier.fillMaxSize())
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 80.dp)
@@ -1951,22 +1962,19 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         label = "grid item scale"
     )
 
-    val infiniteTransition = rememberInfiniteTransition(label = "infinite transition")
-    val floatAnimation by
-    infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(2000, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-        label = "float animation"
-    )
-
-    val floatOffset = (floatAnimation - 0.5f) * 8f
-
     val bounceScale = remember { Animatable(1f) }
+
+    // Floating idle animation
+    val infiniteTransition = rememberInfiniteTransition(label = "gridItemFloat")
+    val floatOffset by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "floatY"
+    )
 
     LaunchedEffect(isClicked) {
         if (isClicked) {
@@ -2424,8 +2432,9 @@ fun LiveBadge(modifier: Modifier = Modifier) {
 
     Row(
         modifier = modifier
+            .graphicsLayer { this.alpha = alpha }
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.Red.copy(alpha = alpha))
+            .background(Color.Red)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

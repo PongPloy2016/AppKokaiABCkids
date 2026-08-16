@@ -1,8 +1,6 @@
 package com.pongploydev.priyankvex.paintapp.compose
 
 import android.webkit.WebView.setWebContentsDebuggingEnabled
-
-
 import android.annotation.SuppressLint
 import android.os.Build
 import android.webkit.WebChromeClient
@@ -12,7 +10,10 @@ import android.webkit.WebViewClient
 import android.webkit.JavascriptInterface
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONObject
@@ -23,6 +24,7 @@ import org.json.JSONObject
 fun ComposeWebView(
     url: String,
     modifier: Modifier = Modifier,
+    onCreated: ((WebView) -> Unit)? = null,
     onPageStarted: (() -> Unit)? = null,
     onPageFinished: (() -> Unit)? = null,
     onReceivedError: ((String?) -> Unit)? = null,
@@ -31,6 +33,7 @@ fun ComposeWebView(
     onTitleReceived: ((String) -> Unit)? = null,
     onJavaScriptEvent: ((String, String) -> Unit)? = null
 ) {
+    var loadedPropUrl by remember { mutableStateOf<String?>(null) }
 
     val webViewClient = remember {
         object : WebViewClient() {
@@ -92,8 +95,8 @@ fun ComposeWebView(
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
-                val url = request?.url.toString()
-                return onUrlLoading?.invoke(url) ?: false
+                val reqUrl = request?.url?.toString() ?: return false
+                return onUrlLoading?.invoke(reqUrl) ?: false
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
@@ -157,7 +160,6 @@ fun ComposeWebView(
                     javaScriptEnabled = true
                     domStorageEnabled = true
                     databaseEnabled = true
-                   // setAppCacheEnabled(true)
                     cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
 
                     // For modern web
@@ -176,7 +178,7 @@ fun ComposeWebView(
                     // For responsive design
                     setGeolocationEnabled(true)
                     javaScriptCanOpenWindowsAutomatically = true
-                    setSupportMultipleWindows(true)
+                    setSupportMultipleWindows(false)
 
                     // Mixed content (for HTTPS sites)
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -197,13 +199,16 @@ fun ComposeWebView(
                     setWebContentsDebuggingEnabled(true)
                 }
 
-                // Load the URL
+                // Load the URL initially
                 loadUrl(url)
+                loadedPropUrl = url
+                onCreated?.invoke(this)
             }
         },
         update = { webView ->
-            // Update WebView if URL changes
-            if (webView.url != url) {
+            // Update WebView only if the URL prop passed from parent actually changed
+            if (loadedPropUrl != url) {
+                loadedPropUrl = url
                 webView.loadUrl(url)
             }
         },

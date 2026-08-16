@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -82,13 +83,21 @@ import com.pongploydev.priyankvex.paintapp.model.ThaiAlphabetRepository
 enum class AlphabetMode {
     THAI,
     THAI_VOWELS,
+    TONE_GROUPS,
     NUMBERS,
+    COLORS_DAYS,
+    SPELLING,
+    VEHICLES,
+    BODY_PARTS,
+    ANIMALS,
+    FRUITS,
     ENGLISH
 }
 
 @Composable
 fun AlphabetMenuComposeScreen(
-    initialMode: AlphabetMode = AlphabetMode.THAI,
+    languageCategory: LanguageHubCategory = LanguageHubCategory.THAI,
+    initialMode: AlphabetMode = if (languageCategory == LanguageHubCategory.ENGLISH) AlphabetMode.ENGLISH else AlphabetMode.THAI,
     isAutoReading: Boolean = false,
     currentAutoReadIndex: Int = -1,
     isQuizMode: Boolean = false,
@@ -106,16 +115,34 @@ fun AlphabetMenuComposeScreen(
     onSoundClick: (AlphabetCardItem, Int) -> Unit = { _, _ -> },
     onBackClick: () -> Unit = {}
 ) {
-    var currentMode by remember { mutableStateOf(initialMode) }
+    var currentMode by remember(languageCategory, initialMode) {
+        mutableStateOf(initialMode)
+    }
+
     val thaiItems = remember { ThaiAlphabetRepository.getThaiAlphabetList() }
     val vowelItems = remember { ThaiAlphabetRepository.getThaiVowelList() }
     val numberItems = remember { ThaiAlphabetRepository.getNumbersList() }
+    val engNumberItems = remember { ThaiAlphabetRepository.getEnglishNumbersList() }
+    val toneGroupItems = remember { ThaiAlphabetRepository.getToneGroupsList() }
+    val colorDayItems = remember { ThaiAlphabetRepository.getColorsAndDaysList() }
+    val vehicleItems = remember { ThaiAlphabetRepository.getVehiclesList() }
+    val bodyPartItems = remember { ThaiAlphabetRepository.getBodyPartsList() }
+    val spellingItems = remember { ThaiAlphabetRepository.getSpellingList() }
+    val animalItems = remember { ThaiAlphabetRepository.getAnimalsList() }
+    val fruitItems = remember { ThaiAlphabetRepository.getFruitsList() }
     val englishItems = remember { ThaiAlphabetRepository.getEnglishAlphabetList() }
 
     val currentItems = when (currentMode) {
         AlphabetMode.THAI -> thaiItems
         AlphabetMode.THAI_VOWELS -> vowelItems
-        AlphabetMode.NUMBERS -> numberItems
+        AlphabetMode.TONE_GROUPS -> toneGroupItems
+        AlphabetMode.NUMBERS -> if (languageCategory == LanguageHubCategory.ENGLISH) engNumberItems else numberItems
+        AlphabetMode.COLORS_DAYS -> colorDayItems
+        AlphabetMode.SPELLING -> spellingItems
+        AlphabetMode.VEHICLES -> vehicleItems
+        AlphabetMode.BODY_PARTS -> bodyPartItems
+        AlphabetMode.ANIMALS -> animalItems
+        AlphabetMode.FRUITS -> fruitItems
         AlphabetMode.ENGLISH -> englishItems
     }
     val listState = rememberLazyGridState()
@@ -132,15 +159,18 @@ fun AlphabetMenuComposeScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFFFF3E0), // Warm Cream
-                        Color(0xFFFCE4EC), // Soft Pastel Pink
-                        Color(0xFFE8F5E9)  // Gentle Mint Green
+                    colors = if (languageCategory == LanguageHubCategory.ENGLISH) listOf(
+                        Color(0xFFE1F5FE),
+                        Color(0xFFE8F5E9),
+                        Color(0xFFFFF9C4)
+                    ) else listOf(
+                        Color(0xFFFFF3E0),
+                        Color(0xFFFCE4EC),
+                        Color(0xFFE8F5E9)
                     )
                 )
             )
     ) {
-        // Ambient kid bubbles & stars background
         KidBackground(modifier = Modifier.fillMaxSize())
 
         Column(
@@ -148,6 +178,7 @@ fun AlphabetMenuComposeScreen(
         ) {
             // ── TOP HEADER SECTION ──
             AlphabetTopHeader(
+                languageCategory = languageCategory,
                 currentMode = currentMode,
                 onModeChange = { newMode ->
                     if (isAutoReading) onStopAutoRead()
@@ -172,7 +203,7 @@ fun AlphabetMenuComposeScreen(
                 onRepeatQuizSound = onRepeatQuizSound
             )
 
-            // ── GRID OF ALPHABET / NUMBERS POSTER CARDS ──
+            // ── GRID OF POSTER CARDS ──
             LazyVerticalGrid(
                 state = listState,
                 columns = GridCells.Adaptive(minSize = if (currentMode == AlphabetMode.THAI_VOWELS) 105.dp else 100.dp),
@@ -187,24 +218,45 @@ fun AlphabetMenuComposeScreen(
                     val isCurrentReading = isAutoReading && (currentAutoReadIndex == index)
                     val isCorrect = isQuizMode && (lastCorrectClickedId == item.id)
                     val isWrong = isQuizMode && (lastWrongClickedId == item.id)
-
                     val cardAspect = when (currentMode) {
                         AlphabetMode.THAI_VOWELS -> 1.73f
                         AlphabetMode.NUMBERS -> 1.55f
+                        AlphabetMode.ANIMALS, AlphabetMode.FRUITS, AlphabetMode.VEHICLES, AlphabetMode.BODY_PARTS -> 0.95f
+                        AlphabetMode.COLORS_DAYS -> 1.25f
+                        AlphabetMode.SPELLING -> 1.35f
+                        AlphabetMode.TONE_GROUPS -> 1.25f
                         else -> 1.38f
                     }
 
-                    AlphabetPosterCard(
-                        item = item,
-                        aspectRatio = cardAspect,
-                        isHighlight = isCurrentReading,
-                        isQuizCorrect = isCorrect,
-                        isQuizWrong = isWrong,
-                        onClick = { onCardClick(item, index) },
-                        onLongClick = { onCardLongClick(item, index) },
-                        onSoundClick = { onSoundClick(item, index) },
-                        onPracticeWriteClick = { onPracticeWriteClick(item, index) }
-                    )
+                    if (currentMode == AlphabetMode.ANIMALS || currentMode == AlphabetMode.FRUITS || currentMode == AlphabetMode.VEHICLES || currentMode == AlphabetMode.BODY_PARTS) {
+                        AnimalCardItemView(
+                            item = item,
+                            isHighlight = isCurrentReading,
+                            isQuizCorrect = isCorrect,
+                            isQuizWrong = isWrong,
+                            onClick = { onCardClick(item, index) }
+                        )
+                    } else if (currentMode == AlphabetMode.TONE_GROUPS) {
+                        ToneGroupCardItemView(
+                            item = item,
+                            isHighlight = isCurrentReading,
+                            isQuizCorrect = isCorrect,
+                            isQuizWrong = isWrong,
+                            onClick = { onCardClick(item, index) }
+                        )
+                    } else {
+                        AlphabetPosterCard(
+                            item = item,
+                            aspectRatio = cardAspect,
+                            isHighlight = isCurrentReading,
+                            isQuizCorrect = isCorrect,
+                            isQuizWrong = isWrong,
+                            onClick = { onCardClick(item, index) },
+                            onLongClick = { onCardLongClick(item, index) },
+                            onSoundClick = { onSoundClick(item, index) },
+                            onPracticeWriteClick = { onPracticeWriteClick(item, index) }
+                        )
+                    }
                 }
 
                 // ── BOTTOM BANNER SECTIONS ──
@@ -216,9 +268,21 @@ fun AlphabetMenuComposeScreen(
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         ThaiVowelLegendBanner()
                     }
+                } else if (currentMode == AlphabetMode.TONE_GROUPS) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ThaiToneGroupBannerFooter()
+                    }
                 } else if (currentMode == AlphabetMode.NUMBERS) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         ThaiNumberBannerFooter()
+                    }
+                } else if (currentMode == AlphabetMode.ANIMALS) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ThaiAnimalBannerFooter()
+                    }
+                } else if (currentMode == AlphabetMode.FRUITS) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ThaiFruitBannerFooter()
                     }
                 }
             }
@@ -226,20 +290,31 @@ fun AlphabetMenuComposeScreen(
     }
 }
 
-/**
- * ส่วนหัวแบนเนอร์ด้านบนสไตล์โปสเตอร์
- */
 @Composable
 private fun AlphabetTopHeader(
+    languageCategory: LanguageHubCategory,
     currentMode: AlphabetMode,
     onModeChange: (AlphabetMode) -> Unit,
     onBackClick: () -> Unit
 ) {
-    val headerGradient = when (currentMode) {
-        AlphabetMode.THAI -> listOf(Color(0xFFFF4081), Color(0xFFE91E63))
-        AlphabetMode.THAI_VOWELS -> listOf(Color(0xFFFF9800), Color(0xFFF57C00))
-        AlphabetMode.NUMBERS -> listOf(Color(0xFF00C853), Color(0xFF00897B))
-        AlphabetMode.ENGLISH -> listOf(Color(0xFF42A5F5), Color(0xFF1E88E5))
+    val headerGradient = if (languageCategory == LanguageHubCategory.ENGLISH) {
+        when (currentMode) {
+            AlphabetMode.NUMBERS -> listOf(Color(0xFF00C853), Color(0xFF00897B))
+            AlphabetMode.ANIMALS -> listOf(Color(0xFFFF7043), Color(0xFFD84315))
+            AlphabetMode.FRUITS -> listOf(Color(0xFFE91E63), Color(0xFF880E4F))
+            else -> listOf(Color(0xFF0288D1), Color(0xFF0097A7))
+        }
+    } else {
+        when (currentMode) {
+            AlphabetMode.THAI_VOWELS -> listOf(Color(0xFFFF9800), Color(0xFFF57C00))
+            AlphabetMode.TONE_GROUPS -> listOf(Color(0xFF673AB7), Color(0xFF3F51B5))
+            AlphabetMode.NUMBERS -> listOf(Color(0xFF00C853), Color(0xFF00897B))
+            AlphabetMode.COLORS_DAYS -> listOf(Color(0xFFEC407A), Color(0xFFAB47BC))
+            AlphabetMode.SPELLING -> listOf(Color(0xFFFF7043), Color(0xFFF4511E))
+            AlphabetMode.VEHICLES -> listOf(Color(0xFF00ACC1), Color(0xFF00838F))
+            AlphabetMode.BODY_PARTS -> listOf(Color(0xFF26A69A), Color(0xFF00695C))
+            else -> listOf(Color(0xFFFF4081), Color(0xFFE91E63))
+        }
     }
 
     Surface(
@@ -252,13 +327,13 @@ private fun AlphabetTopHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Brush.verticalGradient(colors = headerGradient))
+                .statusBarsPadding()
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back Button
                 Surface(
                     shape = CircleShape,
                     color = Color.White.copy(alpha = 0.95f),
@@ -268,32 +343,42 @@ private fun AlphabetTopHeader(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "กลับ",
+                            contentDescription = "กลับหน้าเลือกภาษา",
                             tint = Color(0xFF333333)
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.width(10.dp))
-
-                // Title and Subtitle
                 Column(modifier = Modifier.weight(1f)) {
-                    val titleText = when (currentMode) {
-                        AlphabetMode.THAI -> "หัดอ่าน ก-ฮ KARAOKE"
-                        AlphabetMode.THAI_VOWELS -> "สระ และ วรรณยุกต์ไทย"
-                        AlphabetMode.NUMBERS -> "ตัวเลขไทยและอารบิก (๑ - ๑๐)"
-                        AlphabetMode.ENGLISH -> "Learn English ABC (A-Z)"
+                    val titleText = if (languageCategory == LanguageHubCategory.ENGLISH) {
+                        when (currentMode) {
+                            AlphabetMode.NUMBERS -> "Numbers 1 - 10 (ตัวเลข)"
+                            AlphabetMode.ANIMALS -> "Animals & Sounds 🐾"
+                            AlphabetMode.FRUITS -> "Fruits & Vegetables 🍎"
+                            else -> "Learn English ABC (A - Z)"
+                        }
+                    } else {
+                        when (currentMode) {
+                            AlphabetMode.THAI_VOWELS -> "สระ และ วรรณยุกต์ไทย"
+                            AlphabetMode.TONE_GROUPS -> "อักษร ๓ หมู่ (ไตรยางศ์)"
+                            AlphabetMode.NUMBERS -> "ตัวเลขไทย (๑ - ๑๐)"
+                            AlphabetMode.COLORS_DAYS -> "๗ วัน ๗ สี & สีสันน่ารู้"
+                            AlphabetMode.SPELLING -> "แจกลูกสะกดคำ ผสมสระ"
+                            AlphabetMode.VEHICLES -> "ยานพาหนะและการเดินทาง"
+                            AlphabetMode.BODY_PARTS -> "ร่างกายของฉัน (My Body)"
+                            else -> "ห้องเรียนภาษาไทย ก - ฮ"
+                        }
                     }
-                    val subtitleText = when (currentMode) {
-                        AlphabetMode.THAI -> "แตะรูปฟังเสียง 🔊 หรือเล่นเกมสุ่มทาย 🎮"
-                        AlphabetMode.THAI_VOWELS -> "สระ 32 เสียง + วรรณยุกต์ 4 รูป 🎨"
-                        AlphabetMode.NUMBERS -> "นับเลข 1-10 ไทย & อังกฤษ พร้อมเสียงอ่าน 🌟"
-                        AlphabetMode.ENGLISH -> "Touch cards to hear pronunciation 🔊"
+
+                    val subtitleText = if (languageCategory == LanguageHubCategory.ENGLISH) {
+                        "แตะรูปฟังเสียง 🔊 หรือเล่นเกมสุ่มทาย 🎮"
+                    } else {
+                        "ฝึกอ่าน ออกเสียง พร้อมมินิเกมสุ่มทาย 🌟"
                     }
 
                     Text(
                         text = titleText,
-                        fontSize = 17.sp,
+                        fontSize = 16.5.sp,
                         fontWeight = FontWeight.Black,
                         color = Color.White,
                         style = TextStyle(
@@ -312,19 +397,32 @@ private fun AlphabetTopHeader(
                     )
                 }
 
-                // Mascot / Banner
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color.White,
                     shadowElevation = 3.dp,
-                    modifier = Modifier.size(width = 52.dp, height = 38.dp)
+                    modifier = Modifier.size(width = 50.dp, height = 38.dp)
                 ) {
                     Image(
                         painter = painterResource(
-                            id = when (currentMode) {
-                                AlphabetMode.THAI_VOWELS -> R.drawable.thai_vowel_header_banner
-                                AlphabetMode.NUMBERS -> R.drawable.thai_numbers_banner
-                                else -> R.drawable.thai_header_mascot
+                            id = if (languageCategory == LanguageHubCategory.ENGLISH) {
+                                when (currentMode) {
+                                    AlphabetMode.ANIMALS -> R.drawable.elephant
+                                    AlphabetMode.FRUITS -> R.drawable.watermelon
+                                    AlphabetMode.NUMBERS -> R.drawable.thai_numbers_banner
+                                    else -> R.drawable.words_a
+                                }
+                            } else {
+                                when (currentMode) {
+                                    AlphabetMode.THAI_VOWELS -> R.drawable.thai_vowel_header_banner
+                                    AlphabetMode.NUMBERS -> R.drawable.thai_numbers_banner
+                                    AlphabetMode.TONE_GROUPS -> R.drawable.thai_card_1
+                                    AlphabetMode.COLORS_DAYS -> R.drawable.yellow
+                                    AlphabetMode.VEHICLES -> R.drawable.car
+                                    AlphabetMode.BODY_PARTS -> R.drawable.eye
+                                    AlphabetMode.SPELLING -> R.drawable.k_one
+                                    else -> R.drawable.thai_header_mascot
+                                }
                             }
                         ),
                         contentDescription = "Mascot",
@@ -333,10 +431,27 @@ private fun AlphabetTopHeader(
                     )
                 }
             }
-
             Spacer(modifier = Modifier.height(8.dp))
+            val tabs = if (languageCategory == LanguageHubCategory.ENGLISH) {
+                listOf(
+                    Triple(AlphabetMode.ENGLISH, "🇬🇧 A - Z", "อังกฤษ"),
+                    Triple(AlphabetMode.NUMBERS, "🔢 1 - 10 Numbers", "เลขอังกฤษ"),
+                    Triple(AlphabetMode.ANIMALS, "🐶 Animals & Sounds", "สัตว์"),
+                    Triple(AlphabetMode.FRUITS, "🍎 Fruits & Veggies", "ผลไม้")
+                )
+            } else {
+                listOf(
+                    Triple(AlphabetMode.THAI, "🇹🇭 ก - ฮ", "ไทย"),
+                    Triple(AlphabetMode.THAI_VOWELS, "📖 สระ-วรรณยุกต์", "สระ"),
+                    Triple(AlphabetMode.TONE_GROUPS, "📚 อักษร ๓ หมู่", "ไตรยางศ์"),
+                    Triple(AlphabetMode.NUMBERS, "🔢 ๑-๑๐ เลขไทย", "เลขไทย"),
+                    Triple(AlphabetMode.COLORS_DAYS, "🎨 ๗ วัน ๗ สี", "สีสัน"),
+                    Triple(AlphabetMode.SPELLING, "🗣️ สะกดคำ", "สะกดคำ"),
+                    Triple(AlphabetMode.VEHICLES, "🚗 ยานพาหนะ", "ยานพาหนะ"),
+                    Triple(AlphabetMode.BODY_PARTS, "✋ ร่างกาย", "ร่างกาย")
+                )
+            }
 
-            // ── 4-TAB SCROLLABLE/FLEX SELECTOR ──
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -345,13 +460,6 @@ private fun AlphabetTopHeader(
                     .padding(3.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val tabs = listOf(
-                    Triple(AlphabetMode.THAI, "🇹🇭 ก - ฮ", "ไทย"),
-                    Triple(AlphabetMode.THAI_VOWELS, "📖 สระ-วรรณยุกต์", "สระ"),
-                    Triple(AlphabetMode.NUMBERS, "🔢 ๑-๑๐ ตัวเลข", "เลข"),
-                    Triple(AlphabetMode.ENGLISH, "🇬🇧 A - Z", "อังกฤษ")
-                )
-
                 items(tabs) { (mode, title, _) ->
                     ModeTabButton(
                         title = title,
@@ -375,7 +483,7 @@ private fun ModeTabButton(
         label = "tabBg"
     )
     val textColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF00695C) else Color.White,
+        targetValue = if (isSelected) Color(0xFFC2185B) else Color.White,
         label = "tabText"
     )
 
@@ -386,7 +494,7 @@ private fun ModeTabButton(
         modifier = Modifier.clickable { onClick() }
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -431,14 +539,12 @@ private fun MainGameControlBar(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            // ── IF IN QUIZ MODE ──
             if (isQuizMode) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Replay Audio Button
                     Surface(
                         shape = CircleShape,
                         color = Color(0xFFFF9800),
@@ -459,7 +565,6 @@ private fun MainGameControlBar(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Quiz Text & Star Score
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -488,7 +593,6 @@ private fun MainGameControlBar(
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    // Stop Quiz Button
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = Color(0xFFFF4D4D),
@@ -516,13 +620,11 @@ private fun MainGameControlBar(
                     }
                 }
             } else {
-                // ── NORMAL MODE: AUTO READ + START QUIZ BUTTONS ──
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Sound Icon
                     Surface(
                         shape = CircleShape,
                         color = if (isAutoReading) Color(0xFFFF5252) else Color(0xFF00B4D8),
@@ -540,10 +642,9 @@ private fun MainGameControlBar(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Text Info
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (isAutoReading) "กำลังอ่านออกเสียง..." else "ระบบช่วยอ่าน & เกมทายเสียง",
+                            text = if (isAutoReading) "กำลังอ่านออกเสียง..." else "ระบบช่วยอ่าน & มินิเกมทายเสียง",
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF2D3142)
@@ -563,7 +664,6 @@ private fun MainGameControlBar(
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    // 1. Auto Read Start/Stop
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isAutoReading) Color(0xFFFF4D4D) else Color(0xFF00C853),
@@ -594,7 +694,6 @@ private fun MainGameControlBar(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    // 2. Quiz Button
                     if (!isAutoReading) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
@@ -624,7 +723,6 @@ private fun MainGameControlBar(
                     }
                 }
 
-                // Progress Bar (Visible when Auto-reading)
                 AnimatedVisibility(visible = isAutoReading) {
                     Column(modifier = Modifier.padding(top = 5.dp)) {
                         Row(
@@ -717,7 +815,6 @@ fun AlphabetPosterCard(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // ── The Cropped Poster Card Image ──
             Image(
                 painter = painterResource(id = if (item.posterCardRes != 0) item.posterCardRes else item.imageRes),
                 contentDescription = item.name,
@@ -725,6 +822,200 @@ fun AlphabetPosterCard(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(12.dp))
+            )
+        }
+    }
+}
+
+/**
+ * การ์ดสัตว์และผักผลไม้ พร้อมภาพวาดและป้ายชื่อ 2 ภาษา
+ */
+@Composable
+fun AnimalCardItemView(
+    item: AlphabetCardItem,
+    isHighlight: Boolean = false,
+    isQuizCorrect: Boolean = false,
+    isQuizWrong: Boolean = false,
+    onClick: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "animalPulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(380, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "animalPulseScale"
+    )
+
+    val scale = if (isHighlight || isQuizCorrect) pulseScale else 1.0f
+
+    val borderStroke = when {
+        isQuizCorrect -> BorderStroke(3.5.dp, Color(0xFF00E676))
+        isQuizWrong -> BorderStroke(3.5.dp, Color(0xFFFF1744))
+        isHighlight -> BorderStroke(3.dp, Color(0xFFFF9800))
+        else -> BorderStroke(1.5.dp, item.cardColor.copy(alpha = 0.4f))
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.95f)
+            .scale(scale)
+            .shadow(
+                elevation = if (isHighlight || isQuizCorrect) 8.dp else 3.dp,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = borderStroke
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            item.cardColor.copy(alpha = 0.12f),
+                            Color.White
+                        )
+                    )
+                )
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = item.imageRes),
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = item.cardColor.copy(alpha = 0.18f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = item.name,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E384D),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * การ์ดอักษร 3 หมู่ (ไตรยางศ์: อักษรกลาง ๙, อักษรสูง ๑๑, อักษรต่ำ ๒๔)
+ */
+@Composable
+fun ToneGroupCardItemView(
+    item: AlphabetCardItem,
+    isHighlight: Boolean = false,
+    isQuizCorrect: Boolean = false,
+    isQuizWrong: Boolean = false,
+    onClick: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "tonePulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(380, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "tonePulseScale"
+    )
+
+    val scale = if (isHighlight || isQuizCorrect) pulseScale else 1.0f
+
+    val borderStroke = when {
+        isQuizCorrect -> BorderStroke(3.5.dp, Color(0xFF00E676))
+        isQuizWrong -> BorderStroke(3.5.dp, Color(0xFFFF1744))
+        isHighlight -> BorderStroke(3.dp, item.cardColor)
+        else -> BorderStroke(2.dp, item.cardColor.copy(alpha = 0.6f))
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.15f)
+            .scale(scale)
+            .shadow(
+                elevation = if (isHighlight || isQuizCorrect) 8.dp else 3.dp,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = borderStroke
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            item.cardColor.copy(alpha = 0.12f),
+                            Color.White
+                        )
+                    )
+                )
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = item.cardColor,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = item.groupTag.split(" ").firstOrNull() ?: "อักษร",
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
+            }
+
+            Text(
+                text = item.letter,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = item.cardColor
+            )
+
+            Text(
+                text = item.name,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF37474F),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -844,6 +1135,109 @@ private fun ThaiNumberBannerFooter() {
                 fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1B5E20),
                 textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * แบนเนอร์ด้านล่างของแท็บสัตว์โลกน่ารัก
+ */
+@Composable
+private fun ThaiAnimalBannerFooter() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, bottom = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFBE9E7)),
+        border = BorderStroke(1.5.dp, Color(0xFFFF5722)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "🐶 แตะที่รูปสัตว์เพื่อฟังเสียงร้องและคำศัพท์ภาษาไทย-อังกฤษ",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFFBF360C),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * แบนเนอร์ด้านล่างของแท็บผักและผลไม้
+ */
+@Composable
+private fun ThaiFruitBannerFooter() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, bottom = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFCE4EC)),
+        border = BorderStroke(1.5.dp, Color(0xFFE91E63)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "🍉 เรียนรู้ผักและผลไม้ที่มีประโยชน์ พร้อมคำศัพท์ 2 ภาษา",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF880E4F),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * แบนเนอร์ด้านล่างของแท็บอักษร 3 หมู่ (ไตรยางศ์)
+ */
+@Composable
+private fun ThaiToneGroupBannerFooter() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, bottom = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6)),
+        border = BorderStroke(1.5.dp, Color(0xFF673AB7)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            Text(
+                text = "📚 บทช่วยจำไตรยางศ์ (อักษร ๓ หมู่)",
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF4A148C),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "• อักษรกลาง (๙ ตัว): ไก่ จิก เด็ก ตาย เด็ก ตาย บน ปาก โอ่ง\n• อักษรสูง (๑๑ ตัว): ผี ฝาก ถุง ข้าว สาร ให้ ฉัน ศึกษา ฐาน ขวด\n• อักษรต่ำ (๒๔ ตัว): งูใหญ่นอนอยู่ ณ ริมวัดโมฬีโลก / พ่อค้าฟันทองซื้อช้างฮ่อ",
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF311B92),
+                lineHeight = 16.sp
             )
         }
     }

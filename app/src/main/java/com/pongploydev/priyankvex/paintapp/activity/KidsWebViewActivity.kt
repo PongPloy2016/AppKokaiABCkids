@@ -13,8 +13,12 @@ class KidsWebViewActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val url = intent.getStringExtra("URL") ?: "https://www.youngciety.com/"
-        val title = intent.getStringExtra("TITLE") ?: "วิดีโอสำหรับเด็ก"
+        val url = intent.getStringExtra("extra_url")
+            ?: intent.getStringExtra("URL")
+            ?: "https://www.youngciety.com/"
+        val title = intent.getStringExtra("extra_title")
+            ?: intent.getStringExtra("TITLE")
+            ?: "ท่องเว็บสนุก"
 
         setContent {
             VideoWatchFeatureTheme {
