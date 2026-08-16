@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.compose.AlphabetMenuComposeScreen
 import com.pongploydev.priyankvex.paintapp.compose.AlphabetMode
 import com.pongploydev.priyankvex.paintapp.compose.VideoWatchFeatureTheme
@@ -21,6 +22,7 @@ import com.pongploydev.priyankvex.paintapp.model.AlphabetCardItem
 import com.pongploydev.priyankvex.paintapp.model.ThaiAlphabetRepository
 import com.pongploydev.priyankvex.paintapp.utils.MusicManager
 import java.util.Locale
+import kotlin.random.Random
 
 class MenuThaiLettersActivity : ComponentActivity() {
 
@@ -28,14 +30,23 @@ class MenuThaiLettersActivity : ComponentActivity() {
     private var textToSpeech: TextToSpeech? = null
     private var isTtsReady = false
 
-    // Auto Read State in Compose
+    // Auto Read State
     private var isAutoReading by mutableStateOf(false)
     private var currentAutoReadIndex by mutableIntStateOf(-1)
+
+    // Interactive Listening Quiz State
+    private var isQuizMode by mutableStateOf(false)
+    private var quizScore by mutableIntStateOf(0)
+    private var quizTargetItem by mutableStateOf<AlphabetCardItem?>(null)
+    private var lastCorrectClickedId by mutableIntStateOf(-1)
+    private var lastWrongClickedId by mutableIntStateOf(-1)
+    private var currentActiveMode by mutableStateOf(AlphabetMode.THAI)
 
     private val autoReadHandler = Handler(Looper.getMainLooper())
     private var autoReadRunnable: Runnable? = null
     private val thaiItems by lazy { ThaiAlphabetRepository.getThaiAlphabetList() }
     private val vowelItems by lazy { ThaiAlphabetRepository.getThaiVowelList() }
+    private val numberItems by lazy { ThaiAlphabetRepository.getNumbersList() }
     private val engItems by lazy { ThaiAlphabetRepository.getEnglishAlphabetList() }
 
     private var initialMode = AlphabetMode.THAI
@@ -43,7 +54,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
     companion object {
         private const val TAG = "MenuThaiLettersActivity"
         private const val AUTO_READ_DELAY = 3200L // 3.2 seconds per letter
-        const val EXTRA_MODE = "EXTRA_MODE" // "THAI", "VOWELS" or "ENGLISH"
+        const val EXTRA_MODE = "EXTRA_MODE" // "THAI", "VOWELS", "NUMBERS", or "ENGLISH"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,8 +64,10 @@ class MenuThaiLettersActivity : ComponentActivity() {
         initialMode = when (modeExtra) {
             "ENGLISH" -> AlphabetMode.ENGLISH
             "VOWELS" -> AlphabetMode.THAI_VOWELS
+            "NUMBERS" -> AlphabetMode.NUMBERS
             else -> AlphabetMode.THAI
         }
+        currentActiveMode = initialMode
 
         setupTextToSpeech()
 
@@ -64,15 +77,32 @@ class MenuThaiLettersActivity : ComponentActivity() {
                     initialMode = initialMode,
                     isAutoReading = isAutoReading,
                     currentAutoReadIndex = currentAutoReadIndex,
-                    onStartAutoRead = { mode -> startAutoRead(mode) },
+                    isQuizMode = isQuizMode,
+                    quizScore = quizScore,
+                    lastCorrectClickedId = lastCorrectClickedId,
+                    lastWrongClickedId = lastWrongClickedId,
+                    onStartAutoRead = { mode ->
+                        if (isQuizMode) stopQuiz()
+                        currentActiveMode = mode
+                        startAutoRead(mode)
+                    },
                     onStopAutoRead = { stopAutoRead() },
+                    onStartQuiz = { mode ->
+                        if (isAutoReading) stopAutoRead()
+                        currentActiveMode = mode
+                        startQuiz(mode)
+                    },
+                    onStopQuiz = { stopQuiz() },
+                    onRepeatQuizSound = { repeatQuizSound() },
                     onCardClick = { item, _ ->
-                        if (!isAutoReading) {
+                        if (isQuizMode) {
+                            checkQuizAnswer(item)
+                        } else if (!isAutoReading) {
                             playSoundForItem(item)
                         }
                     },
                     onCardLongClick = { item, position ->
-                        if (!isAutoReading) {
+                        if (!isQuizMode && !isAutoReading) {
                             playSoundForItem(item)
                             if (item.id < 44) {
                                 openWritingScreen(item, position)
@@ -80,7 +110,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
                         }
                     },
                     onPracticeWriteClick = { item, position ->
-                        if (!isAutoReading) {
+                        if (!isQuizMode && !isAutoReading) {
                             if (item.id < 44) {
                                 openWritingScreen(item, position)
                             } else {
@@ -89,7 +119,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
                         }
                     },
                     onSoundClick = { item, _ ->
-                        if (!isAutoReading) {
+                        if (!isQuizMode && !isAutoReading) {
                             playSoundForItem(item)
                         }
                     },
@@ -113,11 +143,15 @@ class MenuThaiLettersActivity : ComponentActivity() {
         if (isAutoReading) {
             stopAutoRead()
         }
+        if (isQuizMode) {
+            stopQuiz()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopAutoRead()
+        stopQuiz()
         releaseMediaPlayer()
         textToSpeech?.stop()
         textToSpeech?.shutdown()
@@ -140,6 +174,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
         }
     }
 
+    // ── AUTO READ SYSTEM ──
     private fun startAutoRead(mode: AlphabetMode) {
         if (isAutoReading) return
 
@@ -151,6 +186,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
                 val items = when (mode) {
                     AlphabetMode.THAI -> thaiItems
                     AlphabetMode.THAI_VOWELS -> vowelItems
+                    AlphabetMode.NUMBERS -> numberItems
                     AlphabetMode.ENGLISH -> engItems
                 }
                 if (!isAutoReading) return
@@ -197,12 +233,93 @@ class MenuThaiLettersActivity : ComponentActivity() {
         releaseMediaPlayer()
     }
 
+    // ── QUIZ / RANDOM LISTENING GAME ──
+    private fun startQuiz(mode: AlphabetMode) {
+        isQuizMode = true
+        quizScore = 0
+        lastCorrectClickedId = -1
+        lastWrongClickedId = -1
+        currentActiveMode = mode
+
+        pickNextQuizTarget(mode)
+    }
+
+    private fun pickNextQuizTarget(mode: AlphabetMode) {
+        if (!isQuizMode) return
+
+        lastCorrectClickedId = -1
+        lastWrongClickedId = -1
+
+        val items = when (mode) {
+            AlphabetMode.THAI -> thaiItems
+            AlphabetMode.THAI_VOWELS -> vowelItems
+            AlphabetMode.NUMBERS -> numberItems
+            AlphabetMode.ENGLISH -> engItems
+        }
+
+        if (items.isEmpty()) return
+
+        // Pick random item
+        val target = items[Random.nextInt(items.size)]
+        quizTargetItem = target
+
+        // Prompt question sound
+        autoReadHandler.postDelayed({
+            if (isQuizMode && quizTargetItem != null) {
+                playSoundForItem(target)
+            }
+        }, 500)
+    }
+
+    private fun repeatQuizSound() {
+        quizTargetItem?.let { item ->
+            playSoundForItem(item)
+        }
+    }
+
+    private fun checkQuizAnswer(clickedItem: AlphabetCardItem) {
+        val target = quizTargetItem ?: return
+
+        if (clickedItem.id == target.id) {
+            // ✅ CORRECT ANSWER!
+            lastCorrectClickedId = clickedItem.id
+            lastWrongClickedId = -1
+            quizScore++
+
+            // Play celebratory sound & speech
+            playRawAudio(R.raw.chiotrue)
+            speakTts("เก่งมากค่ะ!")
+
+            // Advance to next question after 1.6s
+            autoReadHandler.postDelayed({
+                if (isQuizMode) {
+                    pickNextQuizTarget(currentActiveMode)
+                }
+            }, 1600)
+        } else {
+            // ❌ WRONG ANSWER!
+            lastWrongClickedId = clickedItem.id
+            lastCorrectClickedId = -1
+
+            playRawAudio(R.raw.chiofalse)
+            speakTts("ช่วยลองใหม่อีกครั้งค่ะ")
+        }
+    }
+
+    private fun stopQuiz() {
+        isQuizMode = false
+        quizTargetItem = null
+        lastCorrectClickedId = -1
+        lastWrongClickedId = -1
+        textToSpeech?.stop()
+        releaseMediaPlayer()
+    }
+
     private fun readItem(item: AlphabetCardItem) {
         playSoundForItem(item)
     }
 
     private fun openWritingScreen(item: AlphabetCardItem, position: Int) {
-        // นำทางไปยังหน้าฝึกเขียนตัวอักษร ThaiLettersActivity
         val intent = Intent(this, ThaiLettersActivity::class.java).apply {
             putExtra("SELECTED_POSITION", position)
             putExtra("SELECTED_LETTER_INDEX", position)
@@ -216,7 +333,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
         try {
             var playedSound = false
 
-            // 1. เล่นจากไฟล์เสียงถ้ามี (เช่น R.raw.soundk1..soundk44 สำหรับ ก-ฮ และ sounda..soundz สำหรับ A-Z)
+            // 1. เล่นจากไฟล์เสียงถ้ามี (ก-ฮ, A-Z, ตัวเลข 1-9)
             if (item.audioRawRes != 0) {
                 playRawAudio(item.audioRawRes)
                 playedSound = true
@@ -228,25 +345,28 @@ class MenuThaiLettersActivity : ComponentActivity() {
                 }
             }
 
-            // 2. ถ้าไม่มีไฟล์เสียง ให้ใช้ TTS อ่านออกเสียง (สำหรับ สระและวรรณยุกต์ เช่น "สระอะ มะละกอ", "สระอา กา", ...)
-            if (!playedSound && isTtsReady && textToSpeech != null) {
+            // 2. ถ้าไม่มีไฟล์เสียง ให้ใช้ TTS อ่านออกเสียง (สระ, วรรณยุกต์, ๑๐ สิบ Ten)
+            if (!playedSound) {
+                speakTts(item.rhyme)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error playing sound for item: ${item.name}", e)
+            speakTts(item.name)
+        }
+    }
+
+    private fun speakTts(text: String) {
+        try {
+            if (isTtsReady && textToSpeech != null) {
                 textToSpeech?.speak(
-                    item.rhyme,
+                    text,
                     TextToSpeech.QUEUE_FLUSH,
                     null,
                     "AlphabetTTS"
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error playing sound for item: ${item.name}", e)
-            if (isTtsReady && textToSpeech != null) {
-                textToSpeech?.speak(
-                    item.name,
-                    TextToSpeech.QUEUE_FLUSH,
-                    null,
-                    "AlphabetTTS_Fallback"
-                )
-            }
+            Log.e(TAG, "TTS speak error", e)
         }
     }
 

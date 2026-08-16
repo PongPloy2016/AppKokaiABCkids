@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import com.pongploydev.priyankvex.paintapp.R
 
 /**
- * Data Model สำหรับการ์ดตัวอักษร ก-ฮ, สระ-วรรณยุกต์ และ A-Z ในรูปแบบโปสเตอร์สีสันสดใส
+ * Data Model สำหรับการ์ดตัวอักษร ก-ฮ, สระ-วรรณยุกต์, ตัวเลข 1-10 และ A-Z ในรูปแบบโปสเตอร์สีสันสดใส
  */
 data class AlphabetCardItem(
     val id: Int,
@@ -207,6 +207,40 @@ object ThaiAlphabetRepository {
     }
 
     /**
+     * ดึงรายการตัวเลขไทยและอารบิก 1 - 10 (และ 0)
+     */
+    fun getNumbersList(): List<AlphabetCardItem> {
+        val numberData = listOf(
+            Tuple4("๑", "1", "หนึ่ง • One", "๑ หนึ่ง One", R.drawable.m1, R.raw.q1),
+            Tuple4("๒", "2", "สอง • Two", "๒ สอง Two", R.drawable.m2, R.raw.q2),
+            Tuple4("๓", "3", "สาม • Three", "๓ สาม Three", R.drawable.m3, R.raw.q3),
+            Tuple4("๔", "4", "สี่ • Four", "๔ สี่ Four", R.drawable.m4, R.raw.q4),
+            Tuple4("๕", "5", "ห้า • Five", "๕ ห้า Five", R.drawable.m5, R.raw.q5),
+            Tuple4("๖", "6", "หก • Six", "๖ หก Six", R.drawable.m6, R.raw.q6),
+            Tuple4("๗", "7", "เจ็ด • Seven", "๗ เจ็ด Seven", R.drawable.m7, R.raw.q7),
+            Tuple4("๘", "8", "แปด • Eight", "๘ แปด Eight", R.drawable.m8, R.raw.q8),
+            Tuple4("๙", "9", "เก้า • Nine", "๙ เก้า Nine", R.drawable.m9, R.raw.q9),
+            Tuple4("๑๐", "10", "สิบ • Ten", "๑๐ สิบ Ten", R.drawable.ten_10, 0),
+            Tuple4("๐", "0", "ศูนย์ • Zero", "๐ ศูนย์ Zero", R.drawable.m0, R.raw.q0)
+        )
+
+        return numberData.mapIndexed { index, item ->
+            AlphabetCardItem(
+                id = 200 + index,
+                letter = "${item.thai} (${item.arabic})",
+                name = item.name,
+                rhyme = item.rhyme,
+                imageRes = item.imageRes,
+                posterCardRes = item.imageRes,
+                soundResName = if (item.soundRes != 0) "q${index + 1}" else "",
+                audioRawRes = item.soundRes,
+                isObsolete = false,
+                cardColor = cardColors[index % cardColors.size]
+            )
+        }
+    }
+
+    /**
      * ดึงรายการตัวอักษรภาษาอังกฤษ 26 ตัว A - Z พร้อมไฟล์เสียง sounda - soundz
      */
     fun getEnglishAlphabetList(): List<AlphabetCardItem> {
@@ -267,3 +301,12 @@ object ThaiAlphabetRepository {
         }
     }
 }
+
+private data class Tuple4(
+    val thai: String,
+    val arabic: String,
+    val name: String,
+    val rhyme: String,
+    val imageRes: Int,
+    val soundRes: Int
+)
