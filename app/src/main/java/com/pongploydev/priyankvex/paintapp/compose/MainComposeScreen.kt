@@ -102,7 +102,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.AbcMatchGameActivity
-import com.pongploydev.priyankvex.paintapp.activity.KidsWebViewActivity
+import com.pongploydev.kidswebviewfeature.KidsWebViewActivity
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.QuizActivity
 import com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity

@@ -1,13 +1,13 @@
-package com.pongploydev.priyankvex.paintapp.compose
+package com.pongploydev.kidswebviewfeature.compose
 
-import android.webkit.WebView.setWebContentsDebuggingEnabled
 import android.annotation.SuppressLint
 import android.os.Build
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebView.setWebContentsDebuggingEnabled
 import android.webkit.WebViewClient
-import android.webkit.JavascriptInterface
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import org.json.JSONObject
 
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("SetJavaScriptEnabled")

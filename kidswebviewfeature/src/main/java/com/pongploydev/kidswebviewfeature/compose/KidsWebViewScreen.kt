@@ -1,4 +1,4 @@
-package com.pongploydev.priyankvex.paintapp.compose
+package com.pongploydev.kidswebviewfeature.compose
 
 import android.os.Build
 import android.webkit.WebView

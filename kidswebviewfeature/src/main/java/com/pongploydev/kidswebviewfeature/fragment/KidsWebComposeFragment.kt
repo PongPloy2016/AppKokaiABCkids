@@ -1,4 +1,4 @@
-package com.pongploydev.priyankvex.paintapp.fragment
+package com.pongploydev.kidswebviewfeature.fragment
 
 import android.os.Build
 import android.os.Bundle
@@ -14,8 +14,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
-import com.pongploydev.priyankvex.paintapp.compose.KidsWebViewScreen
-import com.pongploydev.priyankvex.paintapp.compose.VideoWatchFeatureTheme
+import com.pongploydev.kidswebviewfeature.compose.KidsWebViewScreen
+import com.pongploydev.kidswebviewfeature.compose.KidsWebViewTheme
 
 class KidsWebComposeFragment : Fragment() {
 
@@ -33,7 +33,7 @@ class KidsWebComposeFragment : Fragment() {
                         drawPadding = PaddingValues(0.dp)
                     )
                 ) {
-                    VideoWatchFeatureTheme {
+                    KidsWebViewTheme {
                         KidsWebViewScreen(
                             url = "https://www.youngciety.com/",
                             title = "ท่องเว็บสนุก (Youngciety)",

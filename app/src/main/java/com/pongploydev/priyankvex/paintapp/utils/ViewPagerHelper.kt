@@ -11,7 +11,7 @@ import androidx.viewpager.widget.ViewPager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
-import com.pongploydev.priyankvex.paintapp.fragment.KidsWebComposeFragment
+import com.pongploydev.kidswebviewfeature.fragment.KidsWebComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
 import com.pongploydev.videowatchfeature.VideoListFragment
