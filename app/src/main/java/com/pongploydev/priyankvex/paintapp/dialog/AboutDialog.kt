@@ -38,7 +38,7 @@ class AboutDialog(private val context: Context) {
 
         // ปุ่มส่งอีเมลติชม
         btnEmail.setOnClickListener {
-            sendFeedbackEmail()
+            com.pongploydev.priyankvex.paintapp.utils.FeedbackHelper.showFeedbackCategoryDialog(context)
             dialog.dismiss()
         }
 
@@ -52,36 +52,6 @@ class AboutDialog(private val context: Context) {
         btnShareApp.setOnClickListener {
             shareApp()
             dialog.dismiss()
-        }
-    }
-
-    private fun sendFeedbackEmail() {
-        try {
-            val emailIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "message/rfc822"
-                putExtra(Intent.EXTRA_EMAIL, arrayOf("pongku71@gmail.com"))
-                putExtra(Intent.EXTRA_SUBJECT, "ความเห็นเกี่ยวกับแอปฝึกเขียนตัวอักษร")
-                putExtra(Intent.EXTRA_TEXT,
-                    "สวัสดีครับ/ค่ะ\n\n" +
-                            "ผม/ดิฉันมีข้อเสนอแนะเกี่ยวกับแอปพลิเคชันฝึกเขียนตัวอักษรดังนี้:\n\n" +
-                            "สิ่งที่ชอบ:\n" +
-                            "- \n\n" +
-                            "ข้อเสนอแนะในการปรับปรุง:\n" +
-                            "- \n\n" +
-                            "ปัญหาที่พบ:\n" +
-                            "- \n\n" +
-                            "ขอบคุณครับ/ค่ะ"
-                )
-            }
-
-            // ตรวจสอบว่ามีแอปที่สามารถจัดการอีเมลได้
-            if (emailIntent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(Intent.createChooser(emailIntent, "ส่งอีเมลผ่าน"))
-            } else {
-                showErrorDialog("ไม่พบแอปพลิเคชันอีเมลในอุปกรณ์ของคุณ")
-            }
-        } catch (e: Exception) {
-            showErrorDialog("ไม่สามารถเปิดแอปพลิเคชันอีเมลได้")
         }
     }
 

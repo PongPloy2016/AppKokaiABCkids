@@ -12,6 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.pongploydev.priyankvex.paintapp.model.LearningCategory;
 import com.pongploydev.priyankvex.paintapp.R;
 import com.pongploydev.priyankvex.paintapp.utils.CategoryDataHelper;
@@ -29,6 +32,7 @@ public class LeaningActvity extends AppCompatActivity {
     private com.google.android.material.floatingactionbutton.FloatingActionButton fabRandom;
     private android.media.SoundPool soundPool;
     private int soundClickId;
+    private AdView adView;
 
     private MediaPlayer mediaPlayer;
     private boolean isSoundLoaded = false;
@@ -49,11 +53,8 @@ public class LeaningActvity extends AppCompatActivity {
         initViews();
         setupDataAndAdapter();
 
-        // 3. Load Ads (สมมติว่า Utils.loadBannerAd มีอยู่)
-        // Utils.loadBannerAd(this, llAdView, llAdViewFacebook);
-
-        // [NEW] Initialize MediaPlayer
-        // Music handled by MusicManager in onResume
+        // 3. Load Banner Ad
+        loadBannerAd();
     }
 
     private void initSounds() {
@@ -93,6 +94,9 @@ public class LeaningActvity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (adView != null) {
+            adView.resume();
+        }
         if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
             mediaPlayer.start();
         }
@@ -102,6 +106,9 @@ public class LeaningActvity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (adView != null) {
+            adView.pause();
+        }
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
         }
@@ -111,6 +118,10 @@ public class LeaningActvity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (adView != null) {
+            adView.destroy();
+            adView = null;
+        }
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
@@ -122,12 +133,43 @@ public class LeaningActvity extends AppCompatActivity {
         // MusicManager manages its own lifecycle
     }
 
+    private void loadBannerAd() {
+        final RelativeLayout llAdView = findViewById(R.id.llAdView);
+        if (llAdView != null) {
+            try {
+                adView = new AdView(this);
+                adView.setAdSize(AdSize.BANNER);
+                String bannerId = getString(R.string.banner_ad_unit_id);
+                adView.setAdUnitId(bannerId);
+                adView.setAdListener(new com.google.android.gms.ads.AdListener() {
+                    @Override
+                    public void onAdFailedToLoad(com.google.android.gms.ads.LoadAdError loadAdError) {
+                        super.onAdFailedToLoad(loadAdError);
+                        // Fallback to Google Test Banner ID for testing
+                        try {
+                            AdView testAdView = new AdView(LeaningActvity.this);
+                            testAdView.setAdSize(AdSize.BANNER);
+                            testAdView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
+                            llAdView.removeAllViews();
+                            llAdView.addView(testAdView);
+                            testAdView.loadAd(new AdRequest.Builder().build());
+                        } catch (Exception ignored) {}
+                    }
+                });
+                llAdView.removeAllViews();
+                llAdView.addView(adView);
+                AdRequest adRequest = new AdRequest.Builder().build();
+                adView.loadAd(adRequest);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void initViews() {
         // Find Views
         txtExamTitle = findViewById(R.id.txtTitleSubHome);
         rvHomeCategories = findViewById(R.id.rvHomeCategories);
-//        llAdView = findViewById(R.id.llAdView);
-//        llAdViewFacebook = findViewById(R.id.llAdViewFacebook);
         fabRandom = findViewById(R.id.fabRandom);
 
         // Set Title based on Type

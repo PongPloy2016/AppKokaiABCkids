@@ -234,7 +234,8 @@ fun AlphabetMenuComposeScreen(
                             isHighlight = isCurrentReading,
                             isQuizCorrect = isCorrect,
                             isQuizWrong = isWrong,
-                            onClick = { onCardClick(item, index) }
+                            onClick = { onCardClick(item, index) },
+                            onLongClick = { onCardLongClick(item, index) }
                         )
                     } else if (currentMode == AlphabetMode.TONE_GROUPS) {
                         ToneGroupCardItemView(
@@ -242,7 +243,8 @@ fun AlphabetMenuComposeScreen(
                             isHighlight = isCurrentReading,
                             isQuizCorrect = isCorrect,
                             isQuizWrong = isWrong,
-                            onClick = { onCardClick(item, index) }
+                            onClick = { onCardClick(item, index) },
+                            onLongClick = { onCardLongClick(item, index) }
                         )
                     } else {
                         AlphabetPosterCard(
@@ -830,13 +832,15 @@ fun AlphabetPosterCard(
 /**
  * การ์ดสัตว์และผักผลไม้ พร้อมภาพวาดและป้ายชื่อ 2 ภาษา
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AnimalCardItemView(
     item: AlphabetCardItem,
     isHighlight: Boolean = false,
     isQuizCorrect: Boolean = false,
     isQuizWrong: Boolean = false,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "animalPulse")
     val pulseScale by infiniteTransition.animateFloat(
@@ -867,7 +871,10 @@ fun AnimalCardItemView(
                 elevation = if (isHighlight || isQuizCorrect) 8.dp else 3.dp,
                 shape = RoundedCornerShape(16.dp)
             )
-            .clickable { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = borderStroke
@@ -929,13 +936,15 @@ fun AnimalCardItemView(
 /**
  * การ์ดอักษร 3 หมู่ (ไตรยางศ์: อักษรกลาง ๙, อักษรสูง ๑๑, อักษรต่ำ ๒๔)
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ToneGroupCardItemView(
     item: AlphabetCardItem,
     isHighlight: Boolean = false,
     isQuizCorrect: Boolean = false,
     isQuizWrong: Boolean = false,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "tonePulse")
     val pulseScale by infiniteTransition.animateFloat(
@@ -966,7 +975,10 @@ fun ToneGroupCardItemView(
                 elevation = if (isHighlight || isQuizCorrect) 8.dp else 3.dp,
                 shape = RoundedCornerShape(14.dp)
             )
-            .clickable { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = borderStroke

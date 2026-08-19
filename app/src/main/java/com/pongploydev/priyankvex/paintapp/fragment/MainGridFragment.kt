@@ -205,11 +205,7 @@ class MainGridFragment : Fragment() {
 
     // --- Menu Item Clicks ---
     private fun openSettings() {
-        AlertDialog.Builder(requireContext())
-            .setTitle("ตั้งค่า")
-            .setMessage("ฟังก์ชันตั้งค่าจะถูกเพิ่มในเวอร์ชันถัดไป")
-            .setPositiveButton("ตกลง", null)
-            .show()
+        showAboutDialogNew()
     }
 
     private fun showAdsInfo() {

@@ -73,6 +73,8 @@ class SubHomeAdapter(
         val imageView: ImageView = view.findViewById(R.id.imgSubHome)
         val linearLayout: LinearLayout? = view.findViewById(R.id.lloutCardSubHome)
         val frameLayout: FrameLayout? = view.findViewById(R.id.flCardContainer)
+        val tvThaiTranslation: android.widget.TextView? = view.findViewById(R.id.tvThaiTranslation)
+        val readingGlowOverlay: View? = view.findViewById(R.id.readingGlowOverlay)
 
         // สำหรับ Debug
         init {
@@ -102,7 +104,6 @@ class SubHomeAdapter(
             imageView.isClickable = false
             imageView.isFocusable = false
             imageView.isFocusableInTouchMode = false
-            imageView.isFocusableInTouchMode = false
         }
     }
 
@@ -125,20 +126,25 @@ class SubHomeAdapter(
         // 1. โหลดรูปภาพด้วย Glide
         loadImageWithGlide(holder, learningData)
 
-        // 2. เพิ่ม Animation เฉพาะเมื่อแสดงครั้งแรก
+        // 2. แสดงคำแปลภาษาไทยใต้คำศัพท์
+        val thaiText = getThaiTranslation(learningData)
+        if (holder.tvThaiTranslation != null) {
+            if (thaiText.isNotEmpty()) {
+                holder.tvThaiTranslation.visibility = View.VISIBLE
+                holder.tvThaiTranslation.text = thaiText
+            } else {
+                holder.tvThaiTranslation.visibility = View.GONE
+            }
+        }
+
+        // 3. เพิ่ม Animation เฉพาะเมื่อแสดงครั้งแรก
         applyEntranceAnimation(holder, position)
 
-        // 3. ตั้งค่า Highlight สำหรับรายการที่กำลังอ่าน
+        // 4. ตั้งค่า Highlight สำหรับรายการที่กำลังอ่าน
         applyReadingHighlight(holder, position)
 
-        // 4. ตั้งค่า Click Listeners (สำคัญ!)
+        // 5. ตั้งค่า Click Listeners (สำคัญ!)
         setupClickListeners(holder, position, learningData)
-
-        // 5. ตั้งค่า Favorite State (ถ้ามีใน layout)
-        // updateFavoriteState(holder, position)
-
-        // 6. ตั้งค่า Border Style
-        //applyBorderStyle(holder, position)
 
         Log.d("SubHomeAdapter", "Bind completed for position: $position")
     }
@@ -300,47 +306,137 @@ class SubHomeAdapter(
     }
 
     /**
+     * ดึงคำแปลภาษาไทยสำหรับรายการ
+     */
+    private fun getThaiTranslation(learningData: LearningDataModel): String {
+        val showTitle = learningData.showTitle ?: ""
+        val speakTitle = learningData.speakTitle ?: ""
+
+        // หาก showTitle เป็นภาษาไทยอยู่แล้ว
+        if (showTitle.any { it in '\u0E01'..'\u0E5B' }) {
+            return showTitle
+        }
+
+        // ดึงภาษาไทยจาก speakTitle (เช่น "A for Apple ลูกแอปเปิล")
+        val thaiPart = speakTitle.filter { it in '\u0E01'..'\u0E5B' || it == ' ' }.trim()
+        if (thaiPart.isNotEmpty()) {
+            return thaiPart
+        }
+
+        return when (showTitle.trim().lowercase()) {
+            "apple" -> "แอปเปิ้ล"
+            "bird" -> "นก"
+            "ball" -> "ลูกบอล"
+            "cat" -> "แมว"
+            "dog" -> "สุนัข"
+            "egg" -> "ไข่"
+            "elephant" -> "ช้าง"
+            "fish" -> "ปลา"
+            "goat" -> "แพะ"
+            "giraffe" -> "ยีราฟ"
+            "hat" -> "หมวก"
+            "horse" -> "ม้า"
+            "ice cream" -> "ไอศกรีม"
+            "joker" -> "ตัวตลก"
+            "jam" -> "แยม"
+            "kite" -> "ว่าว"
+            "key" -> "กุญแจ"
+            "lion" -> "สิงโต"
+            "leaf" -> "ใบไม้"
+            "monkey" -> "ลิง"
+            "mushroom" -> "เห็ด"
+            "nest", "nestling" -> "รังนก"
+            "orange" -> "ส้ม"
+            "owl" -> "นกฮูก"
+            "parrot" -> "นกแก้ว"
+            "pencil" -> "ดินสอ"
+            "queen" -> "พระราชินี"
+            "rabbit" -> "กระต่าย"
+            "ring" -> "แหวน"
+            "sun" -> "ดวงอาทิตย์"
+            "train" -> "รถไฟ"
+            "turtle" -> "เต่า"
+            "umbrella" -> "ร่ม"
+            "violin" -> "ไวโอลิน"
+            "vase" -> "แจกัน"
+            "watch" -> "นาฬิกา"
+            "whale" -> "วาฬ"
+            "xylophone" -> "ระนาดฝรั่ง"
+            "yak" -> "จามรี"
+            "yo yo", "yo-yo" -> "โยโย่"
+            "zebra" -> "ม้าลาย"
+            // ตัวเลข
+            "zero" -> "ศูนย์"
+            "one" -> "หนึ่ง"
+            "two" -> "สอง"
+            "three" -> "สาม"
+            "four" -> "สี่"
+            "five" -> "ห้า"
+            "six" -> "หก"
+            "seven" -> "เจ็ด"
+            "eight" -> "แปด"
+            "nine" -> "เก้า"
+            "ten" -> "สิบ"
+            "eleven" -> "สิบเอ็ด"
+            "twelve" -> "สิบสอง"
+            "thirteen" -> "สิบสาม"
+            "fourteen" -> "สิบสี่"
+            "fifteen" -> "สิบห้า"
+            "sixteen" -> "สิบหก"
+            "seventeen" -> "สิบเจ็ด"
+            "eighteen" -> "สิบแปด"
+            "nineteen" -> "สิบเก้า"
+            "twenty" -> "ยี่สิบ"
+            else -> showTitle
+        }
+    }
+
+    /**
      * ตั้งค่า Highlight สำหรับรายการที่กำลังอ่าน
      */
     private fun applyReadingHighlight(holder: ViewHolder, position: Int) {
         runCatching {
-            when {
-                // กรณีกำลังอ่านอยู่ (สูงสุด priority)
-                position == currentReadingIndex -> {
-                    holder.cardView.setCardBackgroundColor(
-                        ContextCompat.getColor(context, R.color.reading_highlight)
-                    )
-                    holder.cardView.cardElevation = 16f
-                    holder.cardView.radius = 20f
-                    Log.d("SubHomeAdapter", "Reading highlight for position: $position")
-                }
+            val isCurrentReading = (position == currentReadingIndex)
 
-                // กรณีถูกเลือกล่าสุด
-                position == lastSelectedPosition -> {
-                    holder.cardView.setCardBackgroundColor(
-                        ContextCompat.getColor(context, R.color.selected_highlight)
-                    )
-                    holder.cardView.cardElevation = 12f
-                    holder.cardView.radius = 16f
-                }
+            if (isCurrentReading) {
+                // ไฮไลต์การ์ดที่กำลังอ่าน พร้อมเส้นขอบเรืองแสงสีสว่าง
+                holder.cardView.setCardBackgroundColor(Color.parseColor("#FFFDE7"))
+                holder.cardView.cardElevation = 16f
+                holder.cardView.radius = 22f
+                holder.readingGlowOverlay?.visibility = View.VISIBLE
 
-                // กรณีเป็นรายการโปรด
-                favoriteItems.contains(position) -> {
-                    holder.cardView.setCardBackgroundColor(
-                        ContextCompat.getColor(context, R.color.favorite_highlight)
-                    )
-                    holder.cardView.cardElevation = 8f
-                    holder.cardView.radius = 12f
-                }
+                // ขยายขนาดขึ้นเล็กน้อย (Scale Animation) ให้เด็กดูตามทัน
+                holder.cardView.animate()
+                    .scaleX(1.06f)
+                    .scaleY(1.06f)
+                    .setDuration(250)
+                    .start()
 
-                // กรณีปกติ
-                else -> {
-                    holder.cardView.setCardBackgroundColor(
-                        ContextCompat.getColor(context, R.color.card_default)
-                    )
-                    holder.cardView.cardElevation = 4f
-                    holder.cardView.radius = 8f
-                }
+                Log.d("SubHomeAdapter", "Reading highlight for position: $position")
+            } else if (position == lastSelectedPosition) {
+                holder.cardView.setCardBackgroundColor(
+                    ContextCompat.getColor(context, R.color.selected_highlight)
+                )
+                holder.cardView.cardElevation = 10f
+                holder.cardView.radius = 20f
+                holder.readingGlowOverlay?.visibility = View.GONE
+
+                holder.cardView.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
+            } else {
+                holder.cardView.setCardBackgroundColor(Color.WHITE)
+                holder.cardView.cardElevation = 6f
+                holder.cardView.radius = 20f
+                holder.readingGlowOverlay?.visibility = View.GONE
+
+                holder.cardView.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .start()
             }
         }.onFailure { e ->
             Log.e("SubHomeAdapter", "Error applying highlight: ${e.message}")

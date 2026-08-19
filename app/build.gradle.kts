@@ -25,7 +25,7 @@ android {
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
-        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-3279793802315716/8581063137\"")
+        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-9592898299992336/7978304153\"")
         buildConfigField("String", "TEST_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
     }
 
@@ -70,6 +70,7 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(project(":videowatchfeature"))
     implementation(project(":livefeature"))
+    implementation(project(":kidswebviewfeature"))
 
 
     // AndroidX

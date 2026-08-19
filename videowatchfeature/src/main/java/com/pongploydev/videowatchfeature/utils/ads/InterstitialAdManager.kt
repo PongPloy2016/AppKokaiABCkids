@@ -7,7 +7,7 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import android.util.Log // เพิ่มสำหรับ logging
-import com.google.android.exoplayer2.BuildConfig
+import com.pongploydev.videowatchfeature.config.AppConfig
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdValue
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -22,13 +22,13 @@ class InterstitialAdManager(private val context: Context) {
 
     companion object {
         // ID โฆษณาสำหรับแอปเด็กโดยเฉพาะ
-        // คุณต้องสร้าง Ad Unit ใหม่ใน AdMob ที่ตั้งค่าเป็น "Child-directed treatment"
-        private const val CHILD_FRIENDLY_AD_UNIT_ID = "ca-app-pub-3279793802315716/8581063137" // ใช้ ID จริงของคุณ
+        private const val CHILD_FRIENDLY_AD_UNIT_ID = "ca-app-pub-9592898299992336/7978304153" // ใช้ ID จริงของคุณ
+        private const val TEST_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712" // Test ID จาก Google
 
         private const val TAG = "InterstitialAdManager"
 
         // ตั้งค่าสำหรับโหมดทดสอบ
-        private  var USE_TEST_ADS = BuildConfig.DEBUG // ใช้ BuildConfig.DEBUG แทนการกำหนดเอง
+        private var USE_TEST_ADS = true
     }
 
     init {
@@ -75,13 +75,12 @@ class InterstitialAdManager(private val context: Context) {
 
         val adRequest = adRequestBuilder.build()
 
-        // ใช้ Ad Unit ID ที่ตั้งค่าไว้สำหรับเด็ก
+        // ใช้ Ad Unit ID ที่ตั้งค่าไว้
         val adUnitId = if (USE_TEST_ADS) {
-            // ใช้ Test Ad Unit ID ที่ Google จัดเตรียมสำหรับการทดสอบ
-            Log.d(TAG, "Loading Test Ad for children.")
-            CHILD_FRIENDLY_AD_UNIT_ID
+            Log.d(TAG, "Loading Test Ad.")
+            TEST_AD_UNIT_ID
         } else {
-            Log.d(TAG, "Loading Real Child-Friendly Ad.")
+            Log.d(TAG, "Loading Real Child-Friendly Ad: $CHILD_FRIENDLY_AD_UNIT_ID")
             CHILD_FRIENDLY_AD_UNIT_ID
         }
 
@@ -93,11 +92,9 @@ class InterstitialAdManager(private val context: Context) {
                 override fun onAdLoaded(ad: InterstitialAd) {
                     interstitialAd = ad
                     isAdLoading = false
-                    Log.i(TAG, "Child-friendly ad loaded successfully.")
+                    Log.i(TAG, "Ad loaded successfully: $adUnitId")
 
-                    // ตั้งค่า Additional Content Settings
                     ad.setOnPaidEventListener { adValue ->
-                        // จัดการข้อมูลค่าตอบแทน (ถ้ามี)
                         logAdValue(adValue)
                     }
 
@@ -107,7 +104,7 @@ class InterstitialAdManager(private val context: Context) {
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     interstitialAd = null
                     isAdLoading = false
-                    Log.e(TAG, "Child-friendly ad failed to load: ${adError.message}")
+                    Log.e(TAG, "❌ Real Ad failed to load: ${adError.message} (Code: ${adError.code})")
                     onAdFailed(adError)
                 }
             }

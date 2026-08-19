@@ -335,11 +335,7 @@ public class MainActivityAndroidGridView extends Activity {
     }
 
     private void openSettings() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("ตั้งค่า")
-                .setMessage("ฟังก์ชันตั้งค่าจะถูกเพิ่มในเวอร์ชันถัดไป")
-                .setPositiveButton("ตกลง", null)
-                .show();
+        showAboutDialogNew();
     }
 
     private void showAdsInfo() {

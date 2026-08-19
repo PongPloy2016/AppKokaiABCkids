@@ -4,6 +4,7 @@ package com.pongploydev.priyankvex.paintapp.compose
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -107,6 +108,7 @@ import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.QuizActivity
 import com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
+import com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
@@ -500,7 +502,11 @@ fun AutoSlideBannerCarousel(
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
                                 color = Color.White,
-                                shadowElevation = 2.dp
+                                shadowElevation = 2.dp,
+                                modifier = Modifier.clickable {
+                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                    onBannerClick(banner)
+                                }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
@@ -1331,6 +1337,7 @@ fun MainComposeScreen(navController: NavController? = null) {
         )
     }
     var showRewardDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     val viewMode = remember { mutableStateOf(ViewMode.GRID) }
     val menuItems = remember { getMenuItems() }
 
@@ -1366,44 +1373,32 @@ fun MainComposeScreen(navController: NavController? = null) {
         }
     }
 
-    // ฟังก์ชันแสดงโฆษณา
-    val showInterstitialAd: (MenuItem) -> Unit = { item ->
+    // ฟังก์ชันช่วยนำทางพร้อมแสดงโฆษณาคั่น Interstitial Ad
+    val navigateWithAd: (() -> Unit) -> Unit = { onNavigate ->
         val activity = context as? Activity
-        if (activity != null) {
+        if (activity != null && interstitialAdManager.isAdLoaded()) {
+            println("🎬 Showing Interstitial Ad before navigation...")
             interstitialAdManager.showInterstitialAd(
                 activity = activity,
                 onAdDismissed = {
-                    showAdSuccessMessage(context)
-                    handleItemClickDirectly(context, item, navController)
+                    onNavigate()
                 },
                 onAdFailed = {
-                    showAdFailedMessage(context)
-                    handleItemClickDirectly(context, item, navController)
+                    onNavigate()
                 }
             )
         } else {
-            handleItemClickDirectly(context, item, navController)
+            onNavigate()
+            if (!interstitialAdManager.isAdLoaded()) {
+                loadInterstitialAd(interstitialAdManager)
+            }
         }
     }
 
     // ฟังก์ชันจัดการการคลิก
     val handleItemClick: (MenuItem) -> Unit = { item ->
-        visitCount++
-        val shouldShowAd =
-            visitCount >= VISITS_BEFORE_AD && interstitialAdManager.isAdLoaded()
-
-        if (shouldShowAd) {
-            showInterstitialAd(item)
-            visitCount = 0
-        } else {
+        navigateWithAd {
             handleItemClickDirectly(context, item, navController)
-            if (interstitialAdManager.isAdLoaded()) {
-                loadInterstitialAd(interstitialAdManager)
-            }
-        }
-
-        if (!interstitialAdManager.isAdLoaded()) {
-            loadInterstitialAd(interstitialAdManager)
         }
     }
 
@@ -1434,6 +1429,23 @@ fun MainComposeScreen(navController: NavController? = null) {
         RewardDialog(onDismiss = { showRewardDialog = false })
     }
 
+    // Kid-Friendly Settings Dialog
+    if (showSettingsDialog) {
+        KidFriendlySettingsDialog(
+            isMusicEnabled = isMusicEnabled,
+            onMusicToggle = { enabled ->
+                isMusicEnabled = enabled
+                com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
+                    .setMusicEnabled(context, enabled)
+            },
+            onOtherActivitiesClick = {
+                showSettingsDialog = false
+                showKidsActivitiesDialog(context)
+            },
+            onDismiss = { showSettingsDialog = false }
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         content = { paddingValues ->
@@ -1458,7 +1470,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                                     .setMusicEnabled(context, isMusicEnabled)
                             },
                             onSettingsClick = {
-                                showKidsActivitiesDialog(context)
+                                showSettingsDialog = true
                             },
                             onSearchChange = { /* Handle search */ }
                         )
@@ -1473,8 +1485,42 @@ fun MainComposeScreen(navController: NavController? = null) {
                         AutoSlideBannerCarousel(
                             banners = banners,
                             onBannerClick = { banner ->
-                                val item = menuItems.find { it.id == banner.actionId }
-                                item?.let { handleItemClick(it) }
+                                navigateWithAd {
+                                    when (banner.id) {
+                                        1 -> {
+                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        2 -> {
+                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                                putExtra("categoryPosition", 1)
+                                                putExtra("Category", "ตัวเลข 1-20")
+                                                putExtra("Type", 1)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        3 -> {
+                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        4 -> {
+                                            val intent = Intent(context, ColoringGameActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                        5 -> {
+                                            val intent = Intent(context, LiveListActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                        else -> {
+                                            val item = menuItems.find { it.id == banner.actionId }
+                                            item?.let { handleItemClickDirectly(context, it, navController) }
+                                        }
+                                    }
+                                }
                             },
                             modifier = Modifier.padding(horizontal = 20.dp)
                         )
@@ -1487,38 +1533,120 @@ fun MainComposeScreen(navController: NavController? = null) {
                     item {
                         ExploreCategoriesSection(
                             onCategoryClick = { index ->
-                                val item = when (index) {
-                                    1 -> menuItems.find { it.id == 1 }
-                                    2 -> menuItems.find { it.id == 3 }
-                                    3 -> menuItems.find { it.id == 8 }
-                                    4 -> menuItems.find { it.id == 2 }
-                                    5 -> menuItems.find { it.id == 6 }
-                                    6 -> menuItems.find { it.id == 7 }
-                                    else -> null
+                                navigateWithAd {
+                                    when (index) {
+                                        1 -> {
+                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                                putExtra("categoryPosition", 1)
+                                                putExtra("Category", "ตัวเลข 1-20")
+                                                putExtra("Type", 1)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        2 -> {
+                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        3 -> {
+                                            val intent = Intent(context, ColoringGameActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                        4 -> {
+                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        5 -> {
+                                            val intent = Intent(context, QuizActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                        6 -> {
+                                            val intent = Intent(context, LiveListActivity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                        else -> {
+                                            val intent = Intent(context, LeaningActvity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                    }
                                 }
-                                item?.let { handleItemClick(it) }
                             },
                             onViewAllClick = {
-                                showKidsActivitiesDialog(context)
+                                navigateWithAd {
+                                    val intent = Intent(context, LeaningActvity::class.java)
+                                    context.startActivity(intent)
+                                }
                             }
                         )
                     }
 
                     item {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    // Banner Ad ด้านล่างหมวดหมู่การเรียนรู้
+                    item {
+                        BannerAdCompose(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    item {
                         ContinueLearningSection(
                             onLessonClick = { index ->
-                                val item = when (index) {
-                                    1 -> menuItems.find { it.id == 1 }
-                                    2 -> menuItems.find { it.id == 1 }
-                                    3 -> menuItems.find { it.id == 5 }
-                                    4 -> menuItems.find { it.id == 2 }
-                                    else -> null
+                                navigateWithAd {
+                                    when (index) {
+                                        1 -> {
+                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                                putExtra("categoryPosition", 1)
+                                                putExtra("Category", "ตัวเลข 1-20")
+                                                putExtra("Type", 1)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        2 -> {
+                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                                putExtra("categoryPosition", 4)
+                                                putExtra("Category", "สัตว์น่ารัก")
+                                                putExtra("Type", 1)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        3 -> {
+                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                                putExtra("categoryPosition", 6)
+                                                putExtra("Category", "ดอกไม้และพืช")
+                                                putExtra("Type", 1)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        4 -> {
+                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                        else -> {
+                                            val intent = Intent(context, LeaningActvity::class.java)
+                                            context.startActivity(intent)
+                                        }
+                                    }
                                 }
-                                item?.let { handleItemClick(it) }
                             },
                             onViewAllClick = {
-                                val item = menuItems.find { it.id == 1 }
-                                item?.let { handleItemClick(it) }
+                                navigateWithAd {
+                                    val intent = Intent(context, LeaningActvity::class.java)
+                                    context.startActivity(intent)
+                                }
                             }
                         )
                     }
@@ -2629,24 +2757,7 @@ private fun getRandomColor(): Int {
     return colors.random()
 }
 
-private fun showSettingsDialog(
-    context: Context,
-    isMusicEnabled: Boolean,
-    onMusicToggle: (Boolean) -> Unit
-) {
-    val options = arrayOf("เสียงดนตรีพื้นหลัง")
-    val checkedItems = booleanArrayOf(isMusicEnabled)
 
-    android.app.AlertDialog.Builder(context)
-        .setTitle("ตั้งค่า")
-        .setMultiChoiceItems(options, checkedItems) { _, which, isChecked ->
-            if (which == 0) {
-                onMusicToggle(isChecked)
-            }
-        }
-        .setPositiveButton("ตกลง", null)
-        .show()
-}
 
 @Preview(showBackground = true)
 @Composable

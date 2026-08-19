@@ -44,30 +44,30 @@ object DataManager {
     private fun getAlphabetData(): List<LearningDataModel> {
         return listOf(
             LearningDataModel(R.drawable.words_a, "A for Apple", "Apple"),
-            LearningDataModel(R.drawable.words_b, "B for Ball", "Ball"),
+            LearningDataModel(R.drawable.words_b, "B for Bird", "Bird"),
             LearningDataModel(R.drawable.words_c, "C for Cat", "Cat"),
             LearningDataModel(R.drawable.words_d, "D for Dog", "Dog"),
-            LearningDataModel(R.drawable.words_e, "E for Elephant", "Elephant"),
+            LearningDataModel(R.drawable.words_e, "E for Egg", "Egg"),
             LearningDataModel(R.drawable.words_f, "F for Fish", "Fish"),
-            LearningDataModel(R.drawable.words_g, "G for Goat", "Goat"),
-            LearningDataModel(R.drawable.words_h, "H for Horse", "Horse"),
+            LearningDataModel(R.drawable.words_g, "G for Giraffe", "Giraffe"),
+            LearningDataModel(R.drawable.words_h, "H for Hat", "Hat"),
             LearningDataModel(R.drawable.words_i, "I for Ice cream", "Ice cream"),
-            LearningDataModel(R.drawable.words_j, "J for Joker", "Joker"),
-            LearningDataModel(R.drawable.words_k, "K for Kite", "Kite"),
-            LearningDataModel(R.drawable.words_l, "L for Lion", "Lion"),
-            LearningDataModel(R.drawable.words_m, "M for Monkey", "Monkey"),
-            LearningDataModel(R.drawable.words_n, "N for Nest", "Nest"),
-            LearningDataModel(R.drawable.words_o, "O for Orange", "Orange"),
-            LearningDataModel(R.drawable.words_p, "P for Parrot", "Parrot"),
+            LearningDataModel(R.drawable.words_j, "J for Jam", "Jam"),
+            LearningDataModel(R.drawable.words_k, "K for Key", "Key"),
+            LearningDataModel(R.drawable.words_l, "L for Leaf", "Leaf"),
+            LearningDataModel(R.drawable.words_m, "M for Mushroom", "Mushroom"),
+            LearningDataModel(R.drawable.words_n, "N for Nestling", "Nestling"),
+            LearningDataModel(R.drawable.words_o, "O for Owl", "Owl"),
+            LearningDataModel(R.drawable.words_p, "P for Pencil", "Pencil"),
             LearningDataModel(R.drawable.words_q, "Q for Queen", "Queen"),
-            LearningDataModel(R.drawable.words_r, "R for Rabbit", "Rabbit"),
+            LearningDataModel(R.drawable.words_r, "R for Ring", "Ring"),
             LearningDataModel(R.drawable.words_s, "S for Sun", "Sun"),
-            LearningDataModel(R.drawable.words_t, "T for Train", "Train"),
+            LearningDataModel(R.drawable.words_t, "T for Turtle", "Turtle"),
             LearningDataModel(R.drawable.words_u, "U for Umbrella", "Umbrella"),
-            LearningDataModel(R.drawable.words_v, "V for Violin", "Violin"),
-            LearningDataModel(R.drawable.words_w, "W for Watch", "Watch"),
+            LearningDataModel(R.drawable.words_v, "V for Vase", "Vase"),
+            LearningDataModel(R.drawable.words_w, "W for Whale", "Whale"),
             LearningDataModel(R.drawable.words_x, "X for Xylophone", "Xylophone"),
-            LearningDataModel(R.drawable.words_y, "Y for Yak", "Yak"),
+            LearningDataModel(R.drawable.words_y, "Y for Yo-yo", "Yo-yo"),
             LearningDataModel(R.drawable.words_z, "Z for Zebra", "Zebra")
         )
     }
@@ -684,33 +684,6 @@ object DataManager {
      * ข้อมูล default (ตัวอักษร)
      */
     private fun getDefaultAlphabetData(): List<LearningDataModel> {
-        return listOf(
-            LearningDataModel(R.drawable.a, "A for Apple", "Apple"),
-            LearningDataModel(R.drawable.b, "B for Ball", "Ball"),
-            LearningDataModel(R.drawable.c, "C for Cat", "Cat"),
-            LearningDataModel(R.drawable.d, "D for Dog", "Dog"),
-            LearningDataModel(R.drawable.e, "E for Elephant", "Elephant"),
-            LearningDataModel(R.drawable.f, "F for Fish", "Fish"),
-            LearningDataModel(R.drawable.g, "G for Goat", "Goat"),
-            LearningDataModel(R.drawable.h, "H for Horse", "Horse"),
-            LearningDataModel(R.drawable.i, "I for Ice cream", "Ice cream"),
-            LearningDataModel(R.drawable.j, "J for Joker", "Joker"),
-            LearningDataModel(R.drawable.k, "K for Kite", "Kite"),
-            LearningDataModel(R.drawable.l, "L for Lion", "Lion"),
-            LearningDataModel(R.drawable.m, "M for Monkey", "Monkey"),
-            LearningDataModel(R.drawable.n, "N for Nest", "Nest"),
-            LearningDataModel(R.drawable.o, "O for Orange", "Orange"),
-            LearningDataModel(R.drawable.p, "P for Parrot", "Parrot"),
-            LearningDataModel(R.drawable.q, "Q for Queen", "Queen"),
-            LearningDataModel(R.drawable.r, "R for Rabbit", "Rabbit"),
-            LearningDataModel(R.drawable.s, "S for Sun", "Sun"),
-            LearningDataModel(R.drawable.t, "T for Train", "Train"),
-            LearningDataModel(R.drawable.u, "U for Umbrella", "Umbrella"),
-            LearningDataModel(R.drawable.v, "V for Violin", "Violin"),
-            LearningDataModel(R.drawable.w, "W for Watch", "Watch"),
-            LearningDataModel(R.drawable.x, "X for Xylophone", "Xylophone"),
-            LearningDataModel(R.drawable.y, "Y for Yak", "Yak"),
-            LearningDataModel(R.drawable.z, "Z for Zebra", "Zebra")
-        )
+        return getAlphabetData()
     }
 }

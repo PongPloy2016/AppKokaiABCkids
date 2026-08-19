@@ -45,7 +45,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     companion object {
         private const val TEST_INTERSTITIAL = "ca-app-pub-3940256099942544/1033173712"
-        private const val REAL_INTERSTITIAL = "ca-app-pub-3279793802315716/8581063137"
+        private const val REAL_INTERSTITIAL = "ca-app-pub-9592898299992336/7978304153"
 
         // TTS Constants
         private const val TTS_UTTERANCE_ID = "AutoReadTTS"
@@ -63,9 +63,13 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     var txtTitleSubHome: TextView? = null
     var rvSubHome: RecyclerView? = null
 
+    // BGM Controls
+    private var imgMusicToggle: android.widget.ImageView? = null
+    private var btnMusicToggleContainer: View? = null
+
     // Auto Read UI Controls
     private lateinit var btnStartAutoRead: Button
-    private lateinit var btnStopAutoRead: Button
+    private var btnStopAutoRead: Button? = null
     private lateinit var layoutProgress: LinearLayout
     private lateinit var tvProgress: TextView
     private lateinit var progressBar: ProgressBar
@@ -104,7 +108,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var pendingLearningData: LearningDataModel? = null
 
     private val currentAdUnitId: String
-        get() = if (BuildConfig.DEBUG) REAL_INTERSTITIAL else REAL_INTERSTITIAL
+        get() = TEST_INTERSTITIAL
 
     // ============================================
     // LIFECYCLE METHODS
@@ -133,6 +137,11 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onResume() {
         super.onResume()
+        updateBgmButtonState()
+        val isMusicEnabled = com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().isMusicEnabled(this)
+        if (isMusicEnabled) {
+            com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().startMusic(this)
+        }
         // Resume TTS if needed
         if (isTtsInitialized && isAutoReading) {
             updateProgressUI()
@@ -141,8 +150,9 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onPause() {
         super.onPause()
-        // Pause auto-reading when activity pauses
+        // Pause auto-reading and music when activity pauses
         stopAutoRead()
+        com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().pauseMusic()
     }
 
     // ============================================
@@ -170,7 +180,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     // ============================================
-    // UI INITIALIZATION (NO BANNER ADS)
+    // UI INITIALIZATION
     // ============================================
     private fun initUI() {
         rvSubHome = findViewById(R.id.rvSubHome)
@@ -179,7 +189,8 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Initialize Sounds
         initSounds()
 
-        // NO BANNER ADS INITIALIZATION HERE
+        // Initialize BGM Controls
+        initBgmControls()
 
         // Initialize Auto Read Controls
         initAutoReadControls()
@@ -226,6 +237,39 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    /** Initialize BGM Controls */
+    private fun initBgmControls() {
+        imgMusicToggle = findViewById(R.id.imgMusicToggle)
+        btnMusicToggleContainer = findViewById(R.id.btnMusicToggleContainer)
+
+        updateBgmButtonState()
+
+        btnMusicToggleContainer?.setOnClickListener {
+            val isEnabled = com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().isMusicEnabled(this)
+            val newStatus = !isEnabled
+            com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().setMusicEnabled(this, newStatus)
+            if (newStatus) {
+                com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().startMusic(this)
+                showToast("เปิดเสียงดนตรีประกอบ 🎵")
+            } else {
+                com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().stopMusic()
+                showToast("ปิดเสียงดนตรีประกอบ 🔇")
+            }
+            updateBgmButtonState()
+        }
+    }
+
+    private fun updateBgmButtonState() {
+        val isEnabled = com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance().isMusicEnabled(this)
+        if (isEnabled) {
+            imgMusicToggle?.setImageResource(R.drawable.ic_music_on)
+            imgMusicToggle?.alpha = 1.0f
+        } else {
+            imgMusicToggle?.setImageResource(R.drawable.ic_music_off)
+            imgMusicToggle?.alpha = 0.5f
+        }
+    }
+
     /** Initialize Auto Read Controls */
     private fun initAutoReadControls() {
         btnStartAutoRead = findViewById(R.id.btn_start_auto_read)
@@ -237,15 +281,21 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Setup Auto Read Listeners
         setupAutoReadListeners()
 
-        // Initially disable stop button
+        // Initially update button text and state
         updateAutoReadButtons()
     }
 
     /** Setup Auto Read Listeners */
     private fun setupAutoReadListeners() {
-        btnStartAutoRead.setOnClickListener { startAutoRead() }
+        btnStartAutoRead.setOnClickListener {
+            if (isAutoReading) {
+                stopAutoRead()
+            } else {
+                startAutoRead()
+            }
+        }
 
-        btnStopAutoRead.setOnClickListener { stopAutoRead() }
+        btnStopAutoRead?.setOnClickListener { stopAutoRead() }
 
         btnStartAutoRead.setOnLongClickListener {
             showAutoReadSettingsDialog()
@@ -373,7 +423,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         try {
             textToSpeech.stop()
 
-            val textToSpeak = learningData.showTitle ?: learningData.showTitle ?: "Item"
+            val textToSpeak = learningData.showTitle ?: "Item"
             val fullText =
                     if (index == 0) {
                         "Let's learn together! $textToSpeak"
@@ -383,6 +433,9 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             highlightCurrentItem(index)
             updateProgress(index + 1)
+
+            // เลื่อนหน้าจอตามตัวอักษรที่กำลังอ่านอัตโนมัติ
+            rvSubHome?.smoothScrollToPosition(index)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 textToSpeech.speak(
@@ -438,7 +491,8 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         updateAutoReadButtons()
         layoutProgress.visibility = View.VISIBLE
 
-        showToast("เริ่มอ่าน A-Z อัตโนมัติ! 🎯")
+        val startMsg = if (position == 0) "เริ่มอ่าน A-Z อัตโนมัติ! 🎯" else "เริ่มอ่านอัตโนมัติ! 🎯"
+        showToast(startMsg)
 
         autoReadHandler.postDelayed(
                 {
@@ -458,11 +512,6 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (!isAutoReading) return
 
         isAutoReading = false
-
-        if (isTtsInitialized) {
-            textToSpeech.stop()
-        }
-
         autoReadRunnable?.let { autoReadHandler.removeCallbacks(it) }
 
         resetItemHighlight()
@@ -575,21 +624,17 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     /** Update auto read buttons state */
     private fun updateAutoReadButtons() {
         runOnUiThread {
-            btnStartAutoRead.isEnabled = !isAutoReading && isTtsInitialized
-            btnStopAutoRead.isEnabled = isAutoReading
+            btnStartAutoRead.isEnabled = isTtsInitialized
 
             if (isAutoReading) {
-                btnStartAutoRead.text = "⏸️ กำลังอ่าน..."
-                btnStartAutoRead.setBackgroundResource(R.drawable.button_disabled_cartoon)
-            } else {
-                btnStartAutoRead.text = "🚀 เริ่มอ่าน A-Z อัตโนมัติ"
-                btnStartAutoRead.setBackgroundResource(R.drawable.button_green_cartoon)
-            }
-
-            if (isAutoReading || currentReadIndex > 0) {
+                btnStartAutoRead.text = "⏹️ กำลังอ่าน... แตะเพื่อหยุด"
+                btnStartAutoRead.setBackgroundResource(R.drawable.bg_auto_read_toggle_stop)
                 layoutProgress.visibility = View.VISIBLE
             } else {
-                layoutProgress.visibility = View.GONE
+                val isAlphabet = (position == 0)
+                btnStartAutoRead.text = if (isAlphabet) "🚀 เริ่มอ่าน A-Z อัตโนมัติ" else "▶️ เริ่มอ่านอัตโนมัติ"
+                btnStartAutoRead.setBackgroundResource(R.drawable.bg_auto_read_toggle_play)
+                layoutProgress.visibility = if (currentReadIndex > 0) View.VISIBLE else View.GONE
             }
         }
     }
@@ -743,15 +788,13 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     }
 
                     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        logDebug("❌ INTERSTITIAL AD FAILED TO LOAD")
-                        logDebug("Error Code: ${loadAdError.code}")
-                        logDebug("Error Message: ${loadAdError.message}")
-
+                        logDebug("❌ Real Interstitial Ad Failed To Load: ${loadAdError.message} (Error Code: ${loadAdError.code})")
                         interstitialAd = null
                         isAdLoaded = false
 
                         if (adLoadRetryCount < MAX_RETRY_COUNT) {
-                            val delay = adLoadRetryCount * 2000L
+                            adLoadRetryCount++
+                            val delay = adLoadRetryCount * 3000L
                             rvSubHome?.postDelayed({ loadInterstitialAd() }, delay)
                         }
                     }

@@ -70,10 +70,12 @@
     <string name="k_43">อ</string>
     <string name="k_44">ฮ</string>
     <string name="play_sound">Play sound</string>
-    <string name="banner_ad_unit_id_test">ca-app-pub-3940256099942544/6300978111"</string>
-    <string name="banner_ad_unit_id">ca-app-pub-3279793802315716/1117791498</string>
-    <string name="banner_ad_reward">ca-app-pub-3279793802315716/8324446251</string>
-    <string name="interstitial_ad_reward">ca-app-pub-3279793802315716/8581063137</string>
+    <string name="banner_ad_unit_id_test">ca-app-pub-3940256099942544/6300978111</string>
+    <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+    <string name="banner_ad_reward">ca-app-pub-3940256099942544/5224354917</string>
+    <string name="interstitial_ad_reward">ca-app-pub-9592898299992336/7978304153</string>
+    <string name="interstitial_ad_unit_id">ca-app-pub-9592898299992336/7978304153</string>
+    <string name="interstitial_ad_unit_id_test">ca-app-pub-3940256099942544/1033173712</string>
 
     <!--bottom navigation title-->
     <string name="title_nav_home">หน้าแรก</string>

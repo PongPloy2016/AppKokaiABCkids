@@ -2,213 +2,399 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootFullScreenLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_view"
-    android:orientation="vertical"
-    >
+    android:background="@drawable/bg_learning_scenery"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
 
-    <!-- Header Section -->
+    <!-- Top Bar with Back Pill Button -->
     <RelativeLayout
+        android:id="@+id/topBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@drawable/header_gradient"
-        android:padding="8dp">
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp">
 
-        <ImageView
-            android:id="@+id/imgBackButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+        <!-- Back Button Pill -->
+        <LinearLayout
+            android:id="@+id/btnBackPill"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/btn_circle_bg"
+            android:background="@drawable/bg_pill_back"
+            android:clickable="true"
+            android:elevation="3dp"
+            android:focusable="true"
+            android:gravity="center_vertical"
             android:onClick="onClickBack"
-            android:padding="10dp"
-            android:src="@drawable/btn_back_150" />
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="16dp">
 
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="Back icon"
+                android:src="@drawable/ic_arrow_left_white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="Back"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Category Title Badge (Soft and cute in center) -->
         <TextView
             android:id="@+id/tvCategoryTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Learning Fun!"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textColor="#546E7A"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
-        <ImageView
-            android:id="@+id/imgSoundToggle"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+        <!-- Sound Toggle Button on right -->
+        <FrameLayout
+            android:id="@+id/btnSoundToggleContainer"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/btn_circle_bg"
-            android:onClick="onClickSoundToggle"
-            android:padding="8dp"
-            android:src="@drawable/ic_sound_on" />
+            android:background="@drawable/bg_header_bubble"
+            android:clickable="true"
+            android:elevation="2dp"
+            android:focusable="true"
+            android:onClick="onClickSoundToggle">
+
+            <ImageView
+                android:id="@+id/imgSoundToggle"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="Toggle Sound"
+                android:src="@drawable/ic_sound_on" />
+
+        </FrameLayout>
 
     </RelativeLayout>
 
-    <!-- Main Content Area -->
-    <RelativeLayout
+    <!-- Main Content Container -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="16dp">
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
-        <!-- Item Name with Fun Background -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/speech_bubble"
-            android:gravity="center"
-            android:paddingHorizontal="20dp"
-            android:paddingVertical="8dp">
-
-            <TextView
-                android:id="@+id/tvItemName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="A for Apple"
-                android:textColor="@color/black"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-        <!-- ViewPager Container -->
+        <!-- Upper Section: Item Image Character ViewPager -->
         <FrameLayout
-            android:layout_width="280dp"
-            android:layout_height="280dp"
-            android:layout_centerInParent="true"
-            android:background="@drawable/image_frame">
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.2"
+            android:layout_marginTop="4dp">
 
             <com.pongploydev.priyankvex.paintapp.utils.NonSwipeAbleViewPager
                 android:id="@+id/viewPager"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_margin="15dp" />
-
-            <!-- Progress Indicator -->
-            <LinearLayout
-                android:id="@+id/dotsLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="20dp"
-                android:layout_gravity="bottom|center"
-                android:orientation="horizontal" />
+                android:layout_height="match_parent" />
 
         </FrameLayout>
 
-        <!-- Navigation Buttons -->
-        <ImageView
-            android:id="@+id/imgBtnPrev"
-            android:layout_width="65dp"
-            android:layout_height="65dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/btn_nav_bg"
-            android:onClick="onClickPrev"
-            android:padding="12dp"
-            android:src="@drawable/btn_prev_150" />
-
-        <ImageView
-            android:id="@+id/imgBtnNext"
-            android:layout_width="65dp"
-            android:layout_height="65dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/btn_nav_bg"
-            android:onClick="onClickNext"
-            android:padding="12dp"
-            android:src="@drawable/btn_next_150" />
-
-        <!-- Fun Action Buttons -->
+        <!-- Middle Section: Text & Pronunciation -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_alignParentBottom="true"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="2dp"
+            android:paddingBottom="8dp">
 
-            <ImageButton
-                android:id="@+id/btnRepeat"
-                android:layout_width="55dp"
-                android:layout_height="55dp"
-                android:layout_margin="8dp"
-                android:background="@drawable/btn_fun_bg"
-                android:onClick="onClickRepeat"
-                android:padding="10dp"
-                android:src="@drawable/ic_repeat" />
+            <!-- Primary Identifier Symbol (e.g. "1" or "A") -->
+            <TextView
+                android:id="@+id/tvItemSymbol"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textColor="#2D3436"
+                android:textSize="26sp"
+                android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/btnStar"
-                android:layout_width="55dp"
-                android:layout_height="55dp"
-                android:layout_margin="8dp"
-                android:background="@drawable/btn_fun_bg"
-                android:onClick="onClickStar"
-                android:padding="10dp"
-                android:src="@drawable/ic_star_outline" />
+            <!-- Thai Word (e.g. "หนึ่ง") -->
+            <TextView
+                android:id="@+id/tvThaiName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-2dp"
+                android:text="หนึ่ง"
+                android:textColor="#2D3436"
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/btnQuiz"
-                android:layout_width="55dp"
-                android:layout_height="55dp"
-                android:layout_margin="8dp"
-                android:background="@drawable/btn_fun_bg"
-                android:onClick="onClickQuiz"
-                android:padding="10dp"
-                android:src="@drawable/ic_quiz" />
+            <!-- English Word (e.g. "One") -->
+            <TextView
+                android:id="@+id/tvEnglishName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="One"
+                android:textColor="#4A4A4A"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <!-- Yellow Speaker Button for Audio Pronunciation -->
+            <FrameLayout
+                android:id="@+id/btnPronunciationSound"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_speaker_yellow_circle"
+                android:clickable="true"
+                android:elevation="6dp"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Play Pronunciation"
+                    android:src="@drawable/ic_sound_on" />
+
+            </FrameLayout>
+
+            <!-- Pronunciation Help Badge -->
+            <TextView
+                android:id="@+id/tvPronunciationHelp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_pronunciation_pill"
+                android:text="Pronunciation help"
+                android:textColor="#78909C"
+                android:textSize="12sp" />
 
         </LinearLayout>
 
-    </RelativeLayout>
-
-    <!-- Footer with Progress -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:background="@drawable/footer_gradient"
-        android:orientation="vertical"
-        android:padding="12dp">
-
-        <!-- Progress Text -->
-        <TextView
-            android:id="@+id/tvProgress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="1/26"
-            android:textColor="@color/white"
-            android:textSize="16sp" />
-
-        <!-- Progress Bar -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="@android:style/Widget.ProgressBar.Horizontal"
+        <!-- Lower Section: Tracing / Handwriting Stroke Preview Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardTracingPreview"
             android:layout_width="match_parent"
-            android:layout_height="15dp"
-            android:layout_marginTop="8dp"
-            android:progressDrawable="@drawable/progress_bar" />
+            android:layout_height="80dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="3dp"
+            app:cardUseCompatPadding="false">
 
-        <!-- Ad Sections -->
-        <RelativeLayout
-            android:id="@+id/llAdView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:visibility="visible" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp">
 
-        <LinearLayout
-            android:id="@+id/llAdViewFacebook"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="visible" />
+                <!-- 3 Handwriting Guide Lines -->
+                <View
+                    android:id="@+id/lineTop"
+                    android:layout_width="match_parent"
+                    android:layout_height="1.5dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="16dp"
+                    android:background="#CFD8DC" />
+
+                <View
+                    android:id="@+id/lineMiddle"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_centerVertical="true"
+                    android:background="#B0BEC5" />
+
+                <View
+                    android:id="@+id/lineBottom"
+                    android:layout_width="match_parent"
+                    android:layout_height="1.5dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="16dp"
+                    android:background="#CFD8DC" />
+
+                <!-- Tracing Guide Demo with Arrows & Pencil -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Traced Character / Stroke Guide -->
+                    <TextView
+                        android:id="@+id/tvTraceGuideLetter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1"
+                        android:textColor="#37474F"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
+
+                    <!-- Stroke Direction Indicator -->
+                    <TextView
+                        android:id="@+id/tvTraceArrows"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="⇣"
+                        android:textColor="#E91E63"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <!-- Pencil Icon -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="8dp"
+                        android:contentDescription="Pencil"
+                        android:src="@drawable/pencil" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="แตะเพื่อฝึกเขียน ✏️"
+                        android:textColor="#78909C"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+
+        </androidx.cardview.widget.CardView>
 
     </LinearLayout>
+
+    <!-- Bottom Navigation Bar Controller -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="16dp">
+
+        <!-- Previous Button -->
+        <FrameLayout
+            android:id="@+id/imgBtnPrev"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_nav_btn_blue"
+            android:clickable="true"
+            android:elevation="4dp"
+            android:focusable="true"
+            android:onClick="onClickPrev">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:contentDescription="Previous"
+                android:src="@drawable/ic_arrow_left_white" />
+
+        </FrameLayout>
+
+        <!-- Center Progress Bar with Star -->
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="10dp"
+                android:layout_centerVertical="true"
+                android:progressDrawable="@drawable/bg_progress_track_cute" />
+
+            <!-- Smiling Star Indicator in Middle -->
+            <ImageView
+                android:id="@+id/imgStarProgress"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_centerInParent="true"
+                android:contentDescription="Star Milestone"
+                android:src="@drawable/star" />
+
+        </RelativeLayout>
+
+        <!-- Next Button -->
+        <FrameLayout
+            android:id="@+id/imgBtnNext"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_nav_btn_blue"
+            android:clickable="true"
+            android:elevation="4dp"
+            android:focusable="true"
+            android:onClick="onClickNext">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:contentDescription="Next"
+                android:src="@drawable/ic_arrow_right_white" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- Hidden compatibility elements -->
+    <TextView
+        android:id="@+id/tvItemName"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvProgress"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/dotsLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <RelativeLayout
+        android:id="@+id/llAdView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/llAdViewFacebook"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
 </LinearLayout>

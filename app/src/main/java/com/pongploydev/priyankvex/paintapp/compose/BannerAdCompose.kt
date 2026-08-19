@@ -53,27 +53,20 @@ import kotlinx.coroutines.delay
 @Composable
 fun BannerAdCompose(
     modifier: Modifier = Modifier,
-    useRealAd: Boolean = false,
-    adUnitId: String = "ca-app-pub-3940256099942544/6300978111" // Test ID
+    adUnitId: String = "ca-app-pub-3940256099942544/6300978111"
 ) {
-//    if (useRealAd) {
-//        RealAdMobBanner(adUnitId = adUnitId)
-//    } else {
-//        CustomBannerAd(modifier = modifier)
-//    }
+    RealAdMobBanner(modifier = modifier, adUnitId = adUnitId)
 }
 
 @Composable
 fun RealAdMobBanner(
+    modifier: Modifier = Modifier,
     adUnitId: String = "ca-app-pub-3940256099942544/6300978111"
 ) {
-    val context = LocalContext.current
-
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .height(60.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -93,12 +86,12 @@ fun RealAdMobBanner(
                     adListener = object : com.google.android.gms.ads.AdListener() {
                         override fun onAdLoaded() {
                             super.onAdLoaded()
-                            println("✅ Banner Ad loaded successfully")
+                            println("✅ Banner Ad loaded successfully: $adUnitId")
                         }
 
                         override fun onAdFailedToLoad(adError: com.google.android.gms.ads.LoadAdError) {
                             super.onAdFailedToLoad(adError)
-                            println("❌ Banner Ad failed to load: ${adError.message}")
+                            println("❌ Banner Ad failed to load: ${adError.message} (code ${adError.code})")
                         }
 
                         override fun onAdClicked() {

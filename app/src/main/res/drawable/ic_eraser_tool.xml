@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="64dp"
+    android:viewportWidth="36"
+    android:viewportHeight="64">
+    <!-- Eraser Top Pink -->
+    <path
+        android:fillColor="#FF80AB"
+        android:pathData="M8,10 A4,4 0 0,1 12,6 L24,6 A4,4 0 0,1 28,10 L28,26 L8,26 Z" />
+    <!-- Eraser Body White/Blue -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M8,26 L28,26 L28,58 A4,4 0 0,1 24,62 L12,62 A4,4 0 0,1 8,58 Z" />
+    <!-- Eraser Blue Band -->
+    <path
+        android:fillColor="#29B6F6"
+        android:pathData="M8,26 L28,26 L28,46 L8,46 Z" />
+</vector>

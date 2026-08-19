@@ -3,59 +3,72 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cvCardSubHome"
     android:layout_width="match_parent"
-    android:layout_height="200dp"
-    android:layout_margin="8dp"
+    android:layout_height="195dp"
+    android:layout_margin="6dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="12dp"
-    app:cardUseCompatPadding="true"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="6dp"
+    app:cardUseCompatPadding="false"
     app:cardBackgroundColor="@color/card_default">
 
-    <!-- ใช้ FrameLayout เป็น container หลัก -->
+    <!-- Container -->
     <FrameLayout
         android:id="@+id/flCardContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:focusable="false">
 
-    android:focusable="false">
-
-    <!-- Layout ภายใน -->
-    <LinearLayout
-        android:id="@+id/lloutCardSubHome"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:clickable="false"
-        android:focusable="false"
-        android:focusableInTouchMode="false">
-
-        <ImageView
-            android:id="@+id/imgSubHome"
+        <LinearLayout
+            android:id="@+id/lloutCardSubHome"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="fitCenter"
-            android:padding="16dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="6dp"
             android:clickable="false"
-            android:focusable="false"
-            android:focusableInTouchMode="false"
-            android:contentDescription="Learning item" />
+            android:focusable="false">
 
-        <!-- สามารถเพิ่ม TextView ได้ที่นี่ถ้าต้องการ -->
+            <ImageView
+                android:id="@+id/imgSubHome"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:padding="2dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:contentDescription="Learning item" />
 
-    </LinearLayout>
+            <!-- Thai translation text badge -->
+            <TextView
+                android:id="@+id/tvThaiTranslation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/bg_pill_badge"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="คำแปล"
+                android:textColor="#5E35B1"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="visible" />
 
-    <!-- Overlay สำหรับคลิก (optional) -->
-    <View
-        android:id="@+id/clickOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/transparent"
-        android:clickable="false"
-        android:focusable="false" />
+        </LinearLayout>
 
-</FrameLayout>
+        <!-- Highlight Overlay for reading effect -->
+        <View
+            android:id="@+id/readingGlowOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/card_reading_glow_border"
+            android:visibility="gone" />
 
-    </androidx.cardview.widget.CardView>
+    </FrameLayout>
+
+</androidx.cardview.widget.CardView>

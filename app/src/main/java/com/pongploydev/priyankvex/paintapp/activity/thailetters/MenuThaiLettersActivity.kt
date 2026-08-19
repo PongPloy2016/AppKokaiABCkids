@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.pongploydev.priyankvex.paintapp.R
+import com.pongploydev.priyankvex.paintapp.activity.learning.FunTracingActivity
 import com.pongploydev.priyankvex.paintapp.compose.AlphabetMenuComposeScreen
 import com.pongploydev.priyankvex.paintapp.compose.AlphabetMode
 import com.pongploydev.priyankvex.paintapp.compose.LanguageHubCategory
@@ -245,18 +246,12 @@ class MenuThaiLettersActivity : ComponentActivity() {
                             onCardLongClick = { item, position ->
                                 if (!isQuizMode && !isAutoReading) {
                                     playSoundForItem(item)
-                                    if (item.id < 44 && currentLanguageCategory == LanguageHubCategory.THAI) {
-                                        openWritingScreen(item, position)
-                                    }
+                                    openWritingScreen(item, position)
                                 }
                             },
                             onPracticeWriteClick = { item, position ->
                                 if (!isQuizMode && !isAutoReading) {
-                                    if (item.id < 44 && currentLanguageCategory == LanguageHubCategory.THAI) {
-                                        openWritingScreen(item, position)
-                                    } else {
-                                        playSoundForItem(item)
-                                    }
+                                    openWritingScreen(item, position)
                                 }
                             },
                             onSoundClick = { item, _ ->
@@ -483,11 +478,17 @@ class MenuThaiLettersActivity : ComponentActivity() {
     }
 
     private fun openWritingScreen(item: AlphabetCardItem, position: Int) {
-        val intent = Intent(this, ThaiLettersActivity::class.java).apply {
-            putExtra("SELECTED_POSITION", position)
-            putExtra("SELECTED_LETTER_INDEX", position)
-            putExtra("SELECTED_LETTER_NAME", item.name)
-            putExtra("SELECTED_ITEM_ID", item.id)
+        val intent = Intent(this, FunTracingActivity::class.java).apply {
+            putExtra("symbol", item.letter)
+            putExtra("name", item.name)
+            putExtra("thaiName", item.name)
+            putExtra("rhyme", item.rhyme)
+            putExtra("imageRes", item.imageRes)
+            putExtra("audioRawRes", item.audioRawRes)
+            putExtra("soundResName", item.soundResName)
+            putExtra("categoryMode", currentActiveMode.name)
+            putExtra("categoryPosition", if (currentLanguageCategory == LanguageHubCategory.ENGLISH) 0 else 1)
+            putExtra("selectedPosition", position)
         }
         startActivity(intent)
     }
