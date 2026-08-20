@@ -222,46 +222,54 @@ public class Video implements Parcelable {
             return true;
         }
 
-        // ตรวจสอบจากชื่อหมวดหมู่
-        if (!TextUtils.isEmpty(category_name)) {
-            String lowercaseCategory = category.toLowerCase(Locale.getDefault());
-            String lowercaseCategoryName = category_name.toLowerCase(Locale.getDefault());
+        String lowercaseCategory = category.toLowerCase(Locale.getDefault());
+        String textToSearch = ((category_name != null ? category_name : "") + " " +
+                (video_title != null ? video_title : "") + " " +
+                (tags != null ? tags : "") + " " +
+                (video_description != null ? video_description : "")).toLowerCase(Locale.getDefault());
 
-            if (lowercaseCategoryName.contains(lowercaseCategory)) {
-                return true;
-            }
+        if (textToSearch.contains(lowercaseCategory)) {
+            return true;
+        }
 
-            switch (category.toLowerCase(Locale.getDefault())) {
-                case "cartoon":
-                    return lowercaseCategoryName.contains("การ์ตูน") ||
-                            lowercaseCategoryName.contains("cartoon") ||
-                            lowercaseCategoryName.contains("animation");
-                case "music":
-                    return lowercaseCategoryName.contains("เพลง") ||
-                            lowercaseCategoryName.contains("music") ||
-                            lowercaseCategoryName.contains("song");
-                case "learning":
-                case "math":
-                    return lowercaseCategoryName.contains("เรียนรู้") ||
-                            lowercaseCategoryName.contains("learning") ||
-                            lowercaseCategoryName.contains("education") ||
-                            lowercaseCategoryName.contains("สอน") ||
-                            lowercaseCategoryName.contains("math") ||
-                            lowercaseCategoryName.contains("คณิต");
-                case "abc":
-                case "english":
-                    return lowercaseCategoryName.contains("abc") ||
-                            lowercaseCategoryName.contains("english") ||
-                            lowercaseCategoryName.contains("ภาษาอังกฤษ") ||
-                            lowercaseCategoryName.contains("อักษร") ||
-                            lowercaseCategoryName.contains("ก ไก่") ||
-                            lowercaseCategoryName.contains("alphabet");
-                case "story":
-                    return lowercaseCategoryName.contains("นิทาน") ||
-                            lowercaseCategoryName.contains("story") ||
-                            lowercaseCategoryName.contains("tale") ||
-                            lowercaseCategoryName.contains("เรื่อง");
-            }
+        switch (category.toLowerCase(Locale.getDefault())) {
+            case "cartoon":
+                return textToSearch.contains("การ์ตูน") ||
+                        textToSearch.contains("cartoon") ||
+                        textToSearch.contains("animation") ||
+                        textToSearch.contains("นิทาน");
+            case "music":
+                return textToSearch.contains("เพลง") ||
+                        textToSearch.contains("music") ||
+                        textToSearch.contains("song");
+            case "learning":
+            case "math":
+                return textToSearch.contains("เรียนรู้") ||
+                        textToSearch.contains("learning") ||
+                        textToSearch.contains("education") ||
+                        textToSearch.contains("สอน") ||
+                        textToSearch.contains("math") ||
+                        textToSearch.contains("คณิต") ||
+                        textToSearch.contains("บวกเลข") ||
+                        textToSearch.contains("คูณ") ||
+                        textToSearch.contains("หาร");
+            case "abc":
+            case "english":
+                return textToSearch.contains("abc") ||
+                        textToSearch.contains("english") ||
+                        textToSearch.contains("ภาษาอังกฤษ") ||
+                        textToSearch.contains("อักษร") ||
+                        textToSearch.contains("ก ไก่") ||
+                        textToSearch.contains("พยัญชนะ") ||
+                        textToSearch.contains("สระ") ||
+                        textToSearch.contains("ภาษาไทย") ||
+                        textToSearch.contains("phonics") ||
+                        textToSearch.contains("alphabet");
+            case "story":
+                return textToSearch.contains("นิทาน") ||
+                        textToSearch.contains("story") ||
+                        textToSearch.contains("tale") ||
+                        textToSearch.contains("เรื่อง");
         }
 
         return false;

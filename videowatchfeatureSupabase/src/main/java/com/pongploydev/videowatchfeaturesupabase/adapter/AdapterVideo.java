@@ -339,40 +339,48 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public void updateData(List<Video> newVideos) {
         handler.post(() -> {
             if (newVideos == null) return;
-            
-            androidx.recyclerview.widget.DiffUtil.DiffResult diffResult = androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
-                @Override
-                public int getOldListSize() {
-                    return videos.size();
-                }
+            try {
+                androidx.recyclerview.widget.DiffUtil.DiffResult diffResult = androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
+                    @Override
+                    public int getOldListSize() {
+                        return videos.size();
+                    }
 
-                @Override
-                public int getNewListSize() {
-                    return newVideos.size();
-                }
+                    @Override
+                    public int getNewListSize() {
+                        return newVideos.size();
+                    }
 
-                @Override
-                public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-                    Video oldVideo = videos.get(oldItemPosition);
-                    Video newVideo = newVideos.get(newItemPosition);
-                    if (oldVideo == null || newVideo == null) return oldVideo == newVideo;
-                    return oldVideo.vid.equals(newVideo.vid);
-                }
+                    @Override
+                    public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                        Video oldVideo = videos.get(oldItemPosition);
+                        Video newVideo = newVideos.get(newItemPosition);
+                        if (oldVideo == null || newVideo == null) return oldVideo == newVideo;
+                        if (oldVideo.vid != null && newVideo.vid != null) {
+                            return oldVideo.vid.equals(newVideo.vid);
+                        }
+                        return oldVideo.id == newVideo.id;
+                    }
 
-                @Override
-                public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-                    Video oldVideo = videos.get(oldItemPosition);
-                    Video newVideo = newVideos.get(newItemPosition);
-                    if (oldVideo == null || newVideo == null) return oldVideo == newVideo;
-                    return oldVideo.video_title.equals(newVideo.video_title) &&
-                           oldVideo.video_thumbnail.equals(newVideo.video_thumbnail) &&
-                           oldVideo.video_duration.equals(newVideo.video_duration);
-                }
-            });
+                    @Override
+                    public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                        Video oldVideo = videos.get(oldItemPosition);
+                        Video newVideo = newVideos.get(newItemPosition);
+                        if (oldVideo == null || newVideo == null) return oldVideo == newVideo;
+                        return java.util.Objects.equals(oldVideo.video_title, newVideo.video_title) &&
+                               java.util.Objects.equals(oldVideo.video_thumbnail, newVideo.video_thumbnail) &&
+                               java.util.Objects.equals(oldVideo.video_duration, newVideo.video_duration);
+                    }
+                });
 
-            videos.clear();
-            videos.addAll(newVideos);
-            diffResult.dispatchUpdatesTo(AdapterVideo.this);
+                videos.clear();
+                videos.addAll(newVideos);
+                diffResult.dispatchUpdatesTo(AdapterVideo.this);
+            } catch (Exception e) {
+                videos.clear();
+                videos.addAll(newVideos);
+                notifyDataSetChanged();
+            }
         });
     }
 

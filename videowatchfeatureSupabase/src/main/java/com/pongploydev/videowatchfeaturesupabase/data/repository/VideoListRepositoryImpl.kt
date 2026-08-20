@@ -21,7 +21,7 @@ class VideoListRepositoryImpl(
             try {
                 val offset = (page - 1) * count
                 val supabaseVideos = SupabaseClient.getService().getVideos(
-                    categoryFilter = "eq.Education & Teaching",
+                    categoryFilter = "ilike.*Education*",
                     limit = count,
                     offset = offset
                 )
@@ -61,7 +61,7 @@ class VideoListRepositoryImpl(
         if (useSupabase) {
             try {
                 val supabaseVideos = SupabaseClient.getService().getVideos(
-                    categoryFilter = "eq.Education & Teaching"
+                    categoryFilter = "ilike.*Education*"
                 )
                 if (supabaseVideos.isNotEmpty()) {
                     val shuffled = supabaseVideos.shuffled()

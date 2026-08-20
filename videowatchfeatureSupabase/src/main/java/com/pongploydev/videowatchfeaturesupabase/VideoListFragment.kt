@@ -176,10 +176,10 @@ class VideoListFragment : Fragment() {
         initializeAds()
 
         swipeProgress(true)
-        ensureCookieChallengeSolved {
-            if (AppConfig.ALLOW_APP_ACCESSED_USING_VPN) {
-                requestAction(1)
-            } else {
+        if (sharedPref.isUseSupabaseApi) {
+            requestAction(1)
+        } else {
+            ensureCookieChallengeSolved {
                 requestAction(1)
             }
         }
@@ -223,9 +223,12 @@ class VideoListFragment : Fragment() {
     }
 
     private fun refreshVideos() {
-        adapterVideo?.resetListData()
-        ensureCookieChallengeSolved {
+        if (sharedPref.isUseSupabaseApi) {
             requestAction(1, true)
+        } else {
+            ensureCookieChallengeSolved {
+                requestAction(1, true)
+            }
         }
     }
 
@@ -488,9 +491,12 @@ class VideoListFragment : Fragment() {
 
     private fun setupListeners() {
         swipeRefreshLayout.setOnRefreshListener {
-            adapterVideo?.resetListData()
-            ensureCookieChallengeSolved {
+            if (sharedPref.isUseSupabaseApi) {
                 requestAction(1, true)
+            } else {
+                ensureCookieChallengeSolved {
+                    requestAction(1, true)
+                }
             }
             // รีโหลด Interstitial Ad
             loadInterstitialAd()
@@ -498,8 +504,12 @@ class VideoListFragment : Fragment() {
 
         btnRetry.setOnClickListener {
             swipeProgress(true)
-            ensureCookieChallengeSolved {
+            if (sharedPref.isUseSupabaseApi) {
                 requestAction(1, true)
+            } else {
+                ensureCookieChallengeSolved {
+                    requestAction(1, true)
+                }
             }
             loadInterstitialAd()
         }
@@ -729,8 +739,12 @@ class VideoListFragment : Fragment() {
         hideKeyboard()
         selectCategory("all")
         hideNoSearchResults()
-        ensureCookieChallengeSolved {
+        if (sharedPref.isUseSupabaseApi) {
             requestAction(1)
+        } else {
+            ensureCookieChallengeSolved {
+                requestAction(1)
+            }
         }
     }
 
@@ -741,8 +755,12 @@ class VideoListFragment : Fragment() {
         selectCategory("all")
         hideNoSearchResults()
         swipeProgress(true)
-        ensureCookieChallengeSolved {
+        if (sharedPref.isUseSupabaseApi) {
             requestAction(1, true)
+        } else {
+            ensureCookieChallengeSolved {
+                requestAction(1, true)
+            }
         }
         loadInterstitialAd()
         Toast.makeText(activityContext, "กำลังรีเฟรชข้อมูล...", Toast.LENGTH_SHORT).show()
