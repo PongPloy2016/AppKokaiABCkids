@@ -35,10 +35,11 @@ import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.adapter.SubHomeAdapter
 import com.pongploydev.priyankvex.paintapp.confixdata.DataManager
 import com.pongploydev.priyankvex.paintapp.model.LearningDataModel
-import com.pongploydev.videowatchfeature.Constant
-import com.pongploydev.videowatchfeature.activity.ActivityVideoAutoDetail
-import com.pongploydev.videowatchfeature.databases.prefs.AdsPref
-import com.pongploydev.videowatchfeature.model.Video
+import com.pongploydev.videowatchfeaturesupabase.Constant
+import com.pongploydev.videowatchfeaturesupabase.activity.ActivityVideoAutoDetail
+import com.pongploydev.videowatchfeaturesupabase.databases.prefs.AdsPref
+import com.pongploydev.videowatchfeaturesupabase.model.Video
+
 import java.util.Locale
 
 class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {

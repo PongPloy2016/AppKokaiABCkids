@@ -1,0 +1,75 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <!-- Brush sizes -->
+    <dimen name="small_brush">10dp</dimen>
+    <integer name="small_size">8</integer>
+    <dimen name="medium_brush">20dp</dimen>
+    <integer name="medium_size">12</integer>
+    <dimen name="large_brush">30dp</dimen>
+    <integer name="large_size">18</integer>
+    <dimen name="corner_radius">8dp</dimen>
+    <dimen name="tab_space_top">4dp</dimen>
+    <dimen name="tab_space">0dp</dimen>
+    <dimen name="tab_space_plus1">3dp</dimen>
+    <dimen name="tab_space_bottom_line">36sp</dimen>
+    <dimen name="tab_space_unselected_top">6sp</dimen>
+    <dimen name="header_top_padding">30</dimen>
+    <dimen name="cell_height">180</dimen>
+    <dimen name="dot_size">12dp</dimen>
+    <dimen name="dot_margin">6dp</dimen>
+
+    <dimen name="default_corner_radii">56dp</dimen>
+    <dimen name="default_badge_corner_radii">16dp</dimen>
+    <dimen name="default_nav_item_padding">12dp</dimen>
+    <dimen name="default_nav_item_text_size">14sp</dimen>
+    <dimen name="default_nav_item_text_padding">8dp</dimen>
+    <dimen name="default_nav_item_title_max_width">80dp</dimen>
+    <dimen name="default_icon_size">24dp</dimen>
+    <dimen name="default_nav_item_badge_padding">2dp</dimen>
+    <dimen name="default_nav_item_badge_text_size">7sp</dimen>
+
+    <dimen name="gnt_no_margin">0dp</dimen>
+    <dimen name="gnt_no_size">0dp</dimen>
+    <dimen name="toolbar_elevation">0dp</dimen>
+
+    <dimen name="spacing_xsmall">4dp</dimen>
+    <dimen name="spacing_xxsmall">3dp</dimen>
+    <dimen name="spacing_small">7dp</dimen>
+    <dimen name="spacing_medium">10dp</dimen>
+    <dimen name="spacing_large">16dp</dimen>
+    <dimen name="spacing_xxlarge">40dp</dimen>
+
+    <!-- สำหรับ spacing -->
+    <dimen name="grid_spacing">12dp</dimen>
+    <dimen name="list_spacing">8dp</dimen>
+    <dimen name="recycler_view_padding">16dp</dimen>
+
+    <!-- สำหรับขนาดของ item -->
+    <dimen name="grid_item_width">160dp</dimen>
+    <dimen name="grid_item_height">160dp</dimen>
+    <dimen name="list_item_height">80dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+
+    <dimen name="spacing_shimmer_default">12dp</dimen>
+    <dimen name="spacing_shimmer_compact">16dp</dimen>
+
+    <dimen name="img_compact_width">128dp</dimen>
+    <dimen name="img_compact_height">90dp</dimen>
+    <dimen name="text_content_title_size">18sp</dimen>
+    <dimen name="text_content_sub_title_size">14sp</dimen>
+    <dimen name="text_title_size">15sp</dimen>
+    <dimen name="text_sub_title_size">13sp</dimen>
+
+    <!-- Grid Spacing -->
+    <dimen name="grid_spacing_small">4dp</dimen>
+    <dimen name="grid_spacing_medium">8dp</dimen>
+
+    <!-- Item Dimensions -->
+    <dimen name="item_video_height">220dp</dimen>
+
+
+    <dimen name="max_banner_height_families">60dp</dimen>
+
+</resources>

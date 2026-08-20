@@ -112,8 +112,9 @@ import com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
 import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
-import com.pongploydev.videowatchfeature.utils.ads.InterstitialAdManager
+import com.pongploydev.videowatchfeaturesupabase.utils.ads.InterstitialAdManager
 import com.pongploydev.livefeature.LiveListActivity
+
 import kotlinx.coroutines.delay
 
 // สีสันสำหรับเด็กๆ

@@ -68,9 +68,10 @@ android {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    implementation(project(":videowatchfeature"))
+    implementation(project(":videowatchfeatureSupabase"))
     implementation(project(":livefeature"))
     implementation(project(":kidswebviewfeature"))
+
 
 
     // AndroidX

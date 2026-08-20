@@ -127,10 +127,20 @@ internal class WebViewYouTubePlayer constructor(
 
   @SuppressLint("SetJavaScriptEnabled")
   private fun initWebView(playerOptions: IFramePlayerOptions, videoId: String?) {
+    android.webkit.CookieManager.getInstance().let {
+      it.setAcceptCookie(true)
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+        it.setAcceptThirdPartyCookies(this, true)
+      }
+    }
+
     settings.apply {
       javaScriptEnabled = true
       mediaPlaybackRequiresUserGesture = false
       cacheMode = WebSettings.LOAD_DEFAULT
+      domStorageEnabled = true
+      databaseEnabled = true
+      userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
     }
 
     addJavascriptInterface(youTubePlayerBridge, "YouTubePlayerBridge")

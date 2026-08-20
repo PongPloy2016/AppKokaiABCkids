@@ -15,7 +15,7 @@
             <option value="$PROJECT_DIR$/custom-ui" />
             <option value="$PROJECT_DIR$/kidswebviewfeature" />
             <option value="$PROJECT_DIR$/livefeature" />
-            <option value="$PROJECT_DIR$/videowatchfeature" />
+            <option value="$PROJECT_DIR$/videowatchfeatureSupabase" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="true" />

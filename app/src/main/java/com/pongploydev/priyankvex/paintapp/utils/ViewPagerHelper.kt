@@ -14,8 +14,9 @@ import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
 import com.pongploydev.kidswebviewfeature.fragment.KidsWebComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
-import com.pongploydev.videowatchfeature.VideoListFragment
+import com.pongploydev.videowatchfeaturesupabase.VideoListFragment
 import com.pongploydev.livefeature.LiveListFragment
+
 
 class ViewPagerHelper(var activity: AppCompatActivity) {
     var prevMenuItem: MenuItem? = null

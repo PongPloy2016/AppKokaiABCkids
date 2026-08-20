@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/menu_sort_popular"
+            android:title="ยอดนิยม"
+            android:icon="@drawable/ic_fire"
+            android:checked="true" />
+
+        <item
+            android:id="@+id/menu_sort_newest"
+            android:title="ใหม่ล่าสุด"
+            android:icon="@drawable/ic_new" />
+
+        <item
+            android:id="@+id/menu_sort_oldest"
+            android:title="เก่าสุด"
+            android:icon="@drawable/ic_old" />
+    </group>
+
+    <item android:title="ตัวเลือกอื่นๆ">
+        <menu>
+            <item
+                android:id="@+id/menu_filter_category"
+                android:title="กรองตามหมวดหมู่"
+                android:icon="@drawable/ic_category" />
+
+            <item
+                android:id="@+id/menu_view_type"
+                android:title="รูปแบบการแสดง"
+                android:icon="@drawable/ic_view" />
+        </menu>
+    </item>
+
+</menu>

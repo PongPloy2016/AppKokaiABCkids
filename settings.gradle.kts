@@ -19,8 +19,11 @@ dependencyResolutionManagement {
 
 rootProject.name = "PaintApp"
 include(":app")
-include(":videowatchfeature")
+// include(":videowatchfeature") // Legacy module
+include(":videowatchfeatureSupabase") // Active Supabase module
 include(":core")
 include(":custom-ui")
 include(":livefeature")
 include(":kidswebviewfeature")
+
+

@@ -42,7 +42,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.pongploydev.priyankvex.paintapp.utils.FeedbackHelper
+
 
 // โทนสีสำหรับธีมเด็กสดใส
 private val PrimaryPurple = Color(0xFF6C5CE7)
@@ -60,6 +68,9 @@ fun KidFriendlySettingsDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val sharedPref = remember { context.getSharedPreferences("setting", Context.MODE_PRIVATE) }
+    var isSupabaseApi by remember { mutableStateOf(sharedPref.getBoolean("use_supabase_api", true)) }
+
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -148,7 +159,58 @@ fun KidFriendlySettingsDialog(
                     }
                 }
 
+                // 1.2 การตั้งค่า Video API (Supabase / Legacy)
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = SoftCardBg,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.Bolt,
+                                contentDescription = null,
+                                tint = if (isSupabaseApi) Color(0xFF3ECF8E) else Color(0xFF1565C0),
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = if (isSupabaseApi) "⚡ Supabase API" else "🌐 Legacy API",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextDark
+                                )
+                                Text(
+                                    text = if (isSupabaseApi) "ใช้ฐานข้อมูล Supabase" else "ใช้เซิร์ฟเวอร์เดิม",
+                                    fontSize = 11.sp,
+                                    color = TextMuted
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = isSupabaseApi,
+                            onCheckedChange = { checked ->
+                                sharedPref.edit().putBoolean("use_supabase_api", checked).apply()
+                                isSupabaseApi = checked
+                                val msg = if (checked) "⚡ สลับไปใช้ Supabase API" else "🌐 สลับไปใช้ Legacy API"
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF3ECF8E)
+                            )
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
+
 
                 // 2. ผู้จัดทำ & ส่ง Feedback (Dev Info Card)
                 Text(
