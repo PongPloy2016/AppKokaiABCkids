@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.pongploydev.priyankvex.paintapp"
-    compileSdk = 36
+    compileSdk = 35
+    buildToolsVersion = "34.0.0"
 
     buildFeatures {
         viewBinding = true
@@ -19,9 +20,9 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 23
         //noinspection EditedTargetSdkVersion,OldTargetApi
-        targetSdk = 35
-        versionCode = 41
-        versionName = "3.0.0"
+        targetSdk = 34
+        versionCode = 42
+        versionName = "3.0.1"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
@@ -63,6 +64,19 @@ android {
     kotlinOptions { jvmTarget = "11" }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.11" }
+
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.activity:activity:1.8.2")
+            force("androidx.activity:activity-ktx:1.8.2")
+            force("androidx.activity:activity-compose:1.8.2")
+            force("androidx.core:core:1.12.0")
+            force("androidx.core:core-ktx:1.12.0")
+            force("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+            force("androidx.navigation:navigation-compose:2.7.5")
+            force("androidx.recyclerview:recyclerview:1.3.2")
+        }
+    }
 }
 
 dependencies {
@@ -74,9 +88,9 @@ dependencies {
 
 
 
-    // AndroidX
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("com.google.android.material:material:1.10.0")
@@ -122,10 +136,10 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.5")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.5")
     implementation("androidx.activity:activity-ktx:1.8.1")
-    implementation("androidx.compose.foundation:foundation:1.9.5")
+    implementation("androidx.compose.foundation:foundation:1.6.8")
 
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
+    val composeBom = platform("androidx.compose:compose-bom:2024.02.01")
     implementation(composeBom)
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.compose.ui:ui")

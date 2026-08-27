@@ -618,7 +618,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         currentAdView.adListener = object : AdListener() {
             override fun onAdLoaded() {
                 Log.d(TAG, if (isRealAd) "🎉 FAMILY-SAFE AD LOADED!" else "✅ FAMILY-SAFE TEST AD LOADED")
-                currentAdView.visibility = View.VISIBLE
+                currentAdView.visibility = View.GONE // ซ่อน banner ชั่วคราว
                 isAdLoading = false
 
                 // ✅ ตรวจสอบเพิ่มเติมว่าโฆษณาปลอดภัยสำหรับเด็ก

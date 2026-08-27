@@ -109,7 +109,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var pendingLearningData: LearningDataModel? = null
 
     private val currentAdUnitId: String
-        get() = TEST_INTERSTITIAL
+        get() = REAL_INTERSTITIAL
 
     // ============================================
     // LIFECYCLE METHODS

@@ -28,7 +28,7 @@ class InterstitialAdManager(private val context: Context) {
         private const val TAG = "InterstitialAdManager"
 
         // ตั้งค่าสำหรับโหมดทดสอบ
-        private var USE_TEST_ADS = true
+        private var USE_TEST_ADS = false
     }
 
     init {

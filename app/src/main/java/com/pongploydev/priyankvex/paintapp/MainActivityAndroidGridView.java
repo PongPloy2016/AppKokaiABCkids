@@ -202,33 +202,9 @@ public class MainActivityAndroidGridView extends Activity {
     }
 
     private void setupAdMob() {
-        if (adView == null) {
-            Log.e("AdMob", "AdView is null. Check layout ID.");
-            return;
+        if (adView != null) {
+            adView.setVisibility(View.GONE);
         }
-
-        // โหลดโฆษณาตามปกติ RequestConfiguration ถูกตั้งค่า Global ใน initializeAdMob() แล้ว
-        adView.loadAd(new AdRequest.Builder().build());
-
-        adView.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() { Log.d("AdMob", "Ad loaded successfully"); }
-            @Override
-            public void onAdFailedToLoad(LoadAdError adError) { Log.e("AdMob", "Ad failed to load: " + adError.getMessage()); }
-            @Override
-            public void onAdOpened() { Log.d("AdMob", "Ad opened"); }
-            @Override
-            public void onAdClicked() { Log.d("AdMob", "Ad clicked"); }
-            @Override
-            public void onAdClosed() {
-                Log.d("AdMob", "Ad closed. Loading new ad...");
-                // สร้าง AdRequest ใหม่เพื่อโหลดโฆษณาถัดไป
-                AdRequest adRequest = new AdRequest.Builder().build();
-                adView.loadAd(adRequest);
-            }
-            @Override
-            public void onAdImpression() { Log.d("AdMob", "Ad impression recorded"); }
-        });
     }
 
     private void switchToGridView() {

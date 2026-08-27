@@ -136,33 +136,7 @@ public class LeaningActvity extends AppCompatActivity {
     private void loadBannerAd() {
         final RelativeLayout llAdView = findViewById(R.id.llAdView);
         if (llAdView != null) {
-            try {
-                adView = new AdView(this);
-                adView.setAdSize(AdSize.BANNER);
-                String bannerId = getString(R.string.banner_ad_unit_id);
-                adView.setAdUnitId(bannerId);
-                adView.setAdListener(new com.google.android.gms.ads.AdListener() {
-                    @Override
-                    public void onAdFailedToLoad(com.google.android.gms.ads.LoadAdError loadAdError) {
-                        super.onAdFailedToLoad(loadAdError);
-                        // Fallback to Google Test Banner ID for testing
-                        try {
-                            AdView testAdView = new AdView(LeaningActvity.this);
-                            testAdView.setAdSize(AdSize.BANNER);
-                            testAdView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
-                            llAdView.removeAllViews();
-                            llAdView.addView(testAdView);
-                            testAdView.loadAd(new AdRequest.Builder().build());
-                        } catch (Exception ignored) {}
-                    }
-                });
-                llAdView.removeAllViews();
-                llAdView.addView(adView);
-                AdRequest adRequest = new AdRequest.Builder().build();
-                adView.loadAd(adRequest);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            llAdView.setVisibility(View.GONE);
         }
     }
 

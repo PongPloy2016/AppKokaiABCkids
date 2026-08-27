@@ -55,7 +55,8 @@ fun BannerAdCompose(
     modifier: Modifier = Modifier,
     adUnitId: String = "ca-app-pub-3940256099942544/6300978111"
 ) {
-    RealAdMobBanner(modifier = modifier, adUnitId = adUnitId)
+    // ซ่อน banner ชั่วคราว
+    // RealAdMobBanner(modifier = modifier, adUnitId = adUnitId)
 }
 
 @Composable

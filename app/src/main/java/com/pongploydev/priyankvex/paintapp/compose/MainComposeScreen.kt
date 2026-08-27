@@ -1588,7 +1588,8 @@ fun MainComposeScreen(navController: NavController? = null) {
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
-                    // Banner Ad ด้านล่างหมวดหมู่การเรียนรู้
+                    // Banner Ad ด้านล่างหมวดหมู่การเรียนรู้ (ซ่อนชั่วคราว)
+                    /*
                     item {
                         BannerAdCompose(
                             modifier = Modifier
@@ -1600,6 +1601,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                     item {
                         Spacer(modifier = Modifier.height(12.dp))
                     }
+                    */
 
                     item {
                         ContinueLearningSection(

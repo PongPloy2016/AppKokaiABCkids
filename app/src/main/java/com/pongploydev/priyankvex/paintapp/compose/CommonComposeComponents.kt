@@ -213,8 +213,8 @@ fun QuizBackground(modifier: Modifier = Modifier) {
             for (i in 0..5) {
                 val y = h * (0.2f * i)
                 path.moveTo(0f, y)
-                path.quadraticTo(w * 0.25f, y - 50f, w * 0.5f, y)
-                path.quadraticTo(w * 0.75f, y + 50f, w, y)
+                path.quadraticBezierTo(w * 0.25f, y - 50f, w * 0.5f, y)
+                path.quadraticBezierTo(w * 0.75f, y + 50f, w, y)
             }
             drawPath(
                 path = path,
