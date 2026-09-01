@@ -1,48 +1,30 @@
 package com.pongploydev.videowatchfeature
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.pongploydev.videowatchfeature.activity.ActivityVideoAutoDetail
-import com.pongploydev.videowatchfeature.activity.ActivityVideoDetail
-import com.pongploydev.videowatchfeature.adapter.AdapterVideo
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import com.pongploydev.videowatchfeature.databases.prefs.SharedPref
-import com.pongploydev.videowatchfeature.model.Video
-import com.pongploydev.videowatchfeature.viewmodel.FavoriteViewModel
+import com.pongploydev.videowatchfeature.fragment.FavoriteListContentFragment
+import com.pongploydev.videowatchfeature.fragment.TeraBoxFragment
 
 class FavoriteListFragment : Fragment() {
 
     private var rootView: View? = null
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var lytEmptyFavorite: LinearLayout
     private lateinit var btnBack: ImageView
     private lateinit var switchViewButton: ImageView
-    private lateinit var btnGoHome: Button
-    
-    private var adapterVideo: AdapterVideo? = null
-    private lateinit var sharedPref: SharedPref
-    private var activityContext: Activity? = null
-    private lateinit var viewModel: FavoriteViewModel
+    private lateinit var tabLayout: TabLayout
+    private lateinit var viewPager: ViewPager2
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        activityContext = context as Activity
-    }
+    private lateinit var sharedPref: SharedPref
+    private var favoriteContentFragment: FavoriteListContentFragment? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,16 +33,13 @@ class FavoriteListFragment : Fragment() {
     ): View? {
         rootView = inflater.inflate(R.layout.fragment_favorite_list, container, false)
 
-        viewModel = ViewModelProvider(this).get(FavoriteViewModel::class.java)
         sharedPref = SharedPref(requireContext())
 
         initViews()
-        setupRecyclerView()
+        setupViewPager()
         setupListeners()
-        setupObservers()
         updateSwitchViewButtonIcon()
 
-        // Hide ActionBar for a cleaner kid look
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
 
         return rootView
@@ -68,34 +47,40 @@ class FavoriteListFragment : Fragment() {
 
     private fun initViews() {
         rootView?.apply {
-            recyclerView = findViewById(R.id.recyclerView)
-            lytEmptyFavorite = findViewById(R.id.lyt_empty_favorite)
             btnBack = findViewById(R.id.btn_back)
             switchViewButton = findViewById(R.id.switch_view_button)
-            btnGoHome = findViewById(R.id.btn_go_home)
+            tabLayout = findViewById(R.id.tab_layout)
+            viewPager = findViewById(R.id.view_pager)
         }
     }
 
-    private fun setupRecyclerView() {
-        recyclerView.setHasFixedSize(true)
-        setupRecyclerViewLayoutManager()
-        
-        adapterVideo = AdapterVideo(requireContext(), recyclerView, mutableListOf()).apply {
-            setOnItemClickListener { _, video, _ ->
-                openVideoActivity(video)
+    private fun setupViewPager() {
+        val adapter = FavoritePagerAdapter(this)
+        viewPager.adapter = adapter
+
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            when (position) {
+                0 -> {
+                    tab.text = getString(R.string.title_favorite_list)
+                    tab.setIcon(R.drawable.ic_kids_heart)
+                }
+                1 -> {
+                    tab.text = "TeraBox"
+                    tab.setIcon(R.drawable.ic_category)
+                }
             }
-        }
-        recyclerView.adapter = adapterVideo
-    }
+        }.attach()
 
-    private fun setupRecyclerViewLayoutManager() {
-        val viewType = sharedPref.videoViewType
-        if (viewType == Constant.VIDEO_LIST_COMPACT) {
-            recyclerView.layoutManager = LinearLayoutManager(activityContext)
-        } else {
-            // ปรับเป็น List (span 1) แทน Grid (span 2) ตามคำขอของผู้ใช้
-            recyclerView.layoutManager = LinearLayoutManager(activityContext)
-        }
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                if (position == 0) {
+                    switchViewButton.visibility = View.VISIBLE
+                } else {
+                    switchViewButton.visibility = View.GONE
+                }
+            }
+        })
     }
 
     private fun setupListeners() {
@@ -103,43 +88,9 @@ class FavoriteListFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        btnGoHome.setOnClickListener {
-            parentFragmentManager.popBackStack()
-        }
-
         switchViewButton.setOnClickListener {
-            toggleViewType()
-        }
-    }
-
-    private fun setupObservers() {
-        viewModel.favoriteVideos.observe(viewLifecycleOwner) { videos ->
-            if (videos.isNullOrEmpty()) {
-                lytEmptyFavorite.visibility = View.VISIBLE
-                recyclerView.visibility = View.GONE
-            } else {
-                lytEmptyFavorite.visibility = View.GONE
-                recyclerView.visibility = View.VISIBLE
-                adapterVideo?.updateData(videos)
-            }
-        }
-    }
-
-    private fun toggleViewType() {
-        val currentType = sharedPref.videoViewType
-        val newType = if (currentType == Constant.VIDEO_LIST_COMPACT) {
-            Constant.VIDEO_LIST_DEFAULT
-        } else {
-            Constant.VIDEO_LIST_COMPACT
-        }
-        sharedPref.updateVideoViewType(newType)
-
-        setupRecyclerViewLayoutManager()
-        updateSwitchViewButtonIcon()
-        
-        // Refresh adapter with current data
-        viewModel.favoriteVideos.value?.let {
-            adapterVideo?.updateData(it)
+            favoriteContentFragment?.toggleViewType()
+            updateSwitchViewButtonIcon()
         }
     }
 
@@ -151,14 +102,20 @@ class FavoriteListFragment : Fragment() {
         }
     }
 
-    private fun openVideoActivity(video: Video) {
-        val intent = if (video.video_type?.lowercase() == "youtube") {
-            Intent(activityContext, ActivityVideoAutoDetail::class.java)
-        } else {
-            Intent(activityContext, ActivityVideoDetail::class.java)
+    private inner class FavoritePagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
+        override fun getItemCount(): Int = 2
+
+        override fun createFragment(position: Int): Fragment {
+            return when (position) {
+                0 -> {
+                    val contentFragment = FavoriteListContentFragment.newInstance()
+                    favoriteContentFragment = contentFragment
+                    contentFragment
+                }
+                1 -> TeraBoxFragment.newInstance()
+                else -> FavoriteListContentFragment.newInstance()
+            }
         }
-        intent.putExtra(Constant.KEY_VID, video.vid)
-        startActivity(intent)
     }
 
     companion object {

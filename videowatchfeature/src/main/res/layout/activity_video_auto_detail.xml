@@ -111,6 +111,13 @@
                 android:visibility="gone"
                 app:enableAutomaticInitialization="false" />
 
+            <!-- WebView Player Fallback (for TeraBox Share links, etc) -->
+            <WebView
+                android:id="@+id/player_web_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
             <!-- Local Video View -->
             <RelativeLayout
                 android:id="@+id/lyt_local_video_container"

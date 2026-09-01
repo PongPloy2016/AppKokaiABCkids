@@ -8,7 +8,7 @@
     android:layout_marginBottom="12dp"
     app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="20dp"
-    app:cardElevation="2dp"
+    app:cardElevation="3dp"
     app:strokeColor="#F0F0F0"
     app:strokeWidth="1dp">
 
@@ -16,22 +16,23 @@
         android:id="@+id/lyt_parent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="10dp">
 
-        <!-- Left: Rounded Thumbnail with Play Button & Duration Badge -->
+        <!-- Left: Thumbnail Container -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="122dp"
-            android:layout_height="90dp"
+            android:layout_width="125dp"
+            android:layout_height="100dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
             <FrameLayout
+                android:id="@+id/lyt_thumbnail"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="#1A1A1A">
@@ -50,7 +51,7 @@
                     android:layout_height="match_parent"
                     android:visibility="gone" />
 
-                <!-- Circular Play Button -->
+                <!-- Play Button -->
                 <ImageView
                     android:id="@+id/img_play"
                     android:layout_width="34dp"
@@ -62,7 +63,7 @@
                     app:tint="#FF3D00"
                     android:contentDescription="Play" />
 
-                <!-- Duration Badge (Bottom-Right) -->
+                <!-- Duration Badge -->
                 <TextView
                     android:id="@+id/video_duration"
                     android:layout_width="wrap_content"
@@ -88,7 +89,7 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Category Tag Pill (e.g. Spark Learning) -->
+            <!-- Category Tag Pill -->
             <TextView
                 android:id="@+id/category_name"
                 android:layout_width="wrap_content"
@@ -114,7 +115,20 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <!-- Subtitle / Description -->
+            <!-- Video Subtitle -->
+            <TextView
+                android:id="@+id/video_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#424242"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- Video Description -->
             <TextView
                 android:id="@+id/video_description"
                 android:layout_width="match_parent"
@@ -126,6 +140,18 @@
                 android:textColor="#78909C"
                 android:textSize="11sp" />
 
+            <!-- Video Description Snippet (compatibility) -->
+            <TextView
+                android:id="@+id/video_description_snippet"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#757575"
+                android:textSize="11sp"
+                android:visibility="gone" />
+
             <!-- Bottom Row: Age Pill, Reward Pill & Overflow Button -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -134,7 +160,7 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Age Badge Pill (e.g. 2-6 yrs) -->
+                <!-- Age Badge Pill -->
                 <TextView
                     android:id="@+id/txt_age_badge"
                     android:layout_width="wrap_content"
@@ -147,7 +173,7 @@
                     android:textSize="10.5sp"
                     android:textStyle="bold" />
 
-                <!-- Star Reward Pill (e.g. +5 ⭐) -->
+                <!-- Star Reward Pill -->
                 <TextView
                     android:id="@+id/txt_star_reward"
                     android:layout_width="wrap_content"
@@ -160,6 +186,21 @@
                     android:textColor="#F57C00"
                     android:textSize="10.5sp"
                     android:textStyle="bold" />
+
+                <!-- Reward Badge (compatibility) -->
+                <TextView
+                    android:id="@+id/txt_reward_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_badge_star_yellow"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="2dp"
+                    android:text="+5 ⭐"
+                    android:textColor="#F57C00"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
                 <Space
                     android:layout_width="0dp"

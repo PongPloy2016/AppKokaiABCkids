@@ -477,6 +477,18 @@ class VideoListFragment : Fragment() {
             }
             loadInterstitialAd()
         }
+
+        btnClearSearch?.setOnClickListener { clearSearch() }
+        refreshButton?.setOnClickListener { refreshAll() }
+        favoriteButton?.setOnClickListener { openFavoriteList() }
+
+        rootView?.findViewById<View>(R.id.btn_help_spark)?.setOnClickListener {
+            Toast.makeText(activityContext, "⚡ ยินดีต้อนรับสู่ Spark Clips! แตะที่วิดีโอเพื่อเริ่มเรียนรู้และรับคะแนนดาวกันนะจ๊ะ ⭐", Toast.LENGTH_LONG).show()
+        }
+
+        rootView?.findViewById<View>(R.id.btn_filter_spark)?.setOnClickListener {
+            showSortMenu()
+        }
     }
 
     private fun openFavoriteList() {
@@ -554,9 +566,10 @@ class VideoListFragment : Fragment() {
     }
 
     private fun setupCategories() {
-        categoryAll.setOnClickListener { selectCategory("all") }
-        categoryLearning.setOnClickListener { selectCategory("learning") }
-        categoryAbc.setOnClickListener { selectCategory("abc") }
+        categoryAll?.setOnClickListener { selectCategory("all") }
+        categoryLearning?.setOnClickListener { selectCategory("learning") }
+        categoryAbc?.setOnClickListener { selectCategory("abc") }
+        categoryStory?.setOnClickListener { selectCategory("story") }
         updateCategoryUI("all")
     }
 
@@ -620,6 +633,13 @@ class VideoListFragment : Fragment() {
     private fun displaySearchResults(videos: List<Video>) {
         adapterVideo?.updateData(videos)
         Log.d("Search", "Updating ${videos.size} search results using DiffUtil")
+
+        // Update Today's goal card
+        rootView?.findViewById<TextView>(R.id.txt_goal_progress)?.text = "${minOf(videos.size, 5)} of 5 clips"
+        rootView?.findViewById<ProgressBar>(R.id.progress_goal)?.progress = minOf(100, videos.size * 20)
+        rootView?.findViewById<TextView>(R.id.txt_clips_count)?.text = "${videos.size}"
+        rootView?.findViewById<TextView>(R.id.txt_stars_count)?.text = "${videos.size * 5}"
+        rootView?.findViewById<TextView>(R.id.txt_streak_count)?.text = if (videos.isNotEmpty()) "1" else "0"
     }
 
     private fun showNoSearchResults(query: String) {
@@ -1315,7 +1335,7 @@ class VideoListFragment : Fragment() {
     private fun createVideoIntent(videoType: String?): Intent {
         return when (videoType?.lowercase()) {
             "youtube" -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
-            else -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
+            else -> Intent(activityContext, ActivityVideoDetail::class.java)
         }
     }
 

@@ -126,6 +126,9 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         public TextView txtAgeBadge;
         public TextView videoDescription;
         public TextView txtStarReward;
+        public TextView txtRewardBadge;
+        public TextView videoSubtitle;
+        public TextView videoDescriptionSnippet;
 
         @SuppressLint("WrongViewCast")
         public OriginalViewHolder(View v) {
@@ -141,6 +144,9 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             txtAgeBadge = v.findViewById(R.id.txt_age_badge);
             videoDescription = v.findViewById(R.id.video_description);
             txtStarReward = v.findViewById(R.id.txt_star_reward);
+            txtRewardBadge = v.findViewById(R.id.txt_reward_badge);
+            videoSubtitle = v.findViewById(R.id.video_subtitle);
+            videoDescriptionSnippet = v.findViewById(R.id.video_description_snippet);
         }
 
     }
@@ -179,7 +185,12 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             final Video video = videos.get(position);
             final OriginalViewHolder vItem = (OriginalViewHolder) holder;
 
-            vItem.categoryName.setText(video.category_name);
+            if (video.category_name != null && !video.category_name.trim().isEmpty()) {
+                vItem.categoryName.setText(video.category_name);
+            } else {
+                vItem.categoryName.setText("Spark Learning");
+            }
+
             vItem.videoTitle.setText(video.video_title);
             vItem.videoTitle.setSelected(true);
             vItem.videoDuration.setText(video.video_duration);
@@ -196,6 +207,10 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
             if (vItem.txtStarReward != null) {
                 vItem.txtStarReward.setText("+5 ⭐");
+            }
+
+            if (vItem.txtRewardBadge != null) {
+                vItem.txtRewardBadge.setText("+5 ⭐");
             }
 
             if (vItem.txtAgeBadge != null) {
@@ -217,9 +232,42 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                             vItem.txtAgeBadge.getBackground().mutate().setColorFilter(ContextCompat.getColor(context, colorRes), PorterDuff.Mode.SRC_IN);
                         } catch (Exception ignored) {}
                     }
-                } else {
-                    vItem.txtAgeBadge.setVisibility(View.GONE);
                 }
+            }
+
+            if (vItem.videoSubtitle != null) {
+                if (video.tags != null && !video.tags.trim().isEmpty()) {
+                    vItem.videoSubtitle.setVisibility(View.VISIBLE);
+                    vItem.videoSubtitle.setText(video.tags);
+                } else if (video.video_description != null && !video.video_description.trim().isEmpty()) {
+                    vItem.videoSubtitle.setVisibility(View.VISIBLE);
+                    vItem.videoSubtitle.setText(video.video_description);
+                } else {
+                    vItem.videoSubtitle.setVisibility(View.GONE);
+                }
+            }
+
+            if (vItem.videoDescriptionSnippet != null) {
+                if (video.video_description != null && !video.video_description.trim().isEmpty()) {
+                    vItem.videoDescriptionSnippet.setVisibility(View.VISIBLE);
+                    vItem.videoDescriptionSnippet.setText(video.video_description);
+                } else {
+                    vItem.videoDescriptionSnippet.setVisibility(View.GONE);
+                }
+            }
+
+            if (vItem.txtAgeBadge != null) {
+                vItem.txtAgeBadge.setVisibility(View.VISIBLE);
+                if (video.age_rating != null && !video.age_rating.isEmpty()) {
+                    vItem.txtAgeBadge.setText(video.age_rating);
+                } else {
+                    vItem.txtAgeBadge.setText("2-6 yrs");
+                }
+            }
+
+            if (vItem.txtRewardBadge != null) {
+                vItem.txtRewardBadge.setVisibility(View.VISIBLE);
+                vItem.txtRewardBadge.setText("+5 ⭐");
             }
 
             // Reset preview states to prevent flickering from recycled views

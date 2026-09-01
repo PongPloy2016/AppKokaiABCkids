@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@drawable/bg_gradient_kids">
 
     <!-- Header สำหรับหน้าถูกใจ -->
@@ -11,7 +12,6 @@
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:orientation="vertical"
         android:background="@drawable/bg_header_kids"
         android:padding="@dimen/spacing_medium">
@@ -59,59 +59,22 @@
                 android:padding="6dp" />
 
         </LinearLayout>
-    </LinearLayout>
 
-    <!-- Main Content -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/header_layout"
-        android:clipToPadding="false"
-        android:padding="@dimen/spacing_medium"
-        android:background="@drawable/bg_pattern_dots"
-        tools:listitem="@layout/item_video_kids" />
-
-    <!-- Empty State เมื่อยังไม่มีวิดีโอที่ชอบ -->
-    <LinearLayout
-        android:id="@+id/lyt_empty_favorite"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/header_layout"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="@dimen/spacing_large"
-        android:visibility="gone">
-
-        <ImageView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
-            android:src="@drawable/ic_kids_heart"
-            app:tint="@color/kids_pink" />
-
-        <TextView
-            android:layout_width="wrap_content"
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_medium"
-            android:text="@string/msg_no_favorite"
-            android:textColor="@color/kids_text_dark"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:gravity="center" />
-
-        <Button
-            android:id="@+id/btn_go_home"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_large"
-            android:background="@drawable/bg_button_kids"
-            android:paddingHorizontal="32dp"
-            android:paddingVertical="12dp"
-            android:text="@string/btn_go_to_videos"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="8dp"
+            android:background="@android:color/transparent"
+            app:tabIndicatorColor="@color/white"
+            app:tabSelectedTextColor="@color/white"
+            app:tabTextColor="#B3FFFFFF" />
 
     </LinearLayout>
 
-</RelativeLayout>
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

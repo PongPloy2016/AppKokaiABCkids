@@ -89,7 +89,9 @@
                 app:strokeColor="#F0F0F0"
                 app:strokeWidth="1dp">
 
-                <LinearLayout
+                <!-- 1. Hero Mascot Banner Section -->
+                <RelativeLayout
+                    android:id="@+id/hero_banner_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
@@ -150,7 +152,7 @@
                             layout="@layout/item_stat_card" />
 
                     </LinearLayout>
-                </LinearLayout>
+                </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Search Bar -->
@@ -195,6 +197,34 @@
                         android:textColor="@color/kids_text_dark"
                         android:textSize="15sp" />
 
+                    <ImageView
+                        android:id="@+id/btn_clear_search"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="Clear"
+                        android:src="@drawable/ic_close"
+                        android:visibility="gone"
+                        app:tint="#B0BEC5" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Hidden / Compact Header Tools for Compatibility -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+                <LinearLayout
+                    android:id="@+id/header_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+                    <ImageView android:id="@+id/header_icon" android:layout_width="1dp" android:layout_height="1dp" />
+                    <TextView android:id="@+id/header_title" android:layout_width="1dp" android:layout_height="1dp" />
+                    <ImageView android:id="@+id/sort_button" android:layout_width="1dp" android:layout_height="1dp" />
+                    <ImageView android:id="@+id/refresh_button" android:layout_width="1dp" android:layout_height="1dp" />
+                    <ImageView android:id="@+id/favorite_button" android:layout_width="1dp" android:layout_height="1dp" />
+                    <ImageView android:id="@+id/switch_view_button" android:layout_width="1dp" android:layout_height="1dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
