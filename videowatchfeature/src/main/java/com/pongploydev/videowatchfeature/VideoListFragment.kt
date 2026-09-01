@@ -433,6 +433,14 @@ class VideoListFragment : Fragment() {
         refreshButton.setOnClickListener { refreshAll() }
 
         favoriteButton.setOnClickListener { openFavoriteList() }
+
+        rootView?.findViewById<View>(R.id.btn_help_spark)?.setOnClickListener {
+            Toast.makeText(activityContext, "⚡ ยินดีต้อนรับสู่ Spark Clips! แตะที่วิดีโอเพื่อเริ่มเรียนรู้และรับคะแนนดาวกันนะจ๊ะ ⭐", Toast.LENGTH_LONG).show()
+        }
+
+        rootView?.findViewById<View>(R.id.btn_filter_spark)?.setOnClickListener {
+            showSortMenu()
+        }
     }
 
     private fun openFavoriteList() {
@@ -526,9 +534,6 @@ class VideoListFragment : Fragment() {
         categoryMusic.setOnClickListener { selectCategory("music") }
         categoryLearning.setOnClickListener { selectCategory("learning") }
         categoryStory.setOnClickListener { selectCategory("story") }
-
-        // เริ่มต้นเลือกหมวดหมู่ทั้งหมด
-        // selectCategory("all") // ViewModel default is all
     }
 
     private fun selectCategory(category: String) {
@@ -536,30 +541,32 @@ class VideoListFragment : Fragment() {
         val categories =
                 listOf(categoryAll, categoryCartoon, categoryMusic, categoryLearning, categoryStory)
         categories.forEach { 
-            it.setBackgroundResource(R.drawable.bg_category_unselected)
-            it.backgroundTintList = null // Clear any tint
+            it.setBackgroundResource(R.drawable.bg_category_spark_unselected)
+            it.setTextColor(android.graphics.Color.parseColor("#37474F"))
+            it.backgroundTintList = null
         }
 
-        // ตั้งค่าสไตล์สำหรับหมวดหมู่ที่เลือก พร้อมสีสดใสสำหรับเด็ก
+        // ตั้งค่าสไตล์สำหรับหมวดหมู่ที่เลือก
         when (category) {
             "all" -> {
-                categoryAll.setBackgroundResource(R.drawable.bg_category_selected)
+                categoryAll.setBackgroundResource(R.drawable.bg_category_spark_all)
+                categoryAll.setTextColor(android.graphics.Color.WHITE)
             }
             "cartoon" -> {
-                categoryCartoon.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryCartoon.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#2196F3"))
+                categoryCartoon.setBackgroundResource(R.drawable.bg_category_spark_all)
+                categoryCartoon.setTextColor(android.graphics.Color.WHITE)
             }
             "music" -> {
-                categoryMusic.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryMusic.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E91E63"))
+                categoryMusic.setBackgroundResource(R.drawable.bg_category_spark_all)
+                categoryMusic.setTextColor(android.graphics.Color.WHITE)
             }
             "learning" -> {
-                categoryLearning.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryLearning.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50"))
+                categoryLearning.setBackgroundResource(R.drawable.bg_category_spark_all)
+                categoryLearning.setTextColor(android.graphics.Color.WHITE)
             }
             "story" -> {
-                categoryStory.setBackgroundResource(R.drawable.bg_category_selected)
-                categoryStory.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9C27B0"))
+                categoryStory.setBackgroundResource(R.drawable.bg_category_spark_all)
+                categoryStory.setTextColor(android.graphics.Color.WHITE)
             }
         }
 
@@ -574,6 +581,13 @@ class VideoListFragment : Fragment() {
     private fun displaySearchResults(videos: List<Video>) {
         adapterVideo?.updateData(videos)
         Log.d("Search", "Updating ${videos.size} search results using DiffUtil")
+
+        // Update Today's goal card
+        rootView?.findViewById<TextView>(R.id.txt_goal_progress)?.text = "${minOf(videos.size, 5)} of 5 clips"
+        rootView?.findViewById<ProgressBar>(R.id.progress_goal)?.progress = minOf(100, videos.size * 20)
+        rootView?.findViewById<TextView>(R.id.txt_clips_count)?.text = "${videos.size}"
+        rootView?.findViewById<TextView>(R.id.txt_stars_count)?.text = "${videos.size * 5}"
+        rootView?.findViewById<TextView>(R.id.txt_streak_count)?.text = if (videos.isNotEmpty()) "1" else "0"
     }
 
     private fun showNoSearchResults(query: String) {
@@ -1261,7 +1275,7 @@ class VideoListFragment : Fragment() {
     private fun createVideoIntent(videoType: String?): Intent {
         return when (videoType?.lowercase()) {
             "youtube" -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
-            else -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
+            else -> Intent(activityContext, ActivityVideoDetail::class.java)
         }
     }
 

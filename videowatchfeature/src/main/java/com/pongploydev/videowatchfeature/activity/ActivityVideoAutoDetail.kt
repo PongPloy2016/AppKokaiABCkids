@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
-import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -14,20 +13,21 @@ import android.os.Looper
 import android.util.Log
 import android.util.Rational
 import android.util.TypedValue
-import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.speech.tts.TextToSpeech
+import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -40,31 +40,22 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstan
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.pongploydev.videowatchfeature.adapter.AdapterVideo
 import com.pongploydev.videowatchfeature.Constant
 import com.pongploydev.videowatchfeature.R
-import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetail
+import com.pongploydev.videowatchfeature.adapter.AdapterVideo
 import com.pongploydev.videowatchfeature.callbacks.CallbackVideoDetailV1
 import com.pongploydev.videowatchfeature.config.AppConfig
 import com.pongploydev.videowatchfeature.databases.prefs.AdsPref
 import com.pongploydev.videowatchfeature.databases.prefs.SharedPref
 import com.pongploydev.videowatchfeature.model.Video
-import com.pongploydev.videowatchfeature.rests.RestAdapter
 import com.pongploydev.videowatchfeature.utils.Tools
 import com.pongploydev.videowatchfeature.viewmodel.VideoDetailViewModel
-import org.json.JSONException
-import org.json.JSONObject
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import java.util.Locale
 
-class ActivityVideoAutoDetail : AppCompatActivity() {
+class ActivityVideoAutoDetail : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private val viewModel: VideoDetailViewModel by viewModels()
 
-    private var callbackCall: Call<CallbackVideoDetail>? = null
     private lateinit var lytMainContent: LinearLayout
     private var video: Video? = null
     private lateinit var videoId: String
@@ -77,7 +68,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private lateinit var lytView: LinearLayout
     private lateinit var lytDate: LinearLayout
     private lateinit var videoThumbnail: ImageView
-    private lateinit var webView: WebView
+    private lateinit var webViewDescription: WebView
     private lateinit var shimmerFrameLayout: ShimmerFrameLayout
     private lateinit var lytSuggested: RelativeLayout
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -85,16 +76,20 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private lateinit var btnFavorite: ImageButton
     private lateinit var btnShare: ImageButton
     private lateinit var adsPref: AdsPref
-    private lateinit var tools: Tools
     
     private lateinit var rvSuggested: RecyclerView
     private var adapterSuggested: AdapterVideo? = null
+
+    // TTS
+    private var textToSpeech: TextToSpeech? = null
+    private var isTtsReady = false
 
     // YouTube Player Variables
     private lateinit var youTubePlayerView: YouTubePlayerView
     private var youTubePlayer: YouTubePlayer? = null
     private lateinit var lytThumbnailContainer: RelativeLayout
     private lateinit var progressBar: ProgressBar
+    private lateinit var playerWebView: WebView
 
     // SeekBar and Control Variables
     private lateinit var seekBar: YouTubePlayerSeekBar
@@ -103,7 +98,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     private var isPlaying = false
     private val seekBarHandler = Handler(Looper.getMainLooper())
     private var updateSeekBarRunnable: Runnable? = null
-    private var videoDuration = 0f
+    private var videoDurationFloat = 0f
 
     // Local Video Variables
     private lateinit var lytLocalVideoContainer: RelativeLayout
@@ -121,30 +116,40 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     // Pulse Animation
     private lateinit var liveIndicatorDot: View
 
-    private val seekBarTracker = SeekBarTracker()
-
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_auto_detail)
 
-        // Ensure video data is present
         if (!intent.hasExtra(Constant.KEY_VID)) {
             finish()
             return
         }
         videoId = intent.getStringExtra(Constant.KEY_VID) ?: intent.getIntExtra(Constant.KEY_VID, -1).toString()
 
-        tools = Tools(this)
         sharedPref = SharedPref(this)
         adsPref = AdsPref(this)
 
-        adsPref.isTestMode = false
-        adsPref.isFamiliesApp = true
+        textToSpeech = TextToSpeech(this, this)
 
+        initViews()
+        setupViewModelObservers()
+        setupFavorite()
+        setupListeners()
+
+        requestAction()
+        viewModel.loadRandomVideos()
+
+        handleOnBackPressed()
+    }
+
+    private fun initViews() {
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
-        swipeRefreshLayout.setColorSchemeResources(R.color.color_light_primary)
-        swipeRefreshLayout.isRefreshing = false
+        swipeRefreshLayout.setColorSchemeResources(R.color.kids_accent)
+        swipeRefreshLayout.setOnRefreshListener {
+            requestAction()
+            viewModel.loadRandomVideos()
+        }
 
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container)
         lytMainContent = findViewById(R.id.lyt_main_content)
@@ -153,17 +158,20 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         txtTitle = findViewById(R.id.video_title)
         videoCategoryBadge = findViewById(R.id.video_category_badge)
         txtDuration = findViewById(R.id.video_duration)
-        webView = findViewById(R.id.video_description)
+        webViewDescription = findViewById(R.id.video_description)
         txtTotalViews = findViewById(R.id.total_views)
         txtDateTime = findViewById(R.id.date_time)
         lytView = findViewById(R.id.lyt_view_count)
         lytDate = findViewById(R.id.lyt_date)
         lytSuggested = findViewById(R.id.lyt_suggested)
         rvSuggested = findViewById(R.id.rv_suggested)
-        setupSuggestedRecyclerView()
+        
+        btnFavorite = findViewById(R.id.img_favorite)
+        btnShare = findViewById(R.id.btn_share)
 
         // Initialize Player Views
         youTubePlayerView = findViewById(R.id.youtube_player_view)
+        playerWebView = findViewById(R.id.player_web_view)
         lytThumbnailContainer = findViewById(R.id.lyt_thumbnail_container)
         progressBar = findViewById(R.id.progress_bar)
         lytYoutubeCardContainer = findViewById(R.id.lyt_youtube_card_container)
@@ -184,22 +192,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         liveIndicatorDot = findViewById(R.id.liveIndicatorDot)
         startPulseAnimation()
 
-        btnFavorite = findViewById(R.id.img_favorite)
-        btnShare = findViewById(R.id.btn_share)
-
-        setupViewModelObservers()
-        setupFavorite()
-        setupListeners()
-
-        requestAction()
-        viewModel.loadRandomVideos()
-
-        swipeRefreshLayout.setOnRefreshListener {
-            requestAction()
-            viewModel.loadRandomVideos()
-        }
-
-        handleOnBackPressed()
+        setupSuggestedRecyclerView()
         initYouTubePlayer()
     }
 
@@ -209,14 +202,8 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             .repeat(YoYo.INFINITE)
             .playOn(liveIndicatorDot)
 
-        // Animate Header and Title for Kids
-        YoYo.with(Techniques.BounceInDown)
-            .duration(1200)
-            .playOn(findViewById(R.id.cardHeader))
-
-        YoYo.with(Techniques.FadeInUp)
-            .duration(1000)
-            .playOn(txtTitle)
+        YoYo.with(Techniques.BounceInDown).duration(1200).playOn(findViewById(R.id.cardHeader))
+        YoYo.with(Techniques.FadeInUp).duration(1000).playOn(txtTitle)
     }
 
     private fun setupListeners() {
@@ -226,40 +213,144 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
                 Tools.shareContentDetail(this, v) 
             } 
         }
+        
         viewPanel.setOnClickListener { toggleYouTubeControlsVisibility() }
+        
         findViewById<View>(R.id.icon_play).setOnClickListener { 
             video?.let { v -> 
                 YoYo.with(Techniques.Bounce).duration(400).playOn(it)
-                if (v.video_type == "youtube") {
-                    youTubePlayer?.loadVideo(v.video_id, 0f)
-                } else {
-                    setupLocalVideo()
-                }
+                playVideoInternal(v)
             }
         }
         
         findViewById<Button>(R.id.btnRefreshStream).setOnClickListener {
             YoYo.with(Techniques.RotateIn).duration(500).playOn(it)
             requestAction()
-            Toast.makeText(this, "กำลังรีเฟรชสัญญาณ...", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun setupFavorite() {
-        btnFavorite.setOnClickListener { 
-            YoYo.with(Techniques.StandUp).duration(500).playOn(btnFavorite)
-            addToFavorite() 
+    private fun playVideoInternal(v: Video) {
+        var videoUrl = if (v.video_type?.equals("Upload", ignoreCase = true) == true) sharedPref.baseUrl + "/upload/video/" + v.video_url else v.video_url
+        
+        if (v.video_type?.lowercase() == "youtube") {
+            youTubePlayer?.loadVideo(v.video_id ?: "", 0f)
+            return
+        } else if (v.video_type?.lowercase() == "local") {
+            setupLocalVideo()
+            return
         }
-        viewModel.checkFavoriteStatus(videoId)
-        viewModel.isFavorite.observe(this) { isFav -> updateFavoriteIcon(isFav) }
+
+        if (!videoUrl.isNullOrEmpty()) {
+            // ปรับปรุง URL สำหรับ Google Drive
+            if (videoUrl.contains("drive.google.com") && videoUrl.contains("/view")) {
+                videoUrl = videoUrl.replace("/view", "/preview")
+            }
+
+            if (isMediaUrl(videoUrl)) {
+                val intent = Intent(this, ActivityVideoDetail::class.java)
+                intent.putExtra(Constant.KEY_VID, v.vid)
+                startActivity(intent)
+                finish()
+            } else {
+                setupPlayerWebView(videoUrl)
+            }
+        }
     }
 
-    private fun updateFavoriteIcon(isFav: Boolean) {
-        if (isFav) {
-            btnFavorite.setImageResource(R.drawable.ic_heart_filled)
-        } else {
-            btnFavorite.setImageResource(R.drawable.ic_heart_outline)
+    private val browserUserAgent: String
+        get() = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
+    private fun isMediaUrl(url: String): Boolean {
+        val lower = url.lowercase()
+        if (lower.contains("/s/") || lower.contains("/sharing/")) return false
+        return lower.contains(".mkv") || lower.contains(".mp4") || lower.contains(".webm") ||
+                lower.contains("sta_ft=mkv") || lower.contains("sta_ft=mp4") ||
+                lower.contains("freeterabox.com/file/") || lower.contains("d8.freeterabox.com")
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupPlayerWebView(url: String) {
+        playerWebView.visibility = View.VISIBLE
+        youTubePlayerView.visibility = View.GONE
+        lytLocalVideoContainer.visibility = View.GONE
+        lytThumbnailContainer.visibility = View.GONE
+
+        val settings = playerWebView.settings
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = true
+        settings.setSupportZoom(true)
+        settings.builtInZoomControls = true
+        settings.displayZoomControls = false
+        settings.allowFileAccess = true
+        settings.userAgentString = browserUserAgent
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
+
+        playerWebView.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                progressBar.visibility = View.VISIBLE
+            }
+            override fun onPageFinished(view: WebView?, url: String?) {
+                progressBar.visibility = View.GONE
+                
+                val js = """
+                    (function() {
+                        function forceClick(el) {
+                            if (!el) return;
+                            var text = (el.innerText || el.getAttribute('aria-label') || '').toLowerCase();
+                            var dangerWords = ['ลบ', 'นำออก', 'delete', 'remove', 'trash', 'ถังขยะ'];
+                            for (var word of dangerWords) {
+                                if (text.indexOf(word) > -1) return;
+                            }
+                            var events = ['mousedown', 'mouseup', 'click'];
+                            events.forEach(function(evt) {
+                                try {
+                                    var e = document.createEvent('MouseEvent');
+                                    e.initMouseEvent(evt, true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+                                    el.dispatchEvent(e);
+                                } catch(err) {}
+                            });
+                        }
+                        function tryPlay() {
+                            var vids = document.getElementsByTagName('video');
+                            for (var i = 0; i < vids.length; i++) {
+                                if (vids[i].paused) vids[i].play().catch(function(e){});
+                                vids[i].muted = false;
+                            }
+                            var playSelectors = ['.ytp-large-play-button', '.play-button', '[aria-label*="Play"]', '[aria-label*="เล่น"]', '.ytp-cued-thumbnail-overlay'];
+                            playSelectors.forEach(function(s) {
+                                var elms = document.querySelectorAll(s);
+                                for (var j = 0; j < elms.length; j++) forceClick(elms[j]);
+                            });
+                            var centerEl = document.elementFromPoint(window.innerWidth/2, window.innerHeight/2);
+                            if (centerEl && (centerEl.tagName === 'DIV' || centerEl.tagName === 'SVG')) forceClick(centerEl);
+                        }
+                        var count = 0;
+                        var timer = setInterval(function() {
+                            tryPlay();
+                            count++;
+                            if (count > 15) clearInterval(timer);
+                        }, 1000);
+                    })();
+                """.trimIndent()
+                view?.evaluateJavascript(js, null)
+            }
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                if (url != null) {
+                    if (url.startsWith("http://") || url.startsWith("https://")) return false
+                    return true
+                }
+                return true
+            }
+        }
+
+        val extraHeaders = HashMap<String, String>()
+        extraHeaders["Referer"] = "https://freeterabox.com/"
+        playerWebView.loadUrl(url, extraHeaders)
     }
 
     private fun initYouTubePlayer() {
@@ -267,33 +358,36 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         youTubePlayerView.initialize(object : AbstractYouTubePlayerListener() {
             override fun onReady(@NonNull player: YouTubePlayer) {
                 youTubePlayer = player
+                player.addListener(seekBar)
+                seekBar.youtubePlayerSeekBarListener = object : YouTubePlayerSeekBarListener {
+                    override fun seekTo(time: Float) {
+                        player.seekTo(time)
+                    }
+                }
                 video?.let { playOrSetupVideo(it, player) }
             }
 
             override fun onStateChange(@NonNull youTubePlayer: YouTubePlayer, @NonNull state: PlayerConstants.PlayerState) {
-                super.onStateChange(youTubePlayer, state)
                 when (state) {
                     PlayerConstants.PlayerState.PLAYING -> {
                         isPlaying = true
-                        startSeekBarUpdates()
                         lytThumbnailContainer.visibility = View.GONE
                         youTubePlayerView.visibility = View.VISIBLE
                     }
                     PlayerConstants.PlayerState.PAUSED, PlayerConstants.PlayerState.ENDED -> {
                         isPlaying = false
-                        stopSeekBarUpdates()
                     }
                     else -> {}
                 }
             }
 
             override fun onCurrentSecond(@NonNull youTubePlayer: YouTubePlayer, second: Float) {
-                updateCurrentTime(second)
+                txtCurrentTime.text = formatTime(second.toInt())
             }
 
             override fun onVideoDuration(@NonNull youTubePlayer: YouTubePlayer, duration: Float) {
-                videoDuration = duration
-                updateTotalDuration(duration)
+                videoDurationFloat = duration
+                txtTotalDuration.text = formatTime(duration.toInt())
             }
 
             override fun onError(@NonNull youTubePlayer: YouTubePlayer, @NonNull error: PlayerConstants.PlayerError) {
@@ -303,114 +397,159 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         })
     }
 
-    private fun toggleFullscreen() {
-        if (isFullScreen) {
-            // EXIT FULL SCREEN
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-
-            val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
-            params.setMargins(
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt(),
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt(),
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt(),
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt()
-            )
-            params.width = 0
-            params.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 250f, resources.displayMetrics).toInt()
-            lytYoutubeCardContainer.layoutParams = params
-            lytYoutubeCardContainer.radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics)
-
-            findViewById<View>(R.id.cardHeader).visibility = View.VISIBLE
-            findViewById<View>(R.id.cardInfo).visibility = View.VISIBLE
-            isFullScreen = false
+    private fun playOrSetupVideo(video: Video, player: YouTubePlayer) {
+        if (video.video_type?.lowercase() == "youtube" && !video.video_id.isNullOrEmpty()) {
+            player.loadVideo(video.video_id ?: "", 0f)
+            isPlaying = true
+        } else if (video.video_type?.lowercase() == "local") {
+            setupLocalVideo()
         } else {
-            // ENTER FULL SCREEN
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
-
-            val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
-            params.setMargins(0, 0, 0, 0)
-            params.width = ConstraintLayout.LayoutParams.MATCH_PARENT
-            params.height = ConstraintLayout.LayoutParams.MATCH_PARENT
-            lytYoutubeCardContainer.layoutParams = params
-            lytYoutubeCardContainer.radius = 0f
-
-            findViewById<View>(R.id.cardHeader).visibility = View.GONE
-            findViewById<View>(R.id.cardInfo).visibility = View.GONE
-            isFullScreen = true
+            playVideoInternal(video)
         }
+    }
+
+    private fun setupLocalVideo() {
+        youTubePlayerView.visibility = View.GONE
+        lytThumbnailContainer.visibility = View.GONE
+        lytLocalVideoContainer.visibility = View.VISIBLE
+        progressBarLocal.visibility = View.VISIBLE
+
+        try {
+            val videoUrl = video?.video_url
+            if (!videoUrl.isNullOrEmpty()) {
+                localVideoView.setVideoPath(videoUrl)
+                localVideoView.setOnPreparedListener { mp ->
+                    progressBarLocal.visibility = View.GONE
+                    localVideoView.start()
+                    isPlaying = true
+                }
+                localVideoView.setOnCompletionListener { isPlaying = false }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    private fun setupViewModelObservers() {
+        viewModel.videoDetail.observe(this) { responseHome ->
+            val v = responseHome?.post ?: responseHome?.posts?.firstOrNull()
+            v?.let {
+                this.video = it
+                displayData(it)
+                youTubePlayer?.let { p -> playOrSetupVideo(it, p) }
+            }
+        }
+        viewModel.randomVideos.observe(this) { videos ->
+            if (videos.isNotEmpty()) {
+                lytSuggested.visibility = View.VISIBLE
+                adapterSuggested?.updateData(videos)
+            }
+        }
+        viewModel.isLoading.observe(this) { isLoading -> swipeProgress(isLoading) }
+    }
+
+    private fun displayData(v: Video) {
+        txtTitle.text = v.video_title
+        txtDuration.text = v.video_duration
+
+        // อ่านชื่อวิดีโออัตโนมัติ (Auto Read Title)
+        v.video_title?.let { title ->
+            if (isTtsReady) {
+                textToSpeech?.speak(title, TextToSpeech.QUEUE_FLUSH, null, "video_title_tts")
+            }
+        }
+
+        if (v.category_name.isNullOrBlank()) {
+            videoCategoryBadge.visibility = View.GONE
+        } else {
+            videoCategoryBadge.visibility = View.VISIBLE
+            videoCategoryBadge.text = "🌟 " + v.category_name
+            try {
+                val colorStr = v.getCategoryColor() ?: "#4CAF50"
+                videoCategoryBadge.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorStr))
+            } catch (e: Exception) {}
+        }
+
+        if (AppConfig.ENABLE_VIEW_COUNT) {
+            txtTotalViews.text = "👀 " + Tools.withSuffix(v.total_views) + " " + getString(R.string.views_count)
+        }
+        
+        if (AppConfig.ENABLE_DATE_DISPLAY) {
+            txtDateTime.text = "📅 " + (if (AppConfig.DISPLAY_DATE_AS_TIME_AGO) Tools.getTimeAgo(v.date_time) else Tools.getFormatedDateSimple(v.date_time))
+        }
+
+        var thumbnailUrl = v.video_thumbnail
+        if (v.video_type?.lowercase() == "youtube" && thumbnailUrl.isEmpty()) {
+            thumbnailUrl = Constant.YOUTUBE_IMAGE_FRONT + v.video_id + Constant.YOUTUBE_IMAGE_BACK_HQ
+        } else if (!thumbnailUrl.startsWith("http")) {
+            val base = if (sharedPref.baseUrl.endsWith("/")) sharedPref.baseUrl.substring(0, sharedPref.baseUrl.length - 1) else sharedPref.baseUrl
+            thumbnailUrl = base + "/video_image/" + Uri.encode(thumbnailUrl)
+        }
+
+        Glide.with(this).load(thumbnailUrl).placeholder(R.drawable.ic_thumbnail).diskCacheStrategy(DiskCacheStrategy.ALL).into(videoThumbnail)
+        Tools.displayPostDescription(this, webViewDescription, v.video_description)
+        
+        lytMainContent.visibility = View.VISIBLE
+        YoYo.with(Techniques.FadeInUp).duration(800).playOn(lytMainContent)
+    }
+
+    private fun setupFavorite() {
+        btnFavorite.setOnClickListener { 
+            video?.let { 
+                YoYo.with(Techniques.StandUp).duration(500).playOn(btnFavorite)
+                viewModel.toggleFavorite(it) 
+            }
+        }
+        viewModel.checkFavoriteStatus(videoId)
+        viewModel.isFavorite.observe(this) { isFav ->
+            btnFavorite.setImageResource(if (isFav) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline)
+        }
+    }
+
+    private fun setupSuggestedRecyclerView() {
+        rvSuggested.layoutManager = LinearLayoutManager(this)
+        adapterSuggested = AdapterVideo(this, rvSuggested, mutableListOf())
+        rvSuggested.adapter = adapterSuggested
+        adapterSuggested?.setOnItemClickListener { _, video, _ ->
+            val intent = Intent(this, if (video.video_type?.lowercase() == "youtube") ActivityVideoAutoDetail::class.java else ActivityVideoDetail::class.java)
+            intent.putExtra(Constant.KEY_VID, video.vid)
+            startActivity(intent)
+            finish()
+        }
+    }
+
+    private fun requestAction() {
+        viewModel.loadVideoDetail(videoId, isRefresh = true)
+    }
+
+    private fun swipeProgress(show: Boolean) {
+        swipeRefreshLayout.isRefreshing = show
+        if (!show) {
+            shimmerFrameLayout.visibility = View.GONE
+            shimmerFrameLayout.stopShimmer()
+        } else {
+            shimmerFrameLayout.visibility = View.VISIBLE
+            shimmerFrameLayout.startShimmer()
+            lytMainContent.visibility = View.GONE
+        }
+    }
+
+    private fun formatTime(seconds: Int): String {
+        val minutes = seconds / 60
+        val secs = seconds % 60
+        return String.format("%d:%02d", minutes, secs)
     }
 
     private fun toggleYouTubeControlsVisibility() {
         if (findViewById<View>(R.id.custom_controls_container).visibility == View.VISIBLE) {
             hideYouTubeControls()
         } else {
-            showYouTubeControls()
-            startYouTubeControlsHideTimer()
+            findViewById<View>(R.id.custom_controls_container).visibility = View.VISIBLE
+            youtubeControlsHideHandler.removeCallbacks(hideYouTubeControlsRunnable)
+            youtubeControlsHideHandler.postDelayed(hideYouTubeControlsRunnable, 3000)
         }
-    }
-
-    private fun showYouTubeControls() {
-        findViewById<View>(R.id.custom_controls_container).visibility = View.VISIBLE
-        youtubeControlsHideHandler.removeCallbacks(hideYouTubeControlsRunnable)
     }
 
     private fun hideYouTubeControls() {
-        if (isPlaying) {
-            findViewById<View>(R.id.custom_controls_container).visibility = View.GONE
-        }
-    }
-
-    private fun startYouTubeControlsHideTimer() {
-        youtubeControlsHideHandler.removeCallbacks(hideYouTubeControlsRunnable)
-        youtubeControlsHideHandler.postDelayed(hideYouTubeControlsRunnable, 3000)
-    }
-
-    private fun updateCurrentTime(currentSecond: Float) {
-        txtCurrentTime.text = formatTime(currentSecond.toInt())
-        if (videoDuration > 0) {
-            val progress = ((currentSecond / videoDuration) * 1000).toInt()
-            seekBarTracker.seekTo(progress.toFloat())
-        }
-    }
-
-    private fun updateTotalDuration(duration: Float) {
-        txtTotalDuration.text = formatTime(duration.toInt())
-    }
-
-    private inner class SeekBarTracker : YouTubePlayerSeekBarListener {
-        private var currentProgress = 0f
-        override fun seekTo(time: Float) {
-            if (videoDuration > 0) {
-                currentProgress = (time / videoDuration) * 1000
-            }
-        }
-        val progress: Float get() = currentProgress
-    }
-
-    private fun formatTime(seconds: Int): String {
-        val hours = seconds / 3600
-        val minutes = (seconds % 3600) / 60
-        val secs = seconds % 60
-        return if (hours > 0) String.format("%d:%02d:%02d", hours, minutes, secs) else String.format("%d:%02d", minutes, secs)
-    }
-
-    private fun startSeekBarUpdates() {
-        stopSeekBarUpdates()
-        updateSeekBarRunnable = object : Runnable {
-            override fun run() {
-                if (youTubePlayer != null && isPlaying) {
-                    seekBarHandler.postDelayed(this, 1000)
-                }
-            }
-        }
-        updateSeekBarRunnable?.let { seekBarHandler.post(it) }
-    }
-
-    private fun stopSeekBarUpdates() {
-        updateSeekBarRunnable?.let { seekBarHandler.removeCallbacks(it) }
-        updateSeekBarRunnable = null
+        if (isPlaying) findViewById<View>(R.id.custom_controls_container).visibility = View.GONE
     }
 
     private fun handleOnBackPressed() {
@@ -421,149 +560,72 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         })
     }
 
-    private fun playOrSetupVideo(video: Video, player: YouTubePlayer) {
-        if (video.video_type != null && video.video_type.equals("local", ignoreCase = true)) {
-            setupLocalVideo()
-        } else if (video.video_type != null && video.video_type.equals("youtube", ignoreCase = true) && !video.video_id.isNullOrEmpty()) {
-            progressBar.visibility = View.GONE
-            player.loadVideo(video.video_id, 0f)
-            isPlaying = true
-            lytThumbnailContainer.visibility = View.GONE
-            youTubePlayerView.visibility = View.VISIBLE
-            startSeekBarUpdates()
+    private fun toggleFullscreen() {
+        if (isFullScreen) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            isFullScreen = false
+        } else {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+            isFullScreen = true
         }
     }
 
-    private fun setupViewModelObservers() {
-        viewModel.videoDetail.observe(this) { responseHome ->
-            val updatedVideo = responseHome?.post ?: responseHome?.posts?.firstOrNull()
-            updatedVideo?.let { v ->
-                this.video = v
-                displayAllData(responseHome!!)
-                youTubePlayer?.let { playOrSetupVideo(v, it) }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            enterFullScreenUI()
+        } else {
+            exitFullScreenUI()
+        }
+    }
+
+    private fun enterFullScreenUI() {
+        val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
+        params.setMargins(0, 0, 0, 0)
+        params.width = ConstraintLayout.LayoutParams.MATCH_PARENT
+        params.height = ConstraintLayout.LayoutParams.MATCH_PARENT
+        lytYoutubeCardContainer.layoutParams = params
+        lytYoutubeCardContainer.radius = 0f
+        findViewById<View>(R.id.cardHeader).visibility = View.GONE
+        findViewById<View>(R.id.cardInfo).visibility = View.GONE
+        isFullScreen = true
+    }
+
+    private fun exitFullScreenUI() {
+        val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
+        val margin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt()
+        params.setMargins(margin, margin, margin, margin)
+        params.width = 0
+        params.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 250f, resources.displayMetrics).toInt()
+        lytYoutubeCardContainer.layoutParams = params
+        lytYoutubeCardContainer.radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics)
+        findViewById<View>(R.id.cardHeader).visibility = View.VISIBLE
+        findViewById<View>(R.id.cardInfo).visibility = View.VISIBLE
+        isFullScreen = false
+    }
+
+    override fun onPause() { super.onPause() }
+    override fun onDestroy() {
+        super.onDestroy()
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
+        youTubePlayerView.release()
+    }
+
+    override fun onInit(status: Int) {
+        if (status != TextToSpeech.ERROR) {
+            textToSpeech?.language = Locale("th", "TH")
+            textToSpeech?.setSpeechRate(0.7f)
+            isTtsReady = true
+            
+            // ถ้าโหลดวิดีโอเสร็จก่อน TTS พร้อม ให้สั่งอ่านที่นี่
+            video?.video_title?.let { title ->
+                textToSpeech?.speak(title, TextToSpeech.QUEUE_FLUSH, null, "video_title_tts")
             }
         }
-        viewModel.randomVideos.observe(this) { videos ->
-            if (videos.isNotEmpty()) {
-                lytSuggested.visibility = View.VISIBLE
-                adapterSuggested?.updateData(videos)
-            } else {
-                lytSuggested.visibility = View.GONE
-            }
-        }
-        viewModel.isLoading.observe(this) { isLoading -> swipeProgress(isLoading) }
-        viewModel.error.observe(this) { errorMsg -> if (errorMsg != null) onFailRequest() }
     }
-
-    private fun setupSuggestedRecyclerView() {
-        rvSuggested.layoutManager = LinearLayoutManager(this)
-        adapterSuggested = AdapterVideo(this, rvSuggested, mutableListOf())
-        rvSuggested.adapter = adapterSuggested
-        
-        adapterSuggested?.setOnItemClickListener { view, video, position ->
-            val intent = Intent(this, ActivityVideoAutoDetail::class.java)
-            intent.putExtra(Constant.KEY_VID, video.vid)
-            startActivity(intent)
-            finish() // Finish current to load new one
-        }
-    }
-
-    private fun requestAction() {
-        showFailedView(false, "")
-        viewModel.loadVideoDetail(videoId, isRefresh = true)
-    }
-
-    private fun onFailRequest() {
-        swipeProgress(false)
-        lytMainContent.visibility = View.GONE
-        showFailedView(true, getString(R.string.failed_text))
-    }
-
-    private fun showFailedView(show: Boolean, message: String) {
-        val lytFailed = findViewById<View>(R.id.lyt_failed_home)
-        findViewById<TextView>(R.id.failed_message).text = message
-        lytFailed.visibility = if (show) View.VISIBLE else View.GONE
-        findViewById<View>(R.id.failed_retry).setOnClickListener { requestAction() }
-    }
-
-    private fun swipeProgress(show: Boolean) {
-        swipeRefreshLayout.isRefreshing = show
-        if (!show) {
-            shimmerFrameLayout.visibility = View.GONE
-            shimmerFrameLayout.stopShimmer()
-            lytMainContent.visibility = View.VISIBLE
-        } else {
-            shimmerFrameLayout.visibility = View.VISIBLE
-            shimmerFrameLayout.startShimmer()
-            lytMainContent.visibility = View.GONE
-        }
-    }
-
-    private fun displayAllData(responseHome: CallbackVideoDetailV1) {
-        val responseVideo = responseHome.post ?: responseHome.posts.firstOrNull()
-        responseVideo?.let {
-            this.video = it
-            displayData(it)
-        }
-    }
-
-    fun displayData(video: Video) {
-        if (video.category_name.isNullOrBlank()) {
-            videoCategoryBadge.visibility = View.GONE
-        } else {
-            videoCategoryBadge.visibility = View.VISIBLE
-            videoCategoryBadge.text = "🌟 " + video.category_name
-            try {
-                val colorStr = video.getCategoryColor() ?: "#4CAF50"
-                videoCategoryBadge.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(colorStr))
-                videoCategoryBadge.setTextColor(android.graphics.Color.WHITE)
-                videoCategoryBadge.setPadding(32, 8, 32, 8)
-            } catch (e: Exception) { e.printStackTrace() }
-        }
-
-        txtTitle.text = video.video_title
-        txtTitle.textSize = 20f
-        txtDuration.text = video.video_duration
-
-        if (AppConfig.ENABLE_VIEW_COUNT) {
-            txtTotalViews.text = "👀 " + Tools.withSuffix(video.total_views) + " " + getString(R.string.views_count)
-        } else {
-            lytView.visibility = View.GONE
-        }
-
-        if (AppConfig.ENABLE_DATE_DISPLAY) {
-            txtDateTime.text = "📅 " + (if (AppConfig.DISPLAY_DATE_AS_TIME_AGO) Tools.getTimeAgo(video.date_time) else Tools.getFormatedDateSimple(video.date_time))
-        } else {
-            lytDate.visibility = View.GONE
-        }
-
-        var thumbnailUrl = video.video_thumbnail
-        if (video.video_type != null && video.video_type.equals("youtube", ignoreCase = true) && thumbnailUrl.isEmpty()) {
-            thumbnailUrl = Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_HQ
-        } else if (thumbnailUrl.startsWith("http")) {
-            thumbnailUrl = Uri.parse(thumbnailUrl).toString()
-        } else {
-            val base = if (sharedPref.baseUrl.endsWith("/")) sharedPref.baseUrl.substring(0, sharedPref.baseUrl.length - 1) else sharedPref.baseUrl
-            thumbnailUrl = base + "/video_image/" + Uri.encode(thumbnailUrl)
-        }
-
-        Glide.with(this).load(thumbnailUrl).placeholder(R.drawable.ic_thumbnail).diskCacheStrategy(DiskCacheStrategy.ALL).into(videoThumbnail)
-
-        Tools.displayPostDescription(this, webView, video.video_description)
-        
-        // Show content with a nice animation
-        lytMainContent.visibility = View.VISIBLE
-        YoYo.with(Techniques.FadeInUp).duration(800).playOn(lytMainContent)
-
-        Handler(Looper.getMainLooper()).postDelayed({ 
-            if (viewModel.randomVideos.value?.isNotEmpty() == true) {
-                lytSuggested.visibility = View.VISIBLE 
-                YoYo.with(Techniques.SlideInUp).duration(500).playOn(lytSuggested)
-            }
-        }, 1000)
-    }
-
-    fun addToFavorite() { video?.let { viewModel.toggleFavorite(it) } }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
@@ -572,103 +634,4 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-
-    @Suppress("DEPRECATION")
-    private fun loadViewed() { MyTask().execute(sharedPref.baseUrl + "/api/get_total_views/?id=" + videoId) }
-
-    @Suppress("DEPRECATION")
-    private class MyTask : AsyncTask<String, Void, String>() {
-        override fun doInBackground(vararg params: String): String { return Tools.getJSONString(params[0]) }
-        override fun onPostExecute(result: String) {
-            if (result.isNullOrEmpty()) return
-            try {
-                val json = JSONObject(result)
-                val arr = json.getJSONArray("result")
-                if (arr.length() > 0) { val obj = arr.getJSONObject(0) }
-            } catch (e: JSONException) { e.printStackTrace() }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        shimmerFrameLayout.stopShimmer()
-        stopSeekBarUpdates()
-        youTubePlayerView.release()
-    }
-
-    override fun onPause() { super.onPause(); stopSeekBarUpdates() }
-    override fun onResume() { super.onResume(); if (isPlaying) startSeekBarUpdates() }
-
-    private fun setupLocalVideo() {
-        youTubePlayerView.visibility = View.GONE
-        lytThumbnailContainer.visibility = View.GONE
-        progressBar.visibility = View.GONE
-        lytLocalVideoContainer.visibility = View.VISIBLE
-
-        try {
-            val videoUri = if (video!!.video_url != null && video!!.video_url.startsWith("android.resource")) Uri.parse(video!!.video_url) else Uri.parse("android.resource://${packageName}/${video!!.video_id}")
-            localVideoView.setVideoURI(videoUri)
-            localVideoView.setOnPreparedListener { mp ->
-                progressBarLocal.visibility = View.GONE
-                localVideoView.start()
-                isPlaying = true
-                
-                val videoRatio = mp.videoWidth / mp.videoHeight.toFloat()
-                val screenRatio = localVideoView.width / localVideoView.height.toFloat()
-                if (videoRatio >= screenRatio) {
-                    localVideoView.scaleX = 1f
-                    localVideoView.scaleY = screenRatio / videoRatio
-                } else {
-                    localVideoView.scaleX = videoRatio / screenRatio
-                    localVideoView.scaleY = 1f
-                }
-            }
-            localVideoView.setOnCompletionListener { isPlaying = false }
-            localVideoView.setOnErrorListener { _, _, _ ->
-                progressBarLocal.visibility = View.GONE
-                Toast.makeText(this, "Cannot play video", Toast.LENGTH_SHORT).show()
-                true
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "Error setting up video", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onUserLeaveHint() {
-        super.onUserLeaveHint()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            var isVideoPlaying = isPlaying
-            if (::localVideoView.isInitialized && video?.video_type == "local") isVideoPlaying = localVideoView.isPlaying
-            if (isVideoPlaying) {
-                val aspectRatio = Rational(16, 9)
-                val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
-                enterPictureInPictureMode(params)
-            }
-        }
-    }
-
-    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        if (isInPictureInPictureMode) {
-            findViewById<View>(R.id.cardHeader).visibility = View.GONE
-            findViewById<View>(R.id.cardInfo).visibility = View.GONE
-            lytYoutubeCardContainer.radius = 0f
-            (lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams).setMargins(0, 0, 0, 0)
-            (lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams).height = ConstraintLayout.LayoutParams.MATCH_PARENT
-        } else {
-            if (!isFullScreen) {
-                findViewById<View>(R.id.cardHeader).visibility = View.VISIBLE
-                findViewById<View>(R.id.cardInfo).visibility = View.VISIBLE
-                lytYoutubeCardContainer.radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics)
-                val margin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics).toInt()
-                val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
-                params.setMargins(margin, margin, margin, margin)
-                params.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 250f, resources.displayMetrics).toInt()
-                lytYoutubeCardContainer.layoutParams = params
-            }
-        }
-    }
-
-    private fun shouldShowAdsForFamilies(): Boolean = adsPref.isAdEnabled && adsPref.isBannerAdEnabled
 }

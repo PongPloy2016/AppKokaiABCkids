@@ -261,78 +261,19 @@ fun MainComposeScreen(navController: NavController? = null) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Box(
-                        modifier =
-                            Modifier
-                                .background(
-                                    brush = RainbowGradient,
-                                    shape =
-                                        RoundedCornerShape(
-                                            50
-                                        ) // More rounded,
-                                    // pill/cloud
-                                    // shape
-                                )
-                                .padding(
-                                    horizontal = 24.dp,
-                                    vertical = 8.dp
-                                )
-                    ) {
-                        Text(
-                            text = "ฝึกเขียน ก ไก่-ABC",
-                            fontWeight = FontWeight.ExtraBold, // Bolder
-                            fontSize = 24.sp, // Larger font
-                            color = Color(0xFF2D3047)
-                        )
-                    }
+                    Text(
+                        text = "ฝึกเขียน ก ไก่-ABC",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.White
+                    )
                 },
                 colors =
                     TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color(0xFF87CEEB)
-                    ),
-                actions = {
-                    // Animated Settings Button
-                    AnimatedIconButton(
-                        onClick = {
-                            showSettingsDialog(
-                                context,
-                                isMusicEnabled
-                            ) { enabled ->
-                                isMusicEnabled = enabled
-                                com.pongploydev.priyankvex.paintapp
-                                    .utils.MusicManager
-                                    .getInstance()
-                                    .setMusicEnabled(
-                                        context,
-                                        enabled
-                                    )
-                            }
-                        },
-                        icon = Icons.Default.Settings,
-                        contentDescription = "Settings",
-                        buttonColor = Color(0xFFFF6B6B),
-                        size = 48.dp // Larger button
+                        containerColor = Color(0xFF4ECDC4) // Teal color from palette
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp)) // Add spacing
-
-                    // Animated Info Button
-                    AnimatedIconButton(
-                        onClick = { AboutDialog(context).show() },
-                        icon = Icons.Default.Info,
-                        contentDescription = "About",
-                        buttonColor = Color(0xFF4ECDC4),
-                        size = 48.dp // Larger button
-                    )
-                    Spacer(modifier = Modifier.width(8.dp)) // Add spacing end
-                }
             )
         },
-        //        bottomBar = {
-        //            // Banner Ad ใน bottomBar ของ Scaffold
-        //            ChildDirectedBannerAd(adUnitId =
-        // "ca-app-pub-3279793802315716/1117791498")
-        //        },
         content = { paddingValues ->
             Box(
                 modifier =
@@ -343,24 +284,84 @@ fun MainComposeScreen(navController: NavController? = null) {
                 Column(modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)) {
-                    // แสดงจำนวนรอบจนกว่าจะถึงโฆษณา
-                    //                    VisitCounter(
-                    //                        currentCount = visitCount,
-                    //                        maxCount = VISITS_BEFORE_AD,
-                    //                        isAdLoaded =
-                    // interstitialAdManager.isAdLoaded()
-                    //                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    //                    ViewModeSelector(
-                    //                        currentMode = viewMode.value,
-                    //                        onModeSelected = { mode ->
-                    //                            viewMode.value = mode
-                    //                        }
-                    //                    )
+                    // Row with Rainbow Title and Buttons
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .background(
+                                        brush = RainbowGradient,
+                                        shape = RoundedCornerShape(50)
+                                    )
+                                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "ฝึกเขียน ก ไก่-ABC",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 18.sp,
+                                color = Color(0xFF2D3047)
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                    // ใช้ Box กับ weight เพื่อให้เนื้อหาเต็มพื้นที่
+                        // Animated Settings Button
+                        AnimatedIconButton(
+                            onClick = {
+                                showSettingsDialog(
+                                    context,
+                                    isMusicEnabled
+                                ) { enabled ->
+                                    isMusicEnabled = enabled
+                                    com.pongploydev.priyankvex.paintapp
+                                        .utils.MusicManager
+                                        .getInstance()
+                                        .setMusicEnabled(
+                                            context,
+                                            enabled
+                                        )
+                                }
+                            },
+                            icon = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            buttonColor = Color(0xFFFF6B6B),
+                            size = 40.dp
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Animated Info Button
+                        AnimatedIconButton(
+                            onClick = { AboutDialog(context).show() },
+                            icon = Icons.Default.Info,
+                            contentDescription = "About",
+                            buttonColor = Color(0xFF4ECDC4),
+                            size = 40.dp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // View Mode Selector (Uncommented and used)
+                    ViewModeSelector(
+                        currentMode = viewMode.value,
+                        onModeSelected = { mode ->
+                            viewMode.value = mode
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Content Area
                     Box(modifier = Modifier.weight(1f)) {
                         when (viewMode.value) {
                             ViewMode.GRID -> {
@@ -387,15 +388,6 @@ fun MainComposeScreen(navController: NavController? = null) {
                         }
                     }
 
-                    // แสดงสถานะการโหลดโฆษณาเต็มจอ
-                    //                    AdLoadingStatus(
-                    //                        isAdLoading = isAdLoading,
-                    //                        isAdLoaded =
-                    // interstitialAdManager.isAdLoaded(),
-                    //                        adLoadAttempt = adLoadAttempt
-                    //                    )
-
-                    // เพิ่ม Spacer เล็กน้อยเพื่อไม่ให้เนื้อหาติดกับ Banner
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }

@@ -46,6 +46,10 @@ class MainVideoFragment : Fragment() {
                             tab.text = "Favorites"
                             tab.setIcon(R.drawable.ic_heart_filled)
                         }
+                        2 -> {
+                            tab.text = "TeraBox"
+                            tab.setIcon(R.drawable.ic_category)
+                        }
                     }
                 }
                 .attach()

@@ -124,6 +124,9 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         public android.widget.FrameLayout lytYouTubeContainer;
         public ImageView imgPlay;
         public TextView txtAgeBadge;
+        public TextView txtRewardBadge;
+        public TextView videoSubtitle;
+        public TextView videoDescriptionSnippet;
 
         @SuppressLint("WrongViewCast")
         public OriginalViewHolder(View v) {
@@ -137,6 +140,9 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             lytYouTubeContainer = v.findViewById(R.id.lyt_youtube_container);
             imgPlay = v.findViewById(R.id.img_play);
             txtAgeBadge = v.findViewById(R.id.txt_age_badge);
+            txtRewardBadge = v.findViewById(R.id.txt_reward_badge);
+            videoSubtitle = v.findViewById(R.id.video_subtitle);
+            videoDescriptionSnippet = v.findViewById(R.id.video_description_snippet);
         }
 
     }
@@ -175,30 +181,49 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             final Video video = videos.get(position);
             final OriginalViewHolder vItem = (OriginalViewHolder) holder;
 
-            vItem.categoryName.setText(video.category_name);
+            if (video.category_name != null && !video.category_name.trim().isEmpty()) {
+                vItem.categoryName.setText(video.category_name);
+            } else {
+                vItem.categoryName.setText("Spark Learning");
+            }
+
             vItem.videoTitle.setText(video.video_title);
             vItem.videoTitle.setSelected(true);
             vItem.videoDuration.setText(video.video_duration);
 
-            if (vItem.txtAgeBadge != null) {
-                if (video.age_rating != null && !video.age_rating.isEmpty()) {
-                    vItem.txtAgeBadge.setVisibility(View.VISIBLE);
-                    vItem.txtAgeBadge.setText(video.age_rating);
-                    
-                    // Set color based on age
-                    String age = video.age_rating.toLowerCase();
-                    if (age.contains("all") || age.contains("0+")) {
-                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_green), PorterDuff.Mode.SRC_IN);
-                    } else if (age.contains("3+")) {
-                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_blue), PorterDuff.Mode.SRC_IN);
-                    } else if (age.contains("6+")) {
-                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_accent), PorterDuff.Mode.SRC_IN);
-                    } else {
-                        vItem.txtAgeBadge.getBackground().setColorFilter(ContextCompat.getColor(context, R.color.kids_secondary), PorterDuff.Mode.SRC_IN);
-                    }
+            if (vItem.videoSubtitle != null) {
+                if (video.tags != null && !video.tags.trim().isEmpty()) {
+                    vItem.videoSubtitle.setVisibility(View.VISIBLE);
+                    vItem.videoSubtitle.setText(video.tags);
+                } else if (video.video_description != null && !video.video_description.trim().isEmpty()) {
+                    vItem.videoSubtitle.setVisibility(View.VISIBLE);
+                    vItem.videoSubtitle.setText(video.video_description);
                 } else {
-                    vItem.txtAgeBadge.setVisibility(View.GONE);
+                    vItem.videoSubtitle.setVisibility(View.GONE);
                 }
+            }
+
+            if (vItem.videoDescriptionSnippet != null) {
+                if (video.video_description != null && !video.video_description.trim().isEmpty()) {
+                    vItem.videoDescriptionSnippet.setVisibility(View.VISIBLE);
+                    vItem.videoDescriptionSnippet.setText(video.video_description);
+                } else {
+                    vItem.videoDescriptionSnippet.setVisibility(View.GONE);
+                }
+            }
+
+            if (vItem.txtAgeBadge != null) {
+                vItem.txtAgeBadge.setVisibility(View.VISIBLE);
+                if (video.age_rating != null && !video.age_rating.isEmpty()) {
+                    vItem.txtAgeBadge.setText(video.age_rating);
+                } else {
+                    vItem.txtAgeBadge.setText("2-6 yrs");
+                }
+            }
+
+            if (vItem.txtRewardBadge != null) {
+                vItem.txtRewardBadge.setVisibility(View.VISIBLE);
+                vItem.txtRewardBadge.setText("+5 ⭐");
             }
 
             // Reset preview states to prevent flickering from recycled views
