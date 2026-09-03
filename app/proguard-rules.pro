@@ -15,3 +15,7 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+-keep class androidx.compose.foundation.lazy.** { *; }
+-keep interface androidx.compose.foundation.lazy.** { *; }
+

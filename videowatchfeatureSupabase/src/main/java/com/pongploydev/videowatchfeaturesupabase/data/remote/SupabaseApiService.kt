@@ -14,7 +14,9 @@ interface SupabaseApiService {
         @Header("Authorization") auth: String = "Bearer " + AppConfig.SUPABASE_ANON_KEY,
         @Query("select") select: String = "*",
         @Query("order") order: String = "id.asc",
+        @Query("or") orFilter: String? = null,
         @Query("category_name") categoryFilter: String? = null,
+        @Query("cat_id") catIdFilter: String? = null,
         @Query("limit") limit: Int? = null,
         @Query("offset") offset: Int? = null
     ): List<Video>

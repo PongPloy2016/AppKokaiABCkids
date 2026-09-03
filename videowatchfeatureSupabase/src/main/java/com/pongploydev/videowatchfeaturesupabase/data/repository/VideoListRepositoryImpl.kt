@@ -17,22 +17,35 @@ class VideoListRepositoryImpl(
         useSupabase: Boolean
     ): Result<CallbackListVideoV1> {
         if (useSupabase) {
-            // 1. ลองดึงข้อมูลจาก Supabase ก่อน
+            // 1. ลองดึงข้อมูลจาก Supabase (กรองเฉพาะ cat_id = 8 หรือ category_name มี Education & Teaching)
             try {
                 val offset = (page - 1) * count
                 val supabaseVideos = SupabaseClient.getService().getVideos(
-                    categoryFilter = "ilike.*Education*",
+                    orFilter = "(cat_id.eq.8,category_name.ilike.*Education*,category_name.ilike.*Teaching*)",
                     limit = count,
                     offset = offset
                 )
 
-                if (supabaseVideos.isNotEmpty()) {
+                // กรองฝั่ง App เพื่อความแม่นยำว่าเป็น cat_id = 8 หรือ Education & Teaching
+                val validVideos = supabaseVideos.filter { video ->
+                    video.cat_id == 8 || (video.category_name != null && (
+                        video.category_name.contains("Education", ignoreCase = true) ||
+                        video.category_name.contains("Teaching", ignoreCase = true)
+                    ))
+                }
+
+                if (supabaseVideos.isNotEmpty() || page > 1) {
+                    val estimatedTotal = if (supabaseVideos.size >= count) {
+                        offset + validVideos.size + 1
+                    } else {
+                        offset + validVideos.size
+                    }
                     val callback = CallbackListVideoV1(
                         status = "ok",
-                        count = supabaseVideos.size,
-                        countTotal = supabaseVideos.size,
-                        pages = 1,
-                        posts = supabaseVideos
+                        count = validVideos.size,
+                        countTotal = estimatedTotal,
+                        pages = (estimatedTotal + count - 1) / count,
+                        posts = validVideos
                     )
                     return Result.success(callback)
                 }
@@ -61,10 +74,16 @@ class VideoListRepositoryImpl(
         if (useSupabase) {
             try {
                 val supabaseVideos = SupabaseClient.getService().getVideos(
-                    categoryFilter = "ilike.*Education*"
+                    orFilter = "(cat_id.eq.8,category_name.ilike.*Education*,category_name.ilike.*Teaching*)"
                 )
-                if (supabaseVideos.isNotEmpty()) {
-                    val shuffled = supabaseVideos.shuffled()
+                val validVideos = supabaseVideos.filter { video ->
+                    video.cat_id == 8 || (video.category_name != null && (
+                        video.category_name.contains("Education", ignoreCase = true) ||
+                        video.category_name.contains("Teaching", ignoreCase = true)
+                    ))
+                }
+                if (validVideos.isNotEmpty()) {
+                    val shuffled = validVideos.shuffled()
                     val callback = CallbackListVideoV1(
                         status = "ok",
                         count = shuffled.size,

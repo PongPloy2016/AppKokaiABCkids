@@ -1392,7 +1392,7 @@ class VideoListFragment : Fragment() {
     private fun createVideoIntent(videoType: String?): Intent {
         return when (videoType?.lowercase()) {
             "youtube" -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
-            else -> Intent(activityContext, ActivityVideoAutoDetail::class.java)
+            else -> Intent(activityContext, ActivityVideoDetail::class.java)
         }
     }
 

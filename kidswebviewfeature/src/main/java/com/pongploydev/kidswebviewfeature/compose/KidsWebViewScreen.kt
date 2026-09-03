@@ -54,17 +54,23 @@ fun KidsWebViewScreen(
     var currentTitle by remember { mutableStateOf(title) }
     var pageTitle by remember { mutableStateOf(title) }
 
+    var canGoBack by remember { mutableStateOf(false) }
+
     val handleBackPress = {
         if (webView?.canGoBack() == true) {
             webView?.goBack()
+            canGoBack = webView?.canGoBack() == true
         } else {
             onBackClick()
         }
     }
 
-    // Intercept system back button / gesture
-    BackHandler(enabled = true) {
-        handleBackPress()
+    // Intercept system back button / gesture ONLY when webView has back history
+    BackHandler(enabled = canGoBack) {
+        if (webView?.canGoBack() == true) {
+            webView?.goBack()
+            canGoBack = webView?.canGoBack() == true
+        }
     }
 
     // Handle JavaScript events
@@ -127,18 +133,18 @@ fun KidsWebViewScreen(
                 modifier = Modifier.fillMaxSize(),
                 onCreated = { instance ->
                     webView = instance
+                    canGoBack = instance.canGoBack()
                 },
                 onPageStarted = {
                     isLoading = true
                     progress = 0
                     errorMessage = null
+                    canGoBack = webView?.canGoBack() == true
                 },
                 onPageFinished = {
                     isLoading = false
                     progress = 100
-
-                    // Additional JavaScript injection after page load
-                    // This will be handled in the WebViewClient
+                    canGoBack = webView?.canGoBack() == true
                 },
                 onReceivedError = { error ->
                     errorMessage = error ?: "เกิดข้อผิดพลาดในการโหลดหน้าเว็บ"

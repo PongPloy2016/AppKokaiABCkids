@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.pongploydev.videowatchfeaturesupabase.config.AppConfig
 import com.pongploydev.videowatchfeaturesupabase.data.repository.VideoListRepositoryImpl
 import com.pongploydev.videowatchfeaturesupabase.databases.prefs.SharedPref
 import com.pongploydev.videowatchfeaturesupabase.domain.usecase.GetVideoListUseCase
@@ -74,7 +75,8 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
 
         viewModelScope.launch {
             try {
-                val result = getVideoListUseCase(cacheControl, "latest", 10, pageNo, useSupabase)
+                val fetchCount = AppConfig.LOAD_MORE
+                val result = getVideoListUseCase(cacheControl, "latest", fetchCount, pageNo, useSupabase)
 
 
                 if (pageNo == 1) {

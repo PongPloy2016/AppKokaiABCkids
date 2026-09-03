@@ -406,9 +406,8 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public void setLoaded() {
         handler.post(() -> {
             loading = false;
-            // ตรวจสอบจากท้ายไปหน้าเพื่อป้องกัน ConcurrentModificationException
             for (int i = getItemCount() - 1; i >= 0; i--) {
-                if (videos.get(i) == null) {
+                if (i < videos.size() && videos.get(i) == null) {
                     videos.remove(i);
                     notifyItemRemoved(i);
                 }
@@ -419,11 +418,11 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public void setLoading() {
         if (getItemCount() != 0) {
             handler.post(() -> {
-                if (!loading) {
+                if (videos.isEmpty() || videos.get(videos.size() - 1) != null) {
                     this.videos.add(null);
                     notifyItemInserted(getItemCount() - 1);
-                    loading = true;
                 }
+                loading = true;
             });
         }
     }
@@ -460,14 +459,14 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     lastPos = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
                 }
 
-                if (!loading && lastPos == getItemCount() - 1 && onLoadMoreListener != null) {
+                if (!loading && lastPos >= getItemCount() - 2 && onLoadMoreListener != null) {
                     int current_page = getItemCount() / (AppConfig.LOAD_MORE);
+                    loading = true;
 
-                    // ใช้ handler เพื่อเลื่อนการเรียกไปยังเฟรมถัดไป
                     handler.post(() -> {
-                        if (!loading && onLoadMoreListener != null) {
+                        if (onLoadMoreListener != null) {
+                            setLoading();
                             onLoadMoreListener.onLoadMore(current_page);
-                            loading = true;
                         }
                     });
                 }
