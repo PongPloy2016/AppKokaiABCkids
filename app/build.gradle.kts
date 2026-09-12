@@ -26,7 +26,7 @@ android {
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
-        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-9592898299992336/7978304153\"")
+        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-9784556672708249/1773111585\"")
         buildConfigField("String", "TEST_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
     }
 
