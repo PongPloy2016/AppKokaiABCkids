@@ -25,5 +25,6 @@ include(":core")
 include(":custom-ui")
 include(":livefeature")
 include(":kidswebviewfeature")
+include(":profilefeature")
 
 

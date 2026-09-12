@@ -1,6 +1,5 @@
 package com.pongploydev.videowatchfeaturesupabase.config
 
-import com.facebook.shimmer.BuildConfig
 import com.pongploydev.videowatchfeaturesupabase.Constant
 
 
@@ -24,7 +23,7 @@ object AppConfig {
     const val ENABLE_ADMOB_NATIVE = false
 
     // ตั้งค่า Debug Mode
-    const val DEBUG = BuildConfig.DEBUG // หรือ false สำหรับ production
+    const val DEBUG = false // false สำหรับโฆษณาจริง (Production Real Ads)
 
     // Test Ad Unit IDs (สำหรับ Debug/Development)
     val TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"

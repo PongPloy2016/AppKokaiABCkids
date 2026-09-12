@@ -191,7 +191,13 @@ public class LeaningActvity extends AppCompatActivity {
     // Helper to launch activity directly if View is not accessible
     private void launchSubActivity(LearningCategory category) {
         Intent intent;
-        Class<?> targetActivity = com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity.class;
+        Class<?> targetActivity;
+        try {
+            targetActivity = Class.forName("com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
         intent = new Intent(context, targetActivity);
         intent.putExtra("categoryPosition", category.getCategoryPosition());
         intent.putExtra("Category", category.getTitle());

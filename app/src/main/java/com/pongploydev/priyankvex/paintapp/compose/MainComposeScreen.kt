@@ -73,9 +73,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
+import com.pongploydev.profilefeature.data.SupabaseDataManager
+import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -513,6 +519,7 @@ fun AutoSlideBannerCarousel(
                     }
                     .clickableNoRipple {
                         playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(context, "แบนเนอร์_${banner.title}", "หน้าแรก (Home)")
                         onBannerClick(banner)
                     },
                 shape = RoundedCornerShape(28.dp),
@@ -1107,6 +1114,7 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
                     .clickableNoRipple {
                         pressed = true
                         playSoundEffect(ctx, R.raw.is_sound_buttonswitch)
+                        com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(ctx, "เมนูด่วน_${a.label}", "หน้าแรก (Home)")
                         onActionClick(a.id)
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -1190,6 +1198,7 @@ fun CategoryCard(
             .clickableNoRipple {
                 isPressed = true
                 playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(context, "หมวดหมู่_$title", "หน้าแรก (Home)")
                 onClick()
             },
         shape = RoundedCornerShape(28.dp),
@@ -1705,7 +1714,50 @@ fun MainComposeScreen(navController: NavController? = null) {
     }
     var showRewardDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
-    var starCount by remember { mutableStateOf(150) }
+    
+    val scope = rememberCoroutineScope()
+    val supabaseAuthManager = remember { SupabaseAuthManager.getInstance(context) }
+    val dataManager = remember { SupabaseDataManager.getInstance(context) }
+    val firebaseAuth = remember { FirebaseAuth.getInstance() }
+    val userId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
+
+    var starCount by remember { mutableIntStateOf(0) }
+    var currentLevel by remember { mutableIntStateOf(1) }
+    var userDisplayName by remember { mutableStateOf("คนเก่ง") }
+
+    // Sync live stars and level from Supabase
+    fun loadSupabaseStars() {
+        if (userId.isNotEmpty()) {
+            scope.launch {
+                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                    starCount = prof.totalStars
+                    currentLevel = prof.currentLevel
+                    val name = prof.displayName
+                    if (!name.isNullOrBlank()) {
+                        userDisplayName = name
+                    }
+                }
+            }
+        }
+    }
+
+    val homeLifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(homeLifecycleOwner, userId) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
+                loadSupabaseStars()
+            }
+        }
+        homeLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            homeLifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(userId) {
+        loadSupabaseStars()
+    }
+
     val menuItems = remember { getMenuItems() }
 
     val interstitialAdManager = remember { InterstitialAdManager(context) }
@@ -1762,7 +1814,16 @@ fun MainComposeScreen(navController: NavController? = null) {
     if (showRewardDialog) {
         RewardDialog(onDismiss = {
             showRewardDialog = false
-            starCount += 10
+            if (userId.isNotEmpty()) {
+                scope.launch {
+                    dataManager.addStarsAndLevel(userId, starCount, currentLevel, 10).onSuccess { updated ->
+                        starCount = updated.totalStars
+                    }
+                }
+            } else {
+                starCount += 10
+            }
+            Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +10 🌟", Toast.LENGTH_SHORT).show()
         })
     }
 
@@ -1794,20 +1855,26 @@ fun MainComposeScreen(navController: NavController? = null) {
                 ) {
                     item {
                         HomeHeader(
-                            userName = "คนเก่ง",
+                            userName = userDisplayName,
                             isMusicEnabled = isMusicEnabled,
                             starCount = starCount,
-                            level = 3,
+                            level = currentLevel,
                             levelTitle = "นักอ่านตัวน้อย",
                             levelProgress = 0.7f,
                             streakDays = 5,
                             onStarClick = {
-                                starCount += 5
-                                Toast.makeText(
-                                    context,
-                                    "🌟 คุณมี $starCount ดาวแล้ว! สะสมเพื่อแลกของขวัญ",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                if (userId.isNotEmpty()) {
+                                    scope.launch {
+                                        dataManager.addStarsAndLevel(userId, starCount, currentLevel, 5).onSuccess { updated ->
+                                            starCount = updated.totalStars
+                                            currentLevel = updated.currentLevel
+                                            Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +5 (รวม $starCount ดาว)", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } else {
+                                    starCount += 5
+                                    Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +5 (รวม $starCount ดาว)", Toast.LENGTH_SHORT).show()
+                                }
                             },
                             onMusicToggle = {
                                 isMusicEnabled = !isMusicEnabled
@@ -1823,6 +1890,23 @@ fun MainComposeScreen(navController: NavController? = null) {
 
                     item {
                         QuickActionRow(onActionClick = { id ->
+                            val actionName = when (id) {
+                                1 -> "ฝึกเขียน ก-ฮ"
+                                2 -> "ฝึกอ่าน"
+                                3 -> "ระบายสี"
+                                4 -> "ทดสอบวัดความรู้"
+                                else -> "กิจกรรมเรียนรู้"
+                            }
+                            if (userId.isNotEmpty()) {
+                                scope.launch {
+                                    dataManager.saveLearningProgress(userId, "home_quick_action", "action_$id", 100)
+                                    dataManager.addStarsAndLevel(userId, starCount, currentLevel, 5).onSuccess { updated ->
+                                        starCount = updated.totalStars
+                                        currentLevel = updated.currentLevel
+                                    }
+                                }
+                            }
+                            Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +5 🌟 ($actionName)", Toast.LENGTH_SHORT).show()
                             navigateWithAd {
                                 when (id) {
                                     1 -> context.startActivity(

@@ -916,8 +916,8 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         // ฟังก์ชันช่วยจัดการความคล่องตัวของ Toolbar
         val updateToolbarVisibility = { position: Int ->
-            // ซ่อน Toolbar สำหรับหน้า Home (0), Web (1), Video (2) และ Live (4) เพราะมี Toolbar/Header ภายในตัวเองอยู่แล้ว
-            if (position == 0 || position == 1 || position == 2 || position == 4) {
+            // ซ่อน Toolbar สำหรับหน้า Home (0), Web (1), Video (2), Live (4), Profile (5) เพราะมี Toolbar/Header ภายในตัวเองอยู่แล้ว
+            if (position == 0 || position == 1 || position == 2 || position == 4 || position == 5) {
                 appBarLayout.visibility = View.GONE
             } else {
                 appBarLayout.visibility = View.VISIBLE
@@ -927,11 +927,22 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
 
         // ตั้งค่าเริ่มต้นตามหน้าแรก
         updateToolbarVisibility(vp.currentItem)
+        AnalyticsLogger.logScreenView(this, "หน้าแรก (Home)", "MainGridFragment")
 
-        // ซ่อน Toolbar เมื่อเปลี่ยนหน้า
+        // ซ่อน Toolbar เมื่อเปลี่ยนหน้า และส่ง Analytics Screen View
         vp.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
                 updateToolbarVisibility(position)
+                val (screenName, screenClass) = when (position) {
+                    0 -> Pair("หน้าแรก (Home)", "MainGridFragment")
+                    1 -> Pair("หน้าท่องเว็บสนุก (Web Fun)", "KidsWebViewFragment")
+                    2 -> Pair("หน้าวิดีโอ (Video)", "VideoListFragment")
+                    3 -> Pair("หน้าแบบทดสอบ (Quiz)", "QuizFragment")
+                    4 -> Pair("หน้าถ่ายทอดสด (Live)", "LiveStreamFragment")
+                    5 -> Pair("หน้าโปรไฟล์ (Profile)", "ProfileComposeFragment")
+                    else -> Pair("หน้าหลัก_$position", "MainActivity")
+                }
+                AnalyticsLogger.logScreenView(this@MainActivity, screenName, screenClass)
             }
         })
 
@@ -939,6 +950,16 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
         vpRTL.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
                 updateToolbarVisibility(position)
+                val (screenName, screenClass) = when (position) {
+                    0 -> Pair("หน้าแรก (Home)", "MainGridFragment")
+                    1 -> Pair("หน้าท่องเว็บสนุก (Web Fun)", "KidsWebViewFragment")
+                    2 -> Pair("หน้าวิดีโอ (Video)", "VideoListFragment")
+                    3 -> Pair("หน้าแบบทดสอบ (Quiz)", "QuizFragment")
+                    4 -> Pair("หน้าถ่ายทอดสด (Live)", "LiveStreamFragment")
+                    5 -> Pair("หน้าโปรไฟล์ (Profile)", "ProfileComposeFragment")
+                    else -> Pair("หน้าหลัก_$position", "MainActivity")
+                }
+                AnalyticsLogger.logScreenView(this@MainActivity, screenName, screenClass)
             }
         })
 

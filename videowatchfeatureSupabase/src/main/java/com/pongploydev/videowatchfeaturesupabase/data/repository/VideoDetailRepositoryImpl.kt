@@ -12,19 +12,18 @@ class VideoDetailRepositoryImpl(
     override suspend fun getVideoDetail(id: String, isRefresh: Boolean): Result<CallbackVideoDetailV1> {
         // 1. ลองดึงข้อมูลจาก Supabase ก่อน
         try {
-            val list = when {
+            val response = when {
                 id.startsWith("VID", ignoreCase = true) -> {
-                    // Try by vid first (e.g. VID001)
-                    val byVid = SupabaseClient.getService().getVideoDetail(vidFilter = "eq.$id")
-                    if (byVid.isNotEmpty()) {
-                        byVid
+                    val byVidResp = SupabaseClient.getService().getVideoDetail(vidFilter = "eq.$id")
+                    val listByVid = byVidResp.body()
+                    if (byVidResp.isSuccessful && !listByVid.isNullOrEmpty()) {
+                        byVidResp
                     } else {
-                        // Extract number e.g. VID005 -> 5
                         val numPart = id.substring(3).trimStart('0').ifEmpty { "0" }
                         val numId = numPart.toIntOrNull()
                         if (numId != null) {
                             SupabaseClient.getService().getVideoDetail(idFilter = "eq.$numId")
-                        } else emptyList()
+                        } else null
                     }
                 }
                 id.toIntOrNull() != null -> {
@@ -35,6 +34,7 @@ class VideoDetailRepositoryImpl(
                 }
             }
 
+            val list = response?.body() ?: emptyList()
             if (list.isNotEmpty()) {
                 val video = list[0]
                 return Result.success(

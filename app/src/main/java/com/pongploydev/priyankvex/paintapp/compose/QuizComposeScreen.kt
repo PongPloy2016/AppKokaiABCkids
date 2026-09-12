@@ -197,6 +197,7 @@ fun QuizTopicItem(
     onClick: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     LaunchedEffect(Unit) { visible = true }
 
     AnimatedVisibility(
@@ -207,7 +208,10 @@ fun QuizTopicItem(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onClick() },
+                .clickable {
+                    com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(context, "หัวข้อแบบทดสอบ_${topic.title}", "หน้าแบบทดสอบ (Quiz)")
+                    onClick()
+                },
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)

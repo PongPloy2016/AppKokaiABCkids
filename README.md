@@ -79,3 +79,22 @@ git clone https://github.com/PongPloy2016/Practice_Writing_Reading-_Coloring_Tha
 ```bash
 ./gradlew assembleDebug
 ```
+
+---
+
+## 📢 การตั้งค่าโฆษณา AdMob (AdMob & Third-Party Mediation Setup)
+
+### 📋 ข้อมูลรหัสโฆษณา AdMob (AdMob Credentials)
+- **ชื่อแอปในระบบ AdMob**: ฝึกเขียน อ่าน ก ไก่ABC-ระบายสี
+- **รหัสแอป AdMob (AdMob App ID)**: `ca-app-pub-9784556672708249~1174345789`
+- **รหัสหน่วยโฆษณา AdMob (Ad Unit ID)**: `ca-app-pub-9784556672708249/1773111585`
+- **การยืนยันสิทธิ์แอป (app-ads.txt)**: `google.com, pub-9784556672708249, DIRECT, f08c47fec0942fa0`
+
+### 🛠️ วิธีป้อนรายละเอียดหน่วยโฆษณา AdMob ในแพลตฟอร์มสื่อกลางของบุคคลที่สาม (Third-Party Mediation Platform Setup)
+
+1. **ลงชื่อเข้าใช้บัญชี**: เข้าสู่ระบบในแพลตฟอร์มสื่อกลางของบุคคลที่สาม (เช่น AppLovin MAX, Unity LevelPlay, ironSource, Meta ฯลฯ)
+2. **เลือกจัดการเครือข่าย AdMob**: ไปที่เมนู สื่อกลาง (Mediation Networks) แล้วเลือก **Google AdMob**
+3. **ป้อนรายละเอียดเพื่อจับคู่หน่วยโฆษณา (Mapping)**:
+   - **รหัสแอป AdMob**: ใส่ `ca-app-pub-9784556672708249~1174345789`
+   - **รหัสหน่วยโฆษณา AdMob**: ใส่ `ca-app-pub-9784556672708249/1773111585`
+4. **บันทึกการตั้งค่า**: กดบันทึกข้อมูลเพื่อเปิดใช้งานการรับส่งโฆษณาผ่านแพลตฟอร์มสื่อกลาง

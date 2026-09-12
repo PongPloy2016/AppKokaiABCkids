@@ -36,6 +36,9 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
     var currentCategory = "all"
     var searchQuery = ""
 
+    private var currentPage = 1
+    private var isFetching = false
+
     private val getVideoListUseCase: GetVideoListUseCase
 
     init {
@@ -55,6 +58,8 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
         sharedPref.isUseSupabaseApi = useSupabase
         _isSupabaseApi.value = useSupabase
         originalVideos.clear()
+        currentPage = 1
+        postTotal = 0
         fetchVideos(1, isRefresh = true)
     }
 
@@ -64,7 +69,18 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
         return next
     }
 
+    fun getLoadedVideoCount(): Int = originalVideos.size
+
+    fun loadNextPage() {
+        if (isFetching) return
+        if (originalVideos.size >= postTotal && postTotal > 0) return
+        fetchVideos(currentPage + 1)
+    }
+
     fun fetchVideos(pageNo: Int, isRefresh: Boolean = false) {
+        if (isFetching && !isRefresh) return
+        isFetching = true
+
         // If loading first page or refreshing, set loading state
         if (pageNo == 1 && (originalVideos.isEmpty() || isRefresh)) {
             _isLoading.value = true
@@ -78,7 +94,6 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
                 val fetchCount = AppConfig.LOAD_MORE
                 val result = getVideoListUseCase(cacheControl, "latest", fetchCount, pageNo, useSupabase)
 
-
                 if (pageNo == 1) {
                     _isLoading.value = false
                 }
@@ -87,20 +102,23 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
                     postTotal = response.countTotal
                     val posts = response.posts
 
+                    if (pageNo == 1) {
+                        originalVideos.clear()
+                        currentPage = 1
+                    } else {
+                        currentPage = pageNo
+                    }
+
                     if (posts.isNotEmpty()) {
-                        if (pageNo == 1) {
-                            originalVideos.clear()
-                            originalVideos.addAll(posts)
-                        } else {
-                            originalVideos.addAll(posts)
-                        }
+                        val existingIds = originalVideos.map { it.id }.toSet()
+                        val newPosts = posts.filter { it.id !in existingIds }
+                        originalVideos.addAll(newPosts)
                     }
 
                     // Apply filters if any
                     filterVideos(searchQuery, currentCategory)
                     _errorMessage.value = null // Clear error
                 }.onFailure { exception ->
-                    // ถ้าโหลดจากเซิร์ฟเวอร์ไม่ได้ ให้ใช้วิดีโอเริ่มต้นและไม่แสดงหน้า Error
                     if (originalVideos.isEmpty()) {
                         originalVideos.addAll(getFallbackKidVideos())
                         postTotal = originalVideos.size
@@ -115,6 +133,8 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
                     filterVideos(searchQuery, currentCategory)
                 }
                 _errorMessage.value = null
+            } finally {
+                isFetching = false
             }
         }
     }
@@ -134,10 +154,17 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         _videoList.value = filtered
+
+        // ถ้าผลการกรองมีน้อยกว่า 5 รายการ และยังมีข้อมูลบนเซิร์ฟเวอร์ที่ยังไม่ได้ดึง ให้โหลดหน้าถัดไปโดยอัตโนมัติ
+        if (filtered.size < 5 && originalVideos.size < postTotal && !isFetching) {
+            loadNextPage()
+        }
     }
 
     fun resetData() {
         originalVideos.clear()
+        currentPage = 1
+        postTotal = 0
         originalVideos.addAll(getFallbackKidVideos())
         _videoList.value = originalVideos
     }

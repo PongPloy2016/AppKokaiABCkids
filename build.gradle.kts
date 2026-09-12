@@ -1,17 +1,9 @@
 // Top-level build.gradle.kts
 buildscript {
     extra.apply {
-        set("kotlin_version", "2.1.0") // 👈 ลดลงเพื่อเข้ากันได้กับ Compiler
+        set("kotlin_version", "1.9.23")
         set("agp_version", "8.2.2")
-        set("compose_compiler_version", "1.9.3")
-//        set("kotlin_version", "2.1.0")
-//        set("agp_version", "8.3.2")
-//        // ลองเวอร์ชันเหล่านี้ตามลำดับ:
-//        set("compose_compiler_version", "1.11.0") // ตัวเลือกแรก
-
-//        set("kotlin_version", "1.9.23") // ✅ ลดลงให้ตรงกับ Compose
-//        set("agp_version", "8.2.2")
-//        set("compose_compiler_version", "1.5.11") // ✅ ใช้เวอร์ชันที่รองรับ
+        set("compose_compiler_version", "1.5.11")
     }
 
     repositories {

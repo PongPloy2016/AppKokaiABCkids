@@ -38,6 +38,12 @@ import com.google.android.exoplayer2.upstream.*
 import com.google.android.exoplayer2.util.Util
 import com.pongploydev.videowatchfeaturesupabase.Constant
 import com.pongploydev.videowatchfeaturesupabase.R
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
+import com.pongploydev.profilefeature.data.SupabaseDataManager
 import com.pongploydev.videowatchfeaturesupabase.adapter.AdapterVideo
 import com.pongploydev.videowatchfeaturesupabase.callbacks.CallbackVideoDetail
 import com.pongploydev.videowatchfeaturesupabase.callbacks.CallbackVideoDetailV1
@@ -442,6 +448,28 @@ class ActivityVideoDetail : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         // แอนิเมชันรูปดาวข้างชื่อเรื่อง
         YoYo.with(Techniques.Bounce).duration(800).playOn(iconTitleStar)
+
+        // บันทึกคะแนนและดาวสะสมจากการชมวิดีโอเข้า Supabase
+        val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
+        val userId = supabaseUser?.id ?: "guest_user"
+        if (userId.isNotEmpty()) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val dataManager = SupabaseDataManager.getInstance(this@ActivityVideoDetail)
+                val itemKey = if (!video.video_id.isNullOrEmpty()) video.video_id else video.id.toString()
+                dataManager.saveLearningProgress(
+                    userId = userId,
+                    categoryKey = "video_watch",
+                    itemKey = itemKey,
+                    score = 100
+                )
+                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, 1)
+                }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@ActivityVideoDetail, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +1 🎬 (จากการรับชมวิดีโอ)", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         // อ่านชื่อวิดีโออัตโนมัติ (Auto Read Title)
         if (isTtsReady) {

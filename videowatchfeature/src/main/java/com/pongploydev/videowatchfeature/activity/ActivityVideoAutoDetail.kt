@@ -371,8 +371,10 @@ class ActivityVideoAutoDetail : AppCompatActivity(), TextToSpeech.OnInitListener
                 when (state) {
                     PlayerConstants.PlayerState.PLAYING -> {
                         isPlaying = true
+                        progressBar.visibility = View.GONE
                         lytThumbnailContainer.visibility = View.GONE
                         youTubePlayerView.visibility = View.VISIBLE
+                        hideYouTubeControls()
                     }
                     PlayerConstants.PlayerState.PAUSED, PlayerConstants.PlayerState.ENDED -> {
                         isPlaying = false

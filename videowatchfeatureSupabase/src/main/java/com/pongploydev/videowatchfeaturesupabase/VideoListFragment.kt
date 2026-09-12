@@ -152,6 +152,8 @@ class VideoListFragment : Fragment() {
         updateSwitchViewButtonIcon()
 
         adsPref.isTestMode = false
+        adsPref.interstitialAdId = "ca-app-pub-9784556672708249/1773111585"
+        adsPref.interstitialPostDetailId = "ca-app-pub-9784556672708249/1773111585"
         adsPref.isFamiliesApp = true
         adsPref.isAdEnabled = true
         adsPref.isInterstitialAdEnabled = true
@@ -440,11 +442,11 @@ class VideoListFragment : Fragment() {
                 }
             }
 
-            setOnLoadMoreListener { currentPage ->
-                val totalItems = adapterVideo?.itemCount ?: 0
-                if (viewModel.postTotal > totalItems) {
+            setOnLoadMoreListener { _ ->
+                val loadedItems = adapterVideo?.videoCount ?: (adapterVideo?.itemCount ?: 0)
+                if (viewModel.postTotal > loadedItems) {
                     adapterVideo?.setLoading()
-                    viewModel.fetchVideos(currentPage + 1)
+                    viewModel.loadNextPage()
                 } else {
                     adapterVideo?.setLoaded()
                 }
@@ -772,7 +774,7 @@ class VideoListFragment : Fragment() {
         popupMenu.menuInflater.inflate(R.menu.menu_video_sort, popupMenu.menu)
 
         // ติ๊กเลือกเมนูปัจจุบัน
-        when (sharedPref.getCurrentSortHome()) {
+        when (sharedPref.currentSortHome) {
             0 -> popupMenu.menu.findItem(R.id.menu_sort_popular)?.isChecked = true
             1 -> popupMenu.menu.findItem(R.id.menu_sort_oldest)?.isChecked = true
             2 -> popupMenu.menu.findItem(R.id.menu_sort_newest)?.isChecked = true

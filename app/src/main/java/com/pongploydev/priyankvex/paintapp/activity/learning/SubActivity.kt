@@ -20,6 +20,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.auth.FirebaseAuth
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
+import com.pongploydev.profilefeature.data.SupabaseDataManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.GridLayoutManager
 import com.pongploydev.priyankvex.paintapp.utils.ScreenUtils
 import androidx.recyclerview.widget.RecyclerView
@@ -110,7 +116,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var pendingLearningData: LearningDataModel? = null
 
     private val currentAdUnitId: String
-        get() = REAL_INTERSTITIAL
+        get() = if (adsPref.isTestMode) TEST_INTERSTITIAL else REAL_INTERSTITIAL
 
     // ============================================
     // LIFECYCLE METHODS
@@ -308,10 +314,11 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun loadIntentData() {
         val intent = intent
         position = intent.getIntExtra("categoryPosition", 0)
-        val category = intent.getStringExtra("Category")
+        val category = intent.getStringExtra("Category") ?: "เรียนรู้"
         TYPE = intent.getIntExtra("Type", 0)
 
         txtTitleSubHome?.text = category
+        com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logScreenView(this, "หน้าเรียนรู้_$category", "SubActivity")
     }
 
     // ============================================
@@ -905,6 +912,28 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Speak the clicked item
         if (isTtsInitialized) {
             speakItem(learningData, selectedPos)
+        }
+
+        // Track learning progress & add star in Supabase
+        val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val userId = supabaseUser?.id ?: firebaseUser?.uid ?: "guest_user"
+        if (!userId.isNullOrEmpty()) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val dataManager = SupabaseDataManager.getInstance(this@SubActivity)
+                dataManager.saveLearningProgress(
+                    userId = userId,
+                    categoryKey = "cat_$categoryPos",
+                    itemKey = learningData.showTitle ?: learningData.speakTitle ?: "item_$selectedPos",
+                    score = 100
+                )
+                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, 1)
+                }
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    Toast.makeText(this@SubActivity, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +1", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         // Track user clicks for ad interval

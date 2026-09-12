@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
-import com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity;
 import com.pongploydev.priyankvex.paintapp.model.LearningCategory;
 import com.pongploydev.priyankvex.paintapp.R;
 // ต้อง import Activity ปลายทาง
@@ -135,8 +134,12 @@ public class LearningCategoriesAdapter extends RecyclerView.Adapter<LearningCate
 
                 switch (activityType) {
                     case 1:
-                        // ต้องเปลี่ยน SubActivity.class เป็นชื่อ Activity จริง
-                        targetActivity = SubActivity.class;
+                        try {
+                            targetActivity = Class.forName("com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity");
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                            return;
+                        }
                         intent = new Intent(context, targetActivity);
                         intent.putExtra("categoryPosition", category.getCategoryPosition());
                         intent.putExtra("Category", category.getTitle());

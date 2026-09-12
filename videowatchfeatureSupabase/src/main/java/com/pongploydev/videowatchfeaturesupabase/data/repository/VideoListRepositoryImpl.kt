@@ -17,35 +17,30 @@ class VideoListRepositoryImpl(
         useSupabase: Boolean
     ): Result<CallbackListVideoV1> {
         if (useSupabase) {
-            // 1. ลองดึงข้อมูลจาก Supabase (กรองเฉพาะ cat_id = 8 หรือ category_name มี Education & Teaching)
             try {
                 val offset = (page - 1) * count
-                val supabaseVideos = SupabaseClient.getService().getVideos(
-                    orFilter = "(cat_id.eq.8,category_name.ilike.*Education*,category_name.ilike.*Teaching*)",
+                val response = SupabaseClient.getService().getVideos(
                     limit = count,
                     offset = offset
                 )
 
-                // กรองฝั่ง App เพื่อความแม่นยำว่าเป็น cat_id = 8 หรือ Education & Teaching
-                val validVideos = supabaseVideos.filter { video ->
-                    video.cat_id == 8 || (video.category_name != null && (
-                        video.category_name.contains("Education", ignoreCase = true) ||
-                        video.category_name.contains("Teaching", ignoreCase = true)
-                    ))
-                }
+                if (response.isSuccessful) {
+                    val supabaseVideos = response.body() ?: emptyList()
+                    val contentRange = response.headers()["content-range"] // e.g. "0-9/75"
+                    val totalFromHeader = contentRange?.split("/")?.lastOrNull()?.toIntOrNull()
 
-                if (supabaseVideos.isNotEmpty() || page > 1) {
-                    val estimatedTotal = if (supabaseVideos.size >= count) {
-                        offset + validVideos.size + 1
+                    val estimatedTotal = totalFromHeader ?: if (supabaseVideos.size >= count) {
+                        offset + supabaseVideos.size + 1
                     } else {
-                        offset + validVideos.size
+                        offset + supabaseVideos.size
                     }
+
                     val callback = CallbackListVideoV1(
                         status = "ok",
-                        count = validVideos.size,
+                        count = supabaseVideos.size,
                         countTotal = estimatedTotal,
-                        pages = (estimatedTotal + count - 1) / count,
-                        posts = validVideos
+                        pages = if (count > 0) (estimatedTotal + count - 1) / count else 1,
+                        posts = supabaseVideos
                     )
                     return Result.success(callback)
                 }
@@ -73,25 +68,20 @@ class VideoListRepositoryImpl(
     ): Result<CallbackListVideoV1> {
         if (useSupabase) {
             try {
-                val supabaseVideos = SupabaseClient.getService().getVideos(
-                    orFilter = "(cat_id.eq.8,category_name.ilike.*Education*,category_name.ilike.*Teaching*)"
-                )
-                val validVideos = supabaseVideos.filter { video ->
-                    video.cat_id == 8 || (video.category_name != null && (
-                        video.category_name.contains("Education", ignoreCase = true) ||
-                        video.category_name.contains("Teaching", ignoreCase = true)
-                    ))
-                }
-                if (validVideos.isNotEmpty()) {
-                    val shuffled = validVideos.shuffled()
-                    val callback = CallbackListVideoV1(
-                        status = "ok",
-                        count = shuffled.size,
-                        countTotal = shuffled.size,
-                        pages = 1,
-                        posts = shuffled
-                    )
-                    return Result.success(callback)
+                val response = SupabaseClient.getService().getVideos(limit = 50)
+                if (response.isSuccessful) {
+                    val supabaseVideos = response.body() ?: emptyList()
+                    if (supabaseVideos.isNotEmpty()) {
+                        val shuffled = supabaseVideos.shuffled()
+                        val callback = CallbackListVideoV1(
+                            status = "ok",
+                            count = shuffled.size,
+                            countTotal = shuffled.size,
+                            pages = 1,
+                            posts = shuffled
+                        )
+                        return Result.success(callback)
+                    }
                 }
             } catch (e: Exception) {
                 // fallback

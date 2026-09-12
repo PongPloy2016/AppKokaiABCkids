@@ -16,7 +16,7 @@ ext.versions = [
         dokka                           : '1.8.10',
 
         // Kotlin
-        kotlin                          : '2.1.0',
+        kotlin                          : '1.9.23',
 
         // Compose
         composeBom                      : '2025.10.01',

@@ -396,6 +396,16 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         });
     }
 
+    public int getVideoCount() {
+        int count = 0;
+        if (videos != null) {
+            for (Video v : videos) {
+                if (v != null) count++;
+            }
+        }
+        return count;
+    }
+
     public void setItems(List<Video> newVideos) {
         handler.post(() -> {
             this.videos = new ArrayList<>(newVideos);

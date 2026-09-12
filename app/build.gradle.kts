@@ -87,6 +87,7 @@ dependencies {
     implementation(project(":videowatchfeatureSupabase"))
     implementation(project(":livefeature"))
     implementation(project(":kidswebviewfeature"))
+    implementation(project(":profilefeature"))
 
     implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -112,6 +113,7 @@ dependencies {
     implementation("com.github.bumptech.glide:okhttp3-integration:4.16.0")
 
     // Firebase
+    implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-analytics")

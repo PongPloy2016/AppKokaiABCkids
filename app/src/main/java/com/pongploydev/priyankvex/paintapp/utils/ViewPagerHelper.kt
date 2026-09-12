@@ -14,13 +14,14 @@ import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
 import com.pongploydev.kidswebviewfeature.fragment.KidsWebComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
+import com.pongploydev.profilefeature.ProfileComposeFragment
 import com.pongploydev.videowatchfeaturesupabase.VideoListFragment
 import com.pongploydev.livefeature.LiveListFragment
 
 
 class ViewPagerHelper(var activity: AppCompatActivity) {
     var prevMenuItem: MenuItem? = null
-    var pagerNumber: Int = 5
+    var pagerNumber: Int = 6
 
     fun setupViewPagerDefault(
             viewPager: ViewPager,
@@ -50,6 +51,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 }
                 R.id.navigation_live -> {
                     viewPager.currentItem = 4
+                    return@setOnItemSelectedListener true
+                }
+                R.id.navigation_profile -> {
+                    viewPager.currentItem = 5
                     return@setOnItemSelectedListener true
                 }
             }
@@ -92,6 +97,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             4 -> {
                                 titleToolbar.text =
                                         activity.resources.getString(R.string.title_nav_live)
+                            }
+                            5 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_profile)
                             }
                         }
                     }
@@ -131,6 +140,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
+                R.id.navigation_profile -> {
+                    viewPager.currentItem = 5
+                    return@setOnItemSelectedListener true
+                }
             }
             false
         }
@@ -171,6 +184,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             4 -> {
                                 titleToolbar.text =
                                         activity.resources.getString(R.string.title_nav_live)
+                            }
+                            5 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_profile)
                             }
                         }
                     }
@@ -210,6 +227,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
+                R.id.navigation_profile -> {
+                    viewPager.currentItem = 5
+                    return@setOnItemSelectedListener true
+                }
             }
             false
         }
@@ -250,6 +271,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             4 -> {
                                 titleToolbar.text =
                                         activity.resources.getString(R.string.title_nav_live)
+                            }
+                            5 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_profile)
                             }
                         }
                     }
@@ -289,6 +314,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
+                R.id.navigation_profile -> {
+                    viewPager.currentItem = 5
+                    return@setOnItemSelectedListener true
+                }
             }
             false
         }
@@ -330,6 +359,10 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                                 titleToolbar.text =
                                         activity.resources.getString(R.string.title_nav_live)
                             }
+                            5 -> {
+                                titleToolbar.text =
+                                        activity.resources.getString(R.string.title_nav_profile)
+                            }
                         }
                     }
 
@@ -348,6 +381,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 2 -> return VideoListFragment()
                 3 -> return QuizComposeFragment()
                 4 -> return LiveListFragment()
+                5 -> return ProfileComposeFragment()
             }
             return ComposeFragment()
         }
@@ -367,6 +401,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 2 -> return VideoListFragment()
                 3 -> return QuizComposeFragment()
                 4 -> return LiveListFragment()
+                5 -> return ProfileComposeFragment()
             }
             return ComposeFragment()
         }

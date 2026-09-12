@@ -42,6 +42,12 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.Abs
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
+import com.pongploydev.profilefeature.data.SupabaseDataManager
 import com.pongploydev.videowatchfeaturesupabase.adapter.AdapterVideo
 import com.pongploydev.videowatchfeaturesupabase.Constant
 import com.pongploydev.videowatchfeaturesupabase.R
@@ -152,6 +158,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         adsPref = AdsPref(this)
 
         adsPref.isTestMode = false
+        adsPref.interstitialAdId = "ca-app-pub-9784556672708249/1773111585"
         adsPref.isFamiliesApp = true
 
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
@@ -292,8 +299,10 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
                     PlayerConstants.PlayerState.PLAYING -> {
                         isPlaying = true
                         startSeekBarUpdates()
+                        progressBar.visibility = View.GONE
                         lytThumbnailContainer.visibility = View.GONE
                         youTubePlayerView.visibility = View.VISIBLE
+                        hideYouTubeControls()
                     }
                     PlayerConstants.PlayerState.PAUSED, PlayerConstants.PlayerState.ENDED -> {
                         isPlaying = false
@@ -447,6 +456,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             lytThumbnailContainer.visibility = View.GONE
             youTubePlayerView.visibility = View.VISIBLE
             startSeekBarUpdates()
+            startYouTubeControlsHideTimer()
         }
     }
 
@@ -541,6 +551,28 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         txtTitle.text = video.video_title
         txtTitle.textSize = 20f
         txtDuration.text = video.video_duration
+
+        // บันทึกคะแนนและดาวสะสมจากการชมวิดีโอเข้า Supabase
+        val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
+        val userId = supabaseUser?.id ?: "guest_user"
+        if (userId.isNotEmpty()) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val dataManager = SupabaseDataManager.getInstance(this@ActivityVideoAutoDetail)
+                val itemKey = if (!video.video_id.isNullOrEmpty()) video.video_id else video.id.toString()
+                dataManager.saveLearningProgress(
+                    userId = userId,
+                    categoryKey = "video_watch",
+                    itemKey = itemKey,
+                    score = 100
+                )
+                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, 1)
+                }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@ActivityVideoAutoDetail, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +1 🎬 (จากการรับชมวิดีโอ)", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         if (AppConfig.ENABLE_VIEW_COUNT) {
             txtTotalViews.text = "👀 " + Tools.withSuffix(video.total_views) + " " + getString(R.string.views_count)
