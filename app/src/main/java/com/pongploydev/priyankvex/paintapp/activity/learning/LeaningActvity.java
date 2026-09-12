@@ -18,6 +18,7 @@ import com.google.android.gms.ads.AdView;
 import com.pongploydev.priyankvex.paintapp.model.LearningCategory;
 import com.pongploydev.priyankvex.paintapp.R;
 import com.pongploydev.priyankvex.paintapp.utils.CategoryDataHelper;
+import com.pongploydev.priyankvex.paintapp.utils.ScreenUtils;
 import com.pongploydev.priyankvex.paintapp.adapter.LearningCategoriesAdapter;
 
 import java.util.List;
@@ -202,7 +203,8 @@ public class LeaningActvity extends AppCompatActivity {
         // ใช้ Data Model จาก Helper
         List<LearningCategory> categories = CategoryDataHelper.getAllCategories();
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(context, 2, GridLayoutManager.VERTICAL, false);
+        int spanCount = ScreenUtils.getGridSpanCount(context);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(context, spanCount, GridLayoutManager.VERTICAL, false);
         rvHomeCategories.setLayoutManager(gridLayoutManager);
 
         // ส่ง List<LearningCategory> เข้า Adapter

@@ -22,6 +22,7 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.RequestConfiguration; // IMPORTS เดิม
+import com.pongploydev.priyankvex.paintapp.utils.ScreenUtils;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 // **[NEW IMPORTS]**
@@ -226,10 +227,11 @@ public class MainActivityAndroidGridView extends Activity {
     }
 
     private void setupGridView() {
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
+        int spanCount = ScreenUtils.getGridSpanCount(this);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, spanCount);
         recyclerView.setLayoutManager(gridLayoutManager);
         removeAllItemDecorations();
-        recyclerView.addItemDecoration(new GridSpacingItemDecoration(2, 16, true));
+        recyclerView.addItemDecoration(new GridSpacingItemDecoration(spanCount, 16, true));
     }
 
     private void setupListView() {

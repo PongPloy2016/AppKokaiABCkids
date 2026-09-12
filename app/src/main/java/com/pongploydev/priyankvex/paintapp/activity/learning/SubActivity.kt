@@ -21,6 +21,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import com.pongploydev.priyankvex.paintapp.utils.ScreenUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -856,7 +857,8 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun setRvAdapter() {
-        val gridLayoutManager = GridLayoutManager(context, 2, GridLayoutManager.VERTICAL, false)
+        val spanCount = ScreenUtils.getGridSpanCount(this)
+        val gridLayoutManager = GridLayoutManager(this, spanCount, GridLayoutManager.VERTICAL, false)
         rvSubHome?.layoutManager = gridLayoutManager
 
         subHomeAdapter =

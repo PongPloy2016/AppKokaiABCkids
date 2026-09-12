@@ -80,10 +80,12 @@ class FavoriteListContentFragment : Fragment() {
         if (viewType == Constant.VIDEO_LIST_COMPACT) {
             recyclerView.layoutManager = LinearLayoutManager(activityContext)
         } else {
-            val gridLayoutManager = GridLayoutManager(activityContext, 2)
+            val screenWidthDp = activityContext.resources.configuration.screenWidthDp
+            val spanCount = if (screenWidthDp >= 600) 3 else 2
+            val gridLayoutManager = GridLayoutManager(activityContext, spanCount)
             gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
-                    return if (adapterVideo?.getItemViewType(position) == 0) 2 else 1
+                    return if (adapterVideo?.getItemViewType(position) == 0) spanCount else 1
                 }
             }
             recyclerView.layoutManager = gridLayoutManager

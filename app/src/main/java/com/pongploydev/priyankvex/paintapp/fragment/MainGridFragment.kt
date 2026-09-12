@@ -23,6 +23,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
+import com.pongploydev.priyankvex.paintapp.utils.ScreenUtils
 import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
 import com.pongploydev.priyankvex.paintapp.adapter.CustomAdapterAndroidGridView
@@ -137,8 +138,9 @@ class MainGridFragment : Fragment() {
     }
 
     private fun setupGridView() {
-        // ใช้ GridLayoutManager 2 คอลัมน์
-        val layoutManager = GridLayoutManager(requireContext(), 2)
+        // ใช้ GridLayoutManager คำนวณคอลัมน์ตอบสนองต่อหน้าจอแท็บเล็ต
+        val spanCount = ScreenUtils.getGridSpanCount(requireContext())
+        val layoutManager = GridLayoutManager(requireContext(), spanCount)
         binding.recyclerView.layoutManager = layoutManager
 
         // ลบ ItemDecoration เก่าทั้งหมด

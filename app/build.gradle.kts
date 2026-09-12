@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.pongploydev.priyankvex.paintapp"
     compileSdk = 35
-    buildToolsVersion = "34.0.0"
+    buildToolsVersion = "35.0.0"
 
     buildFeatures {
         viewBinding = true
@@ -20,8 +20,8 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 24
         //noinspection EditedTargetSdkVersion,OldTargetApi
-        targetSdk = 34
-        versionCode = 42
+        targetSdk = 35
+        versionCode = 45
         versionName = "3.0.1"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")

@@ -1,6 +1,5 @@
 package com.pongploydev.priyankvex.paintapp.compose
 
-// Import สำหรับ AdMob
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -26,6 +25,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,23 +56,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -81,7 +78,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -96,245 +95,315 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.pongploydev.kidswebviewfeature.KidsWebViewActivity
+import com.pongploydev.livefeature.LiveListActivity
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.AbcMatchGameActivity
-import com.pongploydev.kidswebviewfeature.KidsWebViewActivity
-import com.pongploydev.priyankvex.paintapp.activity.MenuActivityAZ
 import com.pongploydev.priyankvex.paintapp.activity.QuizActivity
-import com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
 import com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity
 import com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity
-import com.pongploydev.priyankvex.paintapp.dialog.AboutDialog
 import com.pongploydev.videowatchfeaturesupabase.utils.ads.InterstitialAdManager
-import com.pongploydev.livefeature.LiveListActivity
-
 import kotlinx.coroutines.delay
+import kotlin.math.sin
 
-// สีสันสำหรับเด็กๆ
-val KidsColorPalette =
-    listOf(
-        Color(0xFFFF6B6B), // สีแดงสด
-        Color(0xFF4ECDC4), // สีฟ้าอมเขียว
-        Color(0xFFFFD166), // สีเหลือง
-        Color(0xFF06D6A0), // สีเขียวสด
-        Color(0xFF118AB2), // สีน้ำเงิน
-        Color(0xFFEF476F), // สีชมพู
-        Color(0xFF7209B7), // สีม่วง
-        Color(0xFFF15BB5) // สีชมพูอมม่วง
+// ==================== DESIGN TOKENS ====================
+
+object KidTheme {
+    val Primary = Color(0xFF7F67FF)
+    val PrimaryDeep = Color(0xFF6A4FF0)
+    val PrimaryLight = Color(0xFFB4A5FF)
+    val Accent = Color(0xFFFFD166)
+    val Success = Color(0xFF00C853)
+    val Danger = Color(0xFFEF476F)
+    val TextDark = Color(0xFF2D3047)
+    val TextMuted = Color(0xFF8A8FA3)
+    val SurfaceSoft = Color(0xFFF7F8FC)
+
+    val HeaderGradient = Brush.linearGradient(
+        colors = listOf(Color(0xFF7F67FF), Color(0xFF9C7BFF), Color(0xFFB4A5FF))
     )
-
-val ActivityColorPalette =
-    listOf(
-        Color(0xFFFF9E6D), // สีส้ม
-        Color(0xFF6A67CE), // สีม่วงอ่อน
-        Color(0xFF4CD7D0), // สีฟ้าใส
-        Color(0xFFFF78C8), // สีชมพูเจล
-        Color(0xFF9DDE1B), // สีเขียวเหลือง
-        Color(0xFFE8A0B0) // สีชมพูพาสเทล
+    val GoldGradient = Brush.horizontalGradient(
+        colors = listOf(Color(0xFFFFD166), Color(0xFFFF9E6D))
     )
+}
 
-val GradientBackground =
-    Brush.verticalGradient(
-        colors =
-            listOf(
-                Color(0xFF87CEEB), // สีฟ้าอ่อน
-                Color(0xFF98FB98) // สีเขียวอ่อน
-            )
+val KidsColorPalette = listOf(
+    Color(0xFFFF6B6B),
+    Color(0xFF4ECDC4),
+    Color(0xFFFFD166),
+    Color(0xFF06D6A0),
+    Color(0xFF118AB2),
+    Color(0xFFEF476F),
+    Color(0xFF7209B7),
+    Color(0xFFF15BB5)
+)
+
+val ActivityColorPalette = listOf(
+    Color(0xFFFF9E6D),
+    Color(0xFF6A67CE),
+    Color(0xFF4CD7D0),
+    Color(0xFFFF78C8),
+    Color(0xFF9DDE1B),
+    Color(0xFFE8A0B0)
+)
+
+val GradientBackground = Brush.verticalGradient(
+    colors = listOf(Color(0xFF87CEEB), Color(0xFF98FB98))
+)
+
+val RainbowGradient = Brush.horizontalGradient(
+    colors = listOf(
+        Color(0xFFFF6B6B),
+        Color(0xFFFFD166),
+        Color(0xFF06D6A0),
+        Color(0xFF118AB2),
+        Color(0xFF7209B7)
     )
+)
 
-val RainbowGradient =
-    Brush.horizontalGradient(
-        colors =
-            listOf(
-                Color(0xFFFF6B6B), // แดง
-                Color(0xFFFFD166), // เหลือง
-                Color(0xFF06D6A0), // เขียว
-                Color(0xFF118AB2), // น้ำเงิน
-                Color(0xFF7209B7) // ม่วง
-            )
-    )
+// ==================== UTILS ====================
 
-@Composable
-fun DashboardSection(
-    title: String,
-    onViewAllClick: () -> Unit = {},
-    content: @Composable () -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3047)
-            )
-            Text(
-                text = "ดูทั้งหมด >",
-                fontSize = 14.sp,
-                color = Color(0xFF8E78FF),
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable { onViewAllClick() }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        content()
-    }
+fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = composed {
+    val interaction = remember { MutableInteractionSource() }
+    clickable(interactionSource = interaction, indication = null) { onClick() }
 }
 
 fun playSoundEffect(context: Context, soundResId: Int) {
     try {
         val mp = android.media.MediaPlayer.create(context, soundResId)
-        mp?.setOnCompletionListener { player ->
-            player.release()
-        }
+        mp?.setOnCompletionListener { player -> player.release() }
         mp?.start()
     } catch (e: Exception) {
         e.printStackTrace()
     }
 }
 
+
+
+// ==================== SECTION HEADER ====================
+
 @Composable
-fun RewardDialog(
-    onDismiss: () -> Unit
+fun DashboardSection(
+    title: String,
+    emoji: String = "✨",
+    accent: Color = KidTheme.Primary,
+    onViewAllClick: () -> Unit = {},
+    content: @Composable () -> Unit
 ) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 5.dp, height = 22.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(accent)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(text = emoji, fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = title,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = accent.copy(alpha = 0.12f),
+                modifier = Modifier.clickableNoRipple { onViewAllClick() }
+            ) {
+                Text(
+                    text = "ดูทั้งหมด ›",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(14.dp))
+        content()
+    }
+}
+
+// ==================== REWARD DIALOG ====================
+
+@Composable
+fun RewardDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         playSoundEffect(context, R.raw.is_sound_success_sound)
     }
 
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(0.92f).padding(16.dp),
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val infiniteTransition = rememberInfiniteTransition(label = "trophy")
-                val scale by infiniteTransition.animateFloat(
-                    initialValue = 0.95f,
-                    targetValue = 1.1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(700, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "trophyScale"
-                )
-
-                Image(
-                    painter = painterResource(id = R.drawable.kids_quiz_3d),
-                    contentDescription = "รางวัล",
-                    modifier = Modifier
-                        .size(115.dp)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "ยินดีด้วยจ้าคนเก่ง! 🎉",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2D3047),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "วันนี้หนูตั้งใจเรียนรู้มาก!\nรับรางวัลพิเศษประจำวันไปเลย:",
-                    fontSize = 15.sp,
-                    color = Color.Gray,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFFFF9E6),
-                        border = BorderStroke(1.5.dp, Color(0xFFFFD166))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "⭐ +10", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "ดาวทอง", fontSize = 13.sp, color = Color(0xFF2D3047))
-                        }
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFE8F5E9),
-                        border = BorderStroke(1.5.dp, Color(0xFF81C784))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "🏆 เหรียญทอง", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Surface(
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp)
-                        .clickable {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            onDismiss()
-                        },
-                    shape = RoundedCornerShape(26.dp),
-                    color = Color(0xFF00C853),
-                    shadowElevation = 6.dp
+                        .height(96.dp)
+                        .background(KidTheme.GoldGradient),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                    Text(
+                        text = "🎉 รางวัลประจำวัน 🎉",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val infiniteTransition = rememberInfiniteTransition(label = "trophy")
+                    val scale by infiniteTransition.animateFloat(
+                        initialValue = 0.95f,
+                        targetValue = 1.1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(700, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "trophyScale"
+                    )
+
+                    Image(
+                        painter = painterResource(id = R.drawable.kids_quiz_3d),
+                        contentDescription = "รางวัล",
+                        modifier = Modifier
+                            .size(115.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "ยินดีด้วยจ้าคนเก่ง! 🎉",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KidTheme.TextDark,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "วันนี้หนูตั้งใจเรียนรู้มาก!\nรับรางวัลพิเศษประจำวันไปเลย:",
+                        fontSize = 15.sp,
+                        color = KidTheme.TextMuted,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "รับรางวัลเลย! เย้! 🎈",
-                            color = Color.White,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFFFF9E6),
+                            border = BorderStroke(1.5.dp, Color(0xFFFFD166))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "⭐ +10",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFF9800)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "ดาวทอง",
+                                    fontSize = 13.sp,
+                                    color = KidTheme.TextDark
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFE8F5E9),
+                            border = BorderStroke(1.5.dp, Color(0xFF81C784))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "🏆 เหรียญทอง",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2E7D32)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onDismiss()
+                            },
+                        shape = RoundedCornerShape(26.dp),
+                        color = KidTheme.Success,
+                        shadowElevation = 6.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "รับรางวัลเลย! เย้! 🎈",
+                                color = Color.White,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
+
+// ==================== BANNER CAROUSEL ====================
 
 data class HomeBannerItem(
     val id: Int,
@@ -355,7 +424,7 @@ fun getHomeBanners(): List<HomeBannerItem> = listOf(
         tag = "🌟 ยอดนิยม",
         imageRes = R.drawable.kids_thai_3d,
         bgColors = listOf(Color(0xFFFF5E7E), Color(0xFFFF9966)),
-        buttonText = "เริ่มฝึกอ่านเลย >",
+        buttonText = "เริ่มฝึกอ่านเลย",
         actionId = 2
     ),
     HomeBannerItem(
@@ -365,7 +434,7 @@ fun getHomeBanners(): List<HomeBannerItem> = listOf(
         tag = "🔢 ฝึกสมอง",
         imageRes = R.drawable.kids_math_3d,
         bgColors = listOf(Color(0xFF3A88E9), Color(0xFF00C6FF)),
-        buttonText = "ไปลุยกันเลย >",
+        buttonText = "ไปลุยกันเลย",
         actionId = 1
     ),
     HomeBannerItem(
@@ -375,7 +444,7 @@ fun getHomeBanners(): List<HomeBannerItem> = listOf(
         tag = "🔤 สนุกทุกวัน",
         imageRes = R.drawable.kids_english_3d,
         bgColors = listOf(Color(0xFF00B09B), Color(0xFF96C93D)),
-        buttonText = "เรียน A-Z เลย >",
+        buttonText = "เรียน A-Z เลย",
         actionId = 3
     ),
     HomeBannerItem(
@@ -385,7 +454,7 @@ fun getHomeBanners(): List<HomeBannerItem> = listOf(
         tag = "🎨 ศิลปะแสนสนุก",
         imageRes = R.drawable.kids_art_3d,
         bgColors = listOf(Color(0xFFF857A6), Color(0xFFFF5858)),
-        buttonText = "ไปวาดรูปเลย >",
+        buttonText = "ไปวาดรูปเลย",
         actionId = 8
     ),
     HomeBannerItem(
@@ -395,7 +464,7 @@ fun getHomeBanners(): List<HomeBannerItem> = listOf(
         tag = "📺 ชมสดออนไลน์",
         imageRes = R.drawable.kids_tv_3d,
         bgColors = listOf(Color(0xFF654EA3), Color(0xFFEAAFC8)),
-        buttonText = "รับชมตอนนี้ >",
+        buttonText = "รับชมตอนนี้",
         actionId = 7
     )
 )
@@ -410,7 +479,6 @@ fun AutoSlideBannerCarousel(
     val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { banners.size })
 
-    // Auto-scroll loop
     LaunchedEffect(pagerState) {
         while (true) {
             delay(3500)
@@ -427,36 +495,56 @@ fun AutoSlideBannerCarousel(
     ) {
         HorizontalPager(
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 0.dp),
             pageSpacing = 12.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(152.dp)
+            modifier = Modifier.fillMaxWidth().height(158.dp)
         ) { page ->
             val banner = banners[page]
+            val pageOffset = ((pagerState.currentPage - page) +
+                    pagerState.currentPageOffsetFraction).coerceIn(-1f, 1f)
+            val cardScale = 1f - kotlin.math.abs(pageOffset) * 0.07f
+
             Card(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
+                    .graphicsLayer {
+                        scaleX = cardScale
+                        scaleY = cardScale
+                        alpha = 1f - kotlin.math.abs(pageOffset) * 0.25f
+                    }
+                    .clickableNoRipple {
                         playSoundEffect(context, R.raw.is_sound_buttonswitch)
                         onBannerClick(banner)
                     },
-                shape = RoundedCornerShape(26.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                shape = RoundedCornerShape(28.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            brush = Brush.horizontalGradient(colors = banner.bgColors)
-                        )
-                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                        .background(Brush.linearGradient(colors = banner.bgColors))
                 ) {
+                    // วงกลมตกแต่ง
+                    Box(
+                        modifier = Modifier
+                            .size(150.dp)
+                            .align(Alignment.CenterEnd)
+                            .graphicsLayer { translationX = 46f }
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.13f))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(70.dp)
+                            .align(Alignment.TopStart)
+                            .graphicsLayer { translationX = -20f; translationY = -20f }
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.10f))
+                    )
+
                     Row(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 18.dp, vertical = 14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -464,7 +552,6 @@ fun AutoSlideBannerCarousel(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.Center
                         ) {
-                            // Tag Badge
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
                                 color = Color.White.copy(alpha = 0.3f)
@@ -480,37 +567,36 @@ fun AutoSlideBannerCarousel(
 
                             Spacer(modifier = Modifier.height(6.dp))
 
-                            // Title
                             Text(
                                 text = banner.title,
                                 color = Color.White,
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
-                            // Subtitle
                             Text(
                                 text = banner.subtitle,
                                 color = Color.White.copy(alpha = 0.9f),
                                 fontSize = 12.sp,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // Action Button
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
                                 color = Color.White,
-                                shadowElevation = 2.dp,
-                                modifier = Modifier.clickable {
+                                shadowElevation = 3.dp,
+                                modifier = Modifier.clickableNoRipple {
                                     playSoundEffect(context, R.raw.is_sound_buttonswitch)
                                     onBannerClick(banner)
                                 }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
@@ -519,19 +605,23 @@ fun AutoSlideBannerCarousel(
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "›",
+                                        color = banner.bgColors.first(),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        // 3D Illustration Image
                         Image(
                             painter = painterResource(id = banner.imageRes),
                             contentDescription = banner.title,
-                            modifier = Modifier
-                                .size(95.dp)
-                                .clip(RoundedCornerShape(16.dp)),
+                            modifier = Modifier.size(98.dp).clip(RoundedCornerShape(16.dp)),
                             contentScale = ContentScale.Fit
                         )
                     }
@@ -541,7 +631,6 @@ fun AutoSlideBannerCarousel(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Page Indicator Dots (Visible on light/white background)
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
@@ -560,7 +649,8 @@ fun AutoSlideBannerCarousel(
                         .width(dotWidth.dp)
                         .clip(CircleShape)
                         .background(
-                            if (isSelected) Color(0xFF7F67FF) else Color(0xFF7F67FF).copy(alpha = 0.25f)
+                            if (isSelected) KidTheme.Primary
+                            else KidTheme.Primary.copy(alpha = 0.25f)
                         )
                 )
             }
@@ -568,11 +658,18 @@ fun AutoSlideBannerCarousel(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// ==================== HOME HEADER ====================
+
 @Composable
 fun HomeHeader(
     userName: String = "คนเก่ง",
     isMusicEnabled: Boolean = true,
+    starCount: Int = 150,
+    level: Int = 3,
+    levelTitle: String = "นักอ่านตัวน้อย",
+    levelProgress: Float = 0.7f,
+    streakDays: Int = 5,
+    onStarClick: () -> Unit = {},
     onMusicToggle: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onSearchChange: (String) -> Unit
@@ -580,7 +677,6 @@ fun HomeHeader(
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var isSearchVisible by remember { mutableStateOf(false) }
-    var starCount by remember { mutableStateOf(150) }
     var messageIndex by remember { mutableStateOf(0) }
     var showSpeechBubble by remember { mutableStateOf(false) }
 
@@ -594,15 +690,16 @@ fun HomeHeader(
         )
     }
 
-    // Avatar bounce animation
     var avatarBounceTrigger by remember { mutableStateOf(0) }
     val avatarScale by animateFloatAsState(
         targetValue = if (avatarBounceTrigger % 2 == 1) 1.25f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "avatarScale"
     )
 
-    // Floating background stars animation
     val infiniteTransition = rememberInfiniteTransition(label = "starFloat")
     val starOffsetY by infiniteTransition.animateFloat(
         initialValue = -6f,
@@ -614,6 +711,12 @@ fun HomeHeader(
         label = "starY"
     )
 
+    val animatedLevelProgress by animateFloatAsState(
+        targetValue = levelProgress,
+        animationSpec = tween(900),
+        label = "lvlProgress"
+    )
+
     LaunchedEffect(avatarBounceTrigger) {
         if (avatarBounceTrigger > 0) {
             delay(250)
@@ -621,7 +724,6 @@ fun HomeHeader(
         }
     }
 
-    // Auto-hide speech bubble
     LaunchedEffect(showSpeechBubble) {
         if (showSpeechBubble) {
             delay(4000)
@@ -633,29 +735,43 @@ fun HomeHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF7F67FF), Color(0xFFB4A5FF))
-                )
-            )
-            .padding(top = 20.dp, bottom = 24.dp)
-            .padding(horizontal = 20.dp)
+            .background(KidTheme.HeaderGradient)
     ) {
-        Column {
-            // Top badges row (Stars on Left, Search / Music / Settings on Right)
+        // วงกลมตกแต่งพื้นหลัง header
+        Box(
+            modifier = Modifier
+                .size(180.dp)
+                .align(Alignment.TopEnd)
+                .graphicsLayer { translationX = 60f; translationY = -70f }
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
+        )
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .align(Alignment.BottomStart)
+                .graphicsLayer { translationX = -40f; translationY = 40f }
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.07f))
+        )
+
+        Column(
+            modifier = Modifier
+                .padding(top = 20.dp, bottom = 24.dp)
+                .padding(horizontal = 20.dp)
+        ) {
+            // แถวบน: ดาว + ปุ่มลัด
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Star Counter Badge
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color.White.copy(alpha = 0.25f),
-                    modifier = Modifier.clickable {
+                    modifier = Modifier.clickableNoRipple {
                         playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                        starCount += 5
-                        Toast.makeText(context, "🌟 คุณมี $starCount ดาวแล้ว! สะสมเพื่อแลกของขวัญ", Toast.LENGTH_SHORT).show()
+                        onStarClick()
                     }
                 ) {
                     Row(
@@ -664,7 +780,7 @@ fun HomeHeader(
                     ) {
                         Text(
                             text = "⭐ $starCount",
-                            color = Color(0xFFFFD166),
+                            color = KidTheme.Accent,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.graphicsLayer { translationY = starOffsetY }
@@ -679,16 +795,15 @@ fun HomeHeader(
                     }
                 }
 
-                // Right Action Buttons (Search Toggle, Music Toggle, Settings)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 1. Search Toggle Button
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isSearchVisible) Color(0xFFFFD166) else Color.White.copy(alpha = 0.25f),
-                        modifier = Modifier.clickable {
+                        color = if (isSearchVisible) KidTheme.Accent
+                        else Color.White.copy(alpha = 0.25f),
+                        modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             isSearchVisible = !isSearchVisible
                             if (!isSearchVisible) {
@@ -702,48 +817,44 @@ fun HomeHeader(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                                imageVector = if (isSearchVisible) Icons.Default.Close
+                                else Icons.Default.Search,
                                 contentDescription = if (isSearchVisible) "ปิดค้นหา" else "ค้นหา",
-                                tint = if (isSearchVisible) Color(0xFF2D3047) else Color.White,
+                                tint = if (isSearchVisible) KidTheme.TextDark else Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (isSearchVisible) "ปิดค้นหา" else "ค้นหา",
-                                color = if (isSearchVisible) Color(0xFF2D3047) else Color.White,
+                                text = if (isSearchVisible) "ปิด" else "ค้นหา",
+                                color = if (isSearchVisible) KidTheme.TextDark else Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
 
-                    // 2. Music Toggle Badge
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isMusicEnabled) Color(0xFF00C853).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.25f),
-                        modifier = Modifier.clickable {
+                        color = if (isMusicEnabled) KidTheme.Success.copy(alpha = 0.85f)
+                        else Color.White.copy(alpha = 0.25f),
+                        modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             onMusicToggle()
                         }
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (isMusicEnabled) "🎵 เพลง" else "🔇 ปิด",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = if (isMusicEnabled) "🎵 เพลง" else "🔇 ปิด",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
                     }
 
-                    // 3. Settings Button (ปุ่ม Set)
                     Surface(
                         shape = CircleShape,
                         color = Color.White.copy(alpha = 0.25f),
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             onSettingsClick()
                         }
@@ -765,7 +876,7 @@ fun HomeHeader(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Greeting & Interactive Avatar
+            // ทักทาย + อวตาร
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -788,7 +899,6 @@ fun HomeHeader(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Interactive Avatar (Click to speak & bounce!)
                 Surface(
                     modifier = Modifier
                         .size(62.dp)
@@ -797,10 +907,7 @@ fun HomeHeader(
                             scaleY = avatarScale
                             translationY = starOffsetY
                         }
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
+                        .clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             avatarBounceTrigger = 1
                             messageIndex = (messageIndex + 1) % encouragingMessages.size
@@ -808,7 +915,7 @@ fun HomeHeader(
                         },
                     shape = CircleShape,
                     color = Color.White.copy(alpha = 0.3f),
-                    border = BorderStroke(2.5.dp, Color(0xFFFFD166)),
+                    border = BorderStroke(2.5.dp, KidTheme.Accent),
                     shadowElevation = 6.dp
                 ) {
                     Image(
@@ -820,76 +927,136 @@ fun HomeHeader(
                 }
             }
 
-            // Speech Bubble
-            if (showSpeechBubble) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color.White,
-                    shadowElevation = 8.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showSpeechBubble = false }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            // กล่องคำพูด
+            AnimatedVisibility(
+                visible = showSpeechBubble,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickableNoRipple { showSpeechBubble = false }
                     ) {
-                        Text(text = "🐥", fontSize = 20.sp)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = encouragingMessages[messageIndex],
-                            color = Color(0xFF2D3047),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "🐥", fontSize = 20.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = encouragingMessages[messageIndex],
+                                color = KidTheme.TextDark,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
 
-            // Collapsible Search Bar
+            // แถบเลเวล + สตรีค
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White.copy(alpha = 0.18f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🏅", fontSize = 15.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "ระดับ $level · $levelTitle",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "🔥 ต่อเนื่อง $streakDays วัน",
+                            color = KidTheme.Accent,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(9.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(Color.White.copy(alpha = 0.25f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(animatedLevelProgress)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(KidTheme.GoldGradient)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "อีก ${((1f - levelProgress) * 100).toInt()} ดาว จะขึ้นระดับ ${level + 1}! 🚀",
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 11.sp
+                    )
+                }
+            }
+
+            // ช่องค้นหา
             AnimatedVisibility(
                 visible = isSearchVisible,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = {
                             searchQuery = it
                             onSearchChange(it)
                         },
-                        placeholder = { Text("ค้นหาบทเรียนหรือคำศัพท์...", color = Color.Gray, fontSize = 14.sp) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
+                        placeholder = {
+                            Text(
+                                "ค้นหาบทเรียนหรือคำศัพท์...",
+                                color = KidTheme.TextMuted,
+                                fontSize = 14.sp
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
                         shape = RoundedCornerShape(27.dp),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             disabledContainerColor = Color.White,
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
                         ),
                         leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
-                        },
-                        trailingIcon = {
-                            Surface(
-                                modifier = Modifier.size(34.dp).padding(end = 4.dp),
-                                shape = CircleShape,
-                                color = Color(0xFFF0F0F0)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_sort),
-                                    contentDescription = "ตัวกรอง",
-                                    modifier = Modifier.padding(8.dp),
-                                    tint = Color.DarkGray
-                                )
-                            }
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = KidTheme.TextMuted
+                            )
                         },
                         singleLine = true
                     )
@@ -899,27 +1066,107 @@ fun HomeHeader(
     }
 }
 
+// ==================== QUICK ACTIONS ====================
+
+data class QuickAction(val emoji: String, val label: String, val color: Color, val id: Int)
+
+@Composable
+fun QuickActionRow(onActionClick: (Int) -> Unit) {
+    val ctx = LocalContext.current
+    val actions = remember {
+        listOf(
+            QuickAction("✏️", "ฝึกเขียน", Color(0xFFFF6B6B), 1),
+            QuickAction("🔊", "ฝึกอ่าน", Color(0xFF4ECDC4), 2),
+            QuickAction("🎨", "ระบายสี", Color(0xFFFFB020), 3),
+            QuickAction("🧠", "ทดสอบ", Color(0xFF7F67FF), 4)
+        )
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        actions.forEach { a ->
+            var pressed by remember { mutableStateOf(false) }
+            val scale by animateFloatAsState(
+                targetValue = if (pressed) 0.9f else 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                label = "qaScale"
+            )
+            LaunchedEffect(pressed) {
+                if (pressed) {
+                    delay(130)
+                    pressed = false
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .graphicsLayer { scaleX = scale; scaleY = scale }
+                    .clickableNoRipple {
+                        pressed = true
+                        playSoundEffect(ctx, R.raw.is_sound_buttonswitch)
+                        onActionClick(a.id)
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(a.color.copy(alpha = 0.18f), a.color.copy(alpha = 0.08f))
+                            )
+                        )
+                        .border(1.5.dp, a.color.copy(alpha = 0.25f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = a.emoji, fontSize = 26.sp)
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = a.label,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+            }
+        }
+    }
+}
+
+// ==================== CATEGORY CARD ====================
+
 @Composable
 fun CategoryCard(
     title: String,
     subtitle: String,
     imageRes: Int,
     backgroundColor: Color,
+    accentColor: Color = KidTheme.Primary,
+    lessonCount: Int = 12,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.93f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "cardScale"
     )
 
-    // Floating idle animation for 3D illustration
     val infiniteTransition = rememberInfiniteTransition(label = "floatImg")
     val floatOffset by infiniteTransition.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
+        initialValue = -4f,
+        targetValue = 4f,
         animationSpec = infiniteRepeatable(
             animation = tween(1600, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
@@ -927,64 +1174,99 @@ fun CategoryCard(
         label = "floatY"
     )
 
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(120)
+            isPressed = false
+        }
+    }
+
     Card(
         modifier = Modifier
-            .width(185.dp)
-            .height(235.dp)
+            .width(182.dp)
+            .height(228.dp)
             .padding(start = 20.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickableNoRipple {
                 isPressed = true
                 playSoundEffect(context, R.raw.is_sound_buttonswitch)
                 onClick()
             },
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        LaunchedEffect(isPressed) {
-            if (isPressed) {
-                delay(120)
-                isPressed = false
-            }
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(18.dp)
-        ) {
-            Text(
-                text = title,
-                fontSize = 19.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3047),
-                maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                fontSize = 13.sp,
-                color = Color(0xFF2D3047).copy(alpha = 0.7f),
-                lineHeight = 17.sp,
-                maxLines = 2
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = title,
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
                 modifier = Modifier
-                    .size(105.dp)
-                    .graphicsLayer { translationY = floatOffset }
-                    .clip(RoundedCornerShape(18.dp))
-                    .align(Alignment.End),
-                contentScale = ContentScale.Fit
+                    .size(110.dp)
+                    .align(Alignment.TopEnd)
+                    .graphicsLayer { translationX = 34f; translationY = -34f }
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.35f))
             )
+
+            Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+                Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.7f)) {
+                    Text(
+                        text = "$lessonCount บทเรียน",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = accentColor,
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Text(
+                    text = subtitle,
+                    fontSize = 12.sp,
+                    color = KidTheme.TextDark.copy(alpha = 0.65f),
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Surface(shape = CircleShape, color = accentColor, shadowElevation = 3.dp) {
+                        Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "›",
+                                color = Color.White,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = title,
+                        modifier = Modifier
+                            .size(96.dp)
+                            .graphicsLayer { translationY = floatOffset },
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
         }
     }
 }
@@ -994,16 +1276,21 @@ fun ExploreCategoriesSection(
     onCategoryClick: (Int) -> Unit,
     onViewAllClick: () -> Unit = {}
 ) {
-    DashboardSection(title = "หมวดหมู่การเรียนรู้", onViewAllClick = onViewAllClick) {
-        LazyRow(
-            contentPadding = PaddingValues(end = 20.dp)
-        ) {
+    DashboardSection(
+        title = "หมวดหมู่การเรียนรู้",
+        emoji = "📚",
+        accent = KidTheme.Primary,
+        onViewAllClick = onViewAllClick
+    ) {
+        LazyRow(contentPadding = PaddingValues(end = 20.dp)) {
             item {
                 CategoryCard(
                     title = "คณิตศาสตร์",
                     subtitle = "ฝึกนับเลข 1-20\nและบวกลบเลข",
                     imageRes = R.drawable.kids_math_3d,
                     backgroundColor = Color(0xFFE8E4FF),
+                    accentColor = Color(0xFF6A67CE),
+                    lessonCount = 20,
                     onClick = { onCategoryClick(1) }
                 )
             }
@@ -1013,6 +1300,8 @@ fun ExploreCategoriesSection(
                     subtitle = "โฟนิกส์ A-Z\nและคำศัพท์น่ารู้",
                     imageRes = R.drawable.kids_english_3d,
                     backgroundColor = Color(0xFFE2F9E9),
+                    accentColor = Color(0xFF00B09B),
+                    lessonCount = 26,
                     onClick = { onCategoryClick(2) }
                 )
             }
@@ -1022,6 +1311,8 @@ fun ExploreCategoriesSection(
                     subtitle = "ฝึกอ่าน-เขียน\nพยัญชนะ ก-ฮ",
                     imageRes = R.drawable.kids_thai_3d,
                     backgroundColor = Color(0xFFFFE8EC),
+                    accentColor = Color(0xFFFF5E7E),
+                    lessonCount = 44,
                     onClick = { onCategoryClick(4) }
                 )
             }
@@ -1031,6 +1322,8 @@ fun ExploreCategoriesSection(
                     subtitle = "วาดภาพระบายสี\nเสริมจินตนาการ",
                     imageRes = R.drawable.kids_art_3d,
                     backgroundColor = Color(0xFFFFF0B4),
+                    accentColor = Color(0xFFFF9800),
+                    lessonCount = 15,
                     onClick = { onCategoryClick(3) }
                 )
             }
@@ -1040,6 +1333,8 @@ fun ExploreCategoriesSection(
                     subtitle = "ตอบคำถามสนุกๆ\nสะสมคะแนน",
                     imageRes = R.drawable.kids_quiz_3d,
                     backgroundColor = Color(0xFFFFE2E2),
+                    accentColor = Color(0xFFFF4B4B),
+                    lessonCount = 30,
                     onClick = { onCategoryClick(5) }
                 )
             }
@@ -1049,12 +1344,16 @@ fun ExploreCategoriesSection(
                     subtitle = "ช่องรายการสด\nDLTV ทุกระดับชั้น",
                     imageRes = R.drawable.kids_tv_3d,
                     backgroundColor = Color(0xFFE0F7FA),
+                    accentColor = Color(0xFF0085FF),
+                    lessonCount = 12,
                     onClick = { onCategoryClick(6) }
                 )
             }
         }
     }
 }
+
+// ==================== LEARNING CARD ====================
 
 @Composable
 fun LearningCard(
@@ -1070,65 +1369,76 @@ fun LearningCard(
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.93f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "learnScale"
     )
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(900),
+        label = "learnProgress"
+    )
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(120)
+            isPressed = false
+        }
+    }
 
     Card(
         modifier = Modifier
-            .width(170.dp)
+            .width(172.dp)
             .padding(start = 20.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickableNoRipple {
                 isPressed = true
                 playSoundEffect(context, R.raw.is_sound_buttonswitch)
                 onClick()
             },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        LaunchedEffect(isPressed) {
-            if (isPressed) {
-                delay(120)
-                isPressed = false
+        Column(modifier = Modifier.padding(16.dp)) {
+            Surface(shape = RoundedCornerShape(50), color = progressColor.copy(alpha = 0.15f)) {
+                Text(
+                    text = subject,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = progressColor,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
             }
-        }
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = subject,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = progressColor
-            )
-            Spacer(modifier = Modifier.height(2.dp))
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Text(
                 text = title,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3047),
+                color = KidTheme.TextDark,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 lineHeight = 19.sp
             )
+
             Spacer(modifier = Modifier.height(10.dp))
+
             Image(
                 painter = painterResource(id = imageRes),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(66.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .align(Alignment.CenterHorizontally),
                 contentScale = ContentScale.Fit
             )
+
             Spacer(modifier = Modifier.height(12.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "${(progress * 100).toInt()}%",
@@ -1137,19 +1447,35 @@ fun LearningCard(
                     color = progressColor,
                     modifier = Modifier.width(36.dp)
                 )
-                LinearProgressIndicator(
-                    progress = progress,
-                    modifier = Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(3.dp)),
-                    color = progressColor,
-                    trackColor = Color.White.copy(alpha = 0.5f)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_play_circle_kids),
-                    contentDescription = null,
-                    tint = progressColor,
-                    modifier = Modifier.size(20.dp)
-                )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(7.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.White.copy(alpha = 0.7f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(animatedProgress)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(progressColor)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                Surface(shape = CircleShape, color = progressColor) {
+                    Box(modifier = Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "▶",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }
@@ -1160,10 +1486,13 @@ fun ContinueLearningSection(
     onLessonClick: (Int) -> Unit,
     onViewAllClick: () -> Unit = {}
 ) {
-    DashboardSection(title = "เรียนรู้ต่อเนื่อง", onViewAllClick = onViewAllClick) {
-        LazyRow(
-            contentPadding = PaddingValues(end = 20.dp)
-        ) {
+    DashboardSection(
+        title = "เรียนรู้ต่อเนื่อง",
+        emoji = "🚀",
+        accent = Color(0xFF00B09B),
+        onViewAllClick = onViewAllClick
+    ) {
+        LazyRow(contentPadding = PaddingValues(end = 20.dp)) {
             item {
                 LearningCard(
                     title = "ผจญภัยตัวเลข\n1 ถึง 20",
@@ -1204,7 +1533,7 @@ fun ContinueLearningSection(
                     progress = 0.46f,
                     imageRes = R.drawable.sunflower,
                     backgroundColor = Color(0xFFE2FFF0),
-                    progressColor = Color(0xFF00C853),
+                    progressColor = KidTheme.Success,
                     onClick = { onLessonClick(3) }
                 )
             }
@@ -1212,10 +1541,10 @@ fun ContinueLearningSection(
     }
 }
 
+// ==================== DAILY GOAL ====================
+
 @Composable
-fun DailyGoalSection(
-    onGiftClick: () -> Unit = {}
-) {
+fun DailyGoalSection(onGiftClick: () -> Unit = {}) {
     val infiniteTransition = rememberInfiniteTransition(label = "giftWiggle")
     val wiggleAngle by infiniteTransition.animateFloat(
         initialValue = -7f,
@@ -1235,38 +1564,58 @@ fun DailyGoalSection(
         ),
         label = "gScale"
     )
+    val goalProgress by animateFloatAsState(
+        targetValue = 0.66f,
+        animationSpec = tween(1000),
+        label = "goalProgress"
+    )
 
-    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "เป้าหมายประจำวัน",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3047)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 5.dp, height = 22.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(KidTheme.Danger)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(text = "🎯", fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "เป้าหมายประจำวัน",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+            }
+
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(50),
                 color = Color(0xFFFFE8EC),
-                modifier = Modifier.clickable { onGiftClick() }
+                modifier = Modifier.clickableNoRipple { onGiftClick() }
             ) {
                 Text(
-                    text = "🎁 แตะเปิดของขวัญ!",
-                    fontSize = 12.sp,
+                    text = "🎁 เปิดของขวัญ!",
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFEF476F),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    color = KidTheme.Danger,
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+
+        Spacer(modifier = Modifier.height(14.dp))
+
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F7F9))
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F7F9)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Row(
                 modifier = Modifier.padding(20.dp),
@@ -1275,45 +1624,56 @@ fun DailyGoalSection(
                 Image(
                     painter = painterResource(id = R.drawable.kids_thai_3d),
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(75.dp)
-                        .clip(RoundedCornerShape(16.dp)),
+                    modifier = Modifier.size(72.dp).clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Fit
                 )
+
                 Spacer(modifier = Modifier.width(16.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "เก่งมากเลยคนเก่ง! 🎉",
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2D3047)
+                        color = KidTheme.TextDark
                     )
                     Text(
                         text = "เรียนสำเร็จ 2 จาก 3 บทเรียนแล้ว",
-                        fontSize = 14.sp,
-                        color = Color.Gray
+                        fontSize = 13.sp,
+                        color = KidTheme.TextMuted
                     )
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = 0.66f,
-                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                        color = Color(0xFF00C853),
-                        trackColor = Color.White.copy(alpha = 0.5f)
-                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(9.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(Color.White.copy(alpha = 0.8f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(goalProgress)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFF06D6A0), Color(0xFF00C853))
+                                    )
+                                )
+                        )
+                    }
                 }
+
                 Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onGiftClick() }
-                ) {
+
+                Box(modifier = Modifier.clickableNoRipple { onGiftClick() }) {
                     Image(
                         painter = painterResource(id = R.drawable.kids_quiz_3d),
                         contentDescription = "กล่องของขวัญ",
                         modifier = Modifier
-                            .size(62.dp)
+                            .size(60.dp)
                             .graphicsLayer {
                                 rotationZ = wiggleAngle
                                 scaleX = giftScale
@@ -1327,33 +1687,31 @@ fun DailyGoalSection(
         }
     }
 }
+
+// ==================== MAIN SCREEN ====================
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainComposeScreen(navController: NavController? = null) {
     val context = LocalContext.current
+    val isPreview = LocalInspectionMode.current
+
     var isMusicEnabled by remember {
         mutableStateOf(
-            com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
-                .isMusicEnabled(context)
+            if (isPreview) true
+            else com.pongploydev.priyankvex.paintapp.utils.MusicManager
+                .getInstance().isMusicEnabled(context)
         )
     }
     var showRewardDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
-    val viewMode = remember { mutableStateOf(ViewMode.GRID) }
+    var starCount by remember { mutableStateOf(150) }
     val menuItems = remember { getMenuItems() }
 
-    // สร้าง Interstitial Ad Manager
     val interstitialAdManager = remember { InterstitialAdManager(context) }
-
-    // State สำหรับ tracking
     var isAdLoading by remember { mutableStateOf(false) }
     var adLoadAttempt by remember { mutableStateOf(0) }
 
-    // State สำหรับนับรอบ
-    var visitCount by remember { mutableStateOf(0) }
-    val VISITS_BEFORE_AD = 3 // แสดงโฆษณาทุก 3 รอบ
-
-    // ฟังก์ชันโหลดโฆษณา
     val loadInterstitialAd: (InterstitialAdManager) -> Unit = { manager ->
         if (!isAdLoading && adLoadAttempt < 3) {
             isAdLoading = true
@@ -1362,57 +1720,33 @@ fun MainComposeScreen(navController: NavController? = null) {
                 onAdLoaded = {
                     isAdLoading = false
                     adLoadAttempt = 0
-                    println("✅ Interstitial ad loaded successfully")
                 },
-                onAdFailed = {
-                    isAdLoading = false
-                    println(
-                        "❌ Failed to load interstitial ad (attempt $adLoadAttempt)"
-                    )
-                }
+                onAdFailed = { isAdLoading = false }
             )
         }
     }
 
-    // ฟังก์ชันช่วยนำทางพร้อมแสดงโฆษณาคั่น Interstitial Ad
     val navigateWithAd: (() -> Unit) -> Unit = { onNavigate ->
         val activity = context as? Activity
         if (activity != null && interstitialAdManager.isAdLoaded()) {
-            println("🎬 Showing Interstitial Ad before navigation...")
             interstitialAdManager.showInterstitialAd(
                 activity = activity,
-                onAdDismissed = {
-                    onNavigate()
-                },
-                onAdFailed = {
-                    onNavigate()
-                }
+                onAdDismissed = { onNavigate() },
+                onAdFailed = { onNavigate() }
             )
         } else {
             onNavigate()
-            if (!interstitialAdManager.isAdLoaded()) {
-                loadInterstitialAd(interstitialAdManager)
-            }
+            if (!interstitialAdManager.isAdLoaded()) loadInterstitialAd(interstitialAdManager)
         }
     }
 
-    // ฟังก์ชันจัดการการคลิก
-    val handleItemClick: (MenuItem) -> Unit = { item ->
-        navigateWithAd {
-            handleItemClickDirectly(context, item, navController)
-        }
+    LaunchedEffect(Unit) {
+        if (!isPreview) loadInterstitialAd(interstitialAdManager)
     }
 
-    // โหลดโฆษณาเมื่อเริ่มต้น
-    LaunchedEffect(Unit) { loadInterstitialAd(interstitialAdManager) }
-
-    // Background Music
     val lifecycleOwner = LocalLifecycleOwner.current
-    val isPreview = LocalInspectionMode.current
     DisposableEffect(lifecycleOwner) {
-        val musicManager =
-            com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
-
+        val musicManager = com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
         val observer = LifecycleEventObserver { _, event ->
             if (isPreview) return@LifecycleEventObserver
             when (event) {
@@ -1425,19 +1759,20 @@ fun MainComposeScreen(navController: NavController? = null) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Reward Celebration Dialog
     if (showRewardDialog) {
-        RewardDialog(onDismiss = { showRewardDialog = false })
+        RewardDialog(onDismiss = {
+            showRewardDialog = false
+            starCount += 10
+        })
     }
 
-    // Kid-Friendly Settings Dialog
     if (showSettingsDialog) {
         KidFriendlySettingsDialog(
             isMusicEnabled = isMusicEnabled,
             onMusicToggle = { enabled ->
                 isMusicEnabled = enabled
-                com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
-                    .setMusicEnabled(context, enabled)
+                com.pongploydev.priyankvex.paintapp.utils.MusicManager
+                    .getInstance().setMusicEnabled(context, enabled)
             },
             onOtherActivitiesClick = {
                 showSettingsDialog = false
@@ -1450,11 +1785,7 @@ fun MainComposeScreen(navController: NavController? = null) {
     Scaffold(
         containerColor = Color.Transparent,
         content = { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 KidBackground(modifier = Modifier.fillMaxSize())
 
                 LazyColumn(
@@ -1465,21 +1796,55 @@ fun MainComposeScreen(navController: NavController? = null) {
                         HomeHeader(
                             userName = "คนเก่ง",
                             isMusicEnabled = isMusicEnabled,
+                            starCount = starCount,
+                            level = 3,
+                            levelTitle = "นักอ่านตัวน้อย",
+                            levelProgress = 0.7f,
+                            streakDays = 5,
+                            onStarClick = {
+                                starCount += 5
+                                Toast.makeText(
+                                    context,
+                                    "🌟 คุณมี $starCount ดาวแล้ว! สะสมเพื่อแลกของขวัญ",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onMusicToggle = {
                                 isMusicEnabled = !isMusicEnabled
-                                com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
-                                    .setMusicEnabled(context, isMusicEnabled)
+                                com.pongploydev.priyankvex.paintapp.utils.MusicManager
+                                    .getInstance().setMusicEnabled(context, isMusicEnabled)
                             },
-                            onSettingsClick = {
-                                showSettingsDialog = true
-                            },
-                            onSearchChange = { /* Handle search */ }
+                            onSettingsClick = { showSettingsDialog = true },
+                            onSearchChange = { }
                         )
                     }
 
+                    item { Spacer(modifier = Modifier.height(18.dp)) }
+
                     item {
-                        Spacer(modifier = Modifier.height(20.dp))
+                        QuickActionRow(onActionClick = { id ->
+                            navigateWithAd {
+                                when (id) {
+                                    1 -> context.startActivity(
+                                        Intent(context, MenuThaiLettersActivity::class.java).apply {
+                                            putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
+                                        }
+                                    )
+                                    2 -> context.startActivity(
+                                        Intent(context, LeaningActvity::class.java)
+                                    )
+                                    3 -> context.startActivity(
+                                        Intent(context, ColoringGameActivity::class.java)
+                                    )
+                                    4 -> context.startActivity(
+                                        Intent(context, QuizActivity::class.java)
+                                    )
+                                }
+                            }
+                        })
                     }
+
+                    item { Spacer(modifier = Modifier.height(18.dp)) }
 
                     item {
                         val banners = remember { getHomeBanners() }
@@ -1488,37 +1853,41 @@ fun MainComposeScreen(navController: NavController? = null) {
                             onBannerClick = { banner ->
                                 navigateWithAd {
                                     when (banner.id) {
-                                        1 -> {
-                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
-                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                        2 -> {
-                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                        1 -> context.startActivity(
+                                            Intent(context, MenuThaiLettersActivity::class.java)
+                                                .apply {
+                                                    putExtra(
+                                                        MenuThaiLettersActivity.EXTRA_MODE,
+                                                        "THAI"
+                                                    )
+                                                }
+                                        )
+                                        2 -> context.startActivity(
+                                            Intent(context, SubActivity::class.java).apply {
                                                 putExtra("categoryPosition", 1)
                                                 putExtra("Category", "ตัวเลข 1-20")
                                                 putExtra("Type", 1)
                                             }
-                                            context.startActivity(intent)
-                                        }
-                                        3 -> {
-                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
-                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                        4 -> {
-                                            val intent = Intent(context, ColoringGameActivity::class.java)
-                                            context.startActivity(intent)
-                                        }
-                                        5 -> {
-                                            val intent = Intent(context, LiveListActivity::class.java)
-                                            context.startActivity(intent)
-                                        }
+                                        )
+                                        3 -> context.startActivity(
+                                            Intent(context, MenuThaiLettersActivity::class.java)
+                                                .apply {
+                                                    putExtra(
+                                                        MenuThaiLettersActivity.EXTRA_MODE,
+                                                        "ENGLISH"
+                                                    )
+                                                }
+                                        )
+                                        4 -> context.startActivity(
+                                            Intent(context, ColoringGameActivity::class.java)
+                                        )
+                                        5 -> context.startActivity(
+                                            Intent(context, LiveListActivity::class.java)
+                                        )
                                         else -> {
-                                            val item = menuItems.find { it.id == banner.actionId }
-                                            item?.let { handleItemClickDirectly(context, it, navController) }
+                                            menuItems.find { it.id == banner.actionId }?.let {
+                                                handleItemClickDirectly(context, it, navController)
+                                            }
                                         }
                                     }
                                 }
@@ -1527,246 +1896,183 @@ fun MainComposeScreen(navController: NavController? = null) {
                         )
                     }
 
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+                    item { Spacer(modifier = Modifier.height(14.dp)) }
 
                     item {
                         ExploreCategoriesSection(
                             onCategoryClick = { index ->
                                 navigateWithAd {
                                     when (index) {
-                                        1 -> {
-                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                        1 -> context.startActivity(
+                                            Intent(context, SubActivity::class.java).apply {
                                                 putExtra("categoryPosition", 1)
                                                 putExtra("Category", "ตัวเลข 1-20")
                                                 putExtra("Type", 1)
                                             }
-                                            context.startActivity(intent)
-                                        }
-                                        2 -> {
-                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
-                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                        3 -> {
-                                            val intent = Intent(context, ColoringGameActivity::class.java)
-                                            context.startActivity(intent)
-                                        }
-                                        4 -> {
-                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
-                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                        5 -> {
-                                            val intent = Intent(context, QuizActivity::class.java)
-                                            context.startActivity(intent)
-                                        }
-                                        6 -> {
-                                            val intent = Intent(context, LiveListActivity::class.java)
-                                            context.startActivity(intent)
-                                        }
-                                        else -> {
-                                            val intent = Intent(context, LeaningActvity::class.java)
-                                            context.startActivity(intent)
-                                        }
+                                        )
+                                        2 -> context.startActivity(
+                                            Intent(context, MenuThaiLettersActivity::class.java)
+                                                .apply {
+                                                    putExtra(
+                                                        MenuThaiLettersActivity.EXTRA_MODE,
+                                                        "ENGLISH"
+                                                    )
+                                                }
+                                        )
+                                        3 -> context.startActivity(
+                                            Intent(context, ColoringGameActivity::class.java)
+                                        )
+                                        4 -> context.startActivity(
+                                            Intent(context, MenuThaiLettersActivity::class.java)
+                                                .apply {
+                                                    putExtra(
+                                                        MenuThaiLettersActivity.EXTRA_MODE,
+                                                        "THAI"
+                                                    )
+                                                }
+                                        )
+                                        5 -> context.startActivity(
+                                            Intent(context, QuizActivity::class.java)
+                                        )
+                                        6 -> context.startActivity(
+                                            Intent(context, LiveListActivity::class.java)
+                                        )
+                                        else -> context.startActivity(
+                                            Intent(context, LeaningActvity::class.java)
+                                        )
                                     }
                                 }
                             },
                             onViewAllClick = {
                                 navigateWithAd {
-                                    val intent = Intent(context, LeaningActvity::class.java)
-                                    context.startActivity(intent)
+                                    context.startActivity(
+                                        Intent(context, LeaningActvity::class.java)
+                                    )
                                 }
                             }
                         )
                     }
 
-                    item {
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    // Banner Ad ด้านล่างหมวดหมู่การเรียนรู้ (ซ่อนชั่วคราว)
-                    /*
-                    item {
-                        BannerAdCompose(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                        )
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    */
+                    item { Spacer(modifier = Modifier.height(10.dp)) }
 
                     item {
                         ContinueLearningSection(
                             onLessonClick = { index ->
                                 navigateWithAd {
                                     when (index) {
-                                        1 -> {
-                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                        1 -> context.startActivity(
+                                            Intent(context, SubActivity::class.java).apply {
                                                 putExtra("categoryPosition", 1)
                                                 putExtra("Category", "ตัวเลข 1-20")
                                                 putExtra("Type", 1)
                                             }
-                                            context.startActivity(intent)
-                                        }
-                                        2 -> {
-                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                        )
+                                        2 -> context.startActivity(
+                                            Intent(context, SubActivity::class.java).apply {
                                                 putExtra("categoryPosition", 4)
                                                 putExtra("Category", "สัตว์น่ารัก")
                                                 putExtra("Type", 1)
                                             }
-                                            context.startActivity(intent)
-                                        }
-                                        3 -> {
-                                            val intent = Intent(context, SubActivity::class.java).apply {
+                                        )
+                                        3 -> context.startActivity(
+                                            Intent(context, SubActivity::class.java).apply {
                                                 putExtra("categoryPosition", 6)
                                                 putExtra("Category", "ดอกไม้และพืช")
                                                 putExtra("Type", 1)
                                             }
-                                            context.startActivity(intent)
-                                        }
-                                        4 -> {
-                                            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
-                                                putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                        else -> {
-                                            val intent = Intent(context, LeaningActvity::class.java)
-                                            context.startActivity(intent)
-                                        }
+                                        )
+                                        4 -> context.startActivity(
+                                            Intent(context, MenuThaiLettersActivity::class.java)
+                                                .apply {
+                                                    putExtra(
+                                                        MenuThaiLettersActivity.EXTRA_MODE,
+                                                        "THAI"
+                                                    )
+                                                }
+                                        )
+                                        else -> context.startActivity(
+                                            Intent(context, LeaningActvity::class.java)
+                                        )
                                     }
                                 }
                             },
                             onViewAllClick = {
                                 navigateWithAd {
-                                    val intent = Intent(context, LeaningActvity::class.java)
-                                    context.startActivity(intent)
+                                    context.startActivity(
+                                        Intent(context, LeaningActvity::class.java)
+                                    )
                                 }
                             }
                         )
                     }
 
-                    item {
-                        DailyGoalSection(
-                            onGiftClick = {
-                                showRewardDialog = true
-                            }
-                        )
-                    }
+                    item { DailyGoalSection(onGiftClick = { showRewardDialog = true }) }
 
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
                 }
             }
         }
     )
 }
 
-// ==================== Banner Ad Functions ====================
+// ==================== BANNER AD FALLBACK ====================
 
 @Composable
 fun BannerAdFallback() {
     val context = LocalContext.current
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp),
+        modifier = Modifier.fillMaxWidth().height(60.dp),
         shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D3047))
+        colors = CardDefaults.cardColors(containerColor = KidTheme.TextDark)
     ) {
         Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        Toast.makeText(
-                            context,
-                            "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏",
-                            Toast.LENGTH_SHORT
-                        )
-                            .show()
-                    },
+            modifier = Modifier.fillMaxSize().clickableNoRipple {
+                Toast.makeText(context, "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏", Toast.LENGTH_SHORT).show()
+            },
             contentAlignment = Alignment.Center
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Ad Icon
                 Box(
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .background(
-                                color = Color(0xFFFF6B6B),
-                                shape = RoundedCornerShape(8.dp)
-                            ),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFFF6B6B), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "AD",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("AD", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
 
-                // Ad Content
-                Column(modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp)) {
+                Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
                     Text(
-                        text = "สนับสนุนนักพัฒนา",
+                        "สนับสนุนนักพัฒนา",
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "ขอบคุณที่ใช้แอปพลิเคชันของเรา",
+                        "ขอบคุณที่ใช้แอปพลิเคชันของเรา",
                         color = Color.White.copy(alpha = 0.9f),
                         fontSize = 10.sp
                     )
                 }
 
-                // Support Badge
                 Box(
-                    modifier =
-                        Modifier
-                            .background(
-                                color = Color(0xFF06D6A0),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(
-                                horizontal = 12.dp,
-                                vertical = 6.dp
-                            )
+                    modifier = Modifier
+                        .background(Color(0xFF06D6A0), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text(
-                        text = "สนับสนุน",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("สนับสนุน", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
 
-// ==================== Other Composable Functions ====================
+// ==================== MISC COMPONENTS ====================
 
 @Composable
 fun VisitCounter(currentCount: Int, maxCount: Int, isAdLoaded: Boolean) {
@@ -1774,65 +2080,45 @@ fun VisitCounter(currentCount: Int, maxCount: Int, isAdLoaded: Boolean) {
     val progress = currentCount.toFloat() / maxCount.toFloat()
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Progress Text
         Text(
-            text =
-                when {
-                    currentCount >= maxCount && isAdLoaded ->
-                        "🎉 พร้อมแสดงโฆษณา!"
-
-                    currentCount >= maxCount -> "⏳ รอโฆษณาโหลด..."
-                    else -> "📊 อีก $remaining ครั้งจะแสดงโฆษณา"
-                },
-            color =
-                when {
-                    currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
-                    currentCount >= maxCount -> Color(0xFFFF6B6B)
-                    else -> Color(0xFF666666)
-                },
+            text = when {
+                currentCount >= maxCount && isAdLoaded -> "🎉 พร้อมแสดงโฆษณา!"
+                currentCount >= maxCount -> "⏳ รอโฆษณาโหลด..."
+                else -> "📊 อีก $remaining ครั้งจะแสดงโฆษณา"
+            },
+            color = when {
+                currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
+                currentCount >= maxCount -> Color(0xFFFF6B6B)
+                else -> KidTheme.TextMuted
+            },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
 
-        // Progress Bar
         Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .background(
-                        color = Color(0xFFE0E0E0),
-                        shape = RoundedCornerShape(2.dp)
-                    )
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(Color(0xFFE0E0E0), RoundedCornerShape(2.dp))
         ) {
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth(progress.coerceIn(0f, 1f))
-                        .height(4.dp)
-                        .background(
-                            color =
-                                when {
-                                    currentCount >= maxCount &&
-                                            isAdLoaded ->
-                                        Color(0xFF06D6A0)
-
-                                    currentCount >= maxCount ->
-                                        Color(0xFFFF6B6B)
-
-                                    else -> Color(0xFF4ECDC4)
-                                },
-                            shape = RoundedCornerShape(2.dp)
-                        )
+                modifier = Modifier
+                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+                    .height(4.dp)
+                    .background(
+                        when {
+                            currentCount >= maxCount && isAdLoaded -> Color(0xFF06D6A0)
+                            currentCount >= maxCount -> Color(0xFFFF6B6B)
+                            else -> Color(0xFF4ECDC4)
+                        },
+                        RoundedCornerShape(2.dp)
+                    )
             )
         }
 
-        // Support Message
         Text(
             text = "ขอบคุณที่สนับสนุนนักพัฒนา! 🙏",
             color = Color(0xFF888888),
@@ -1845,37 +2131,23 @@ fun VisitCounter(currentCount: Int, maxCount: Int, isAdLoaded: Boolean) {
 @Composable
 fun AdLoadingStatus(isAdLoading: Boolean, isAdLoaded: Boolean, adLoadAttempt: Int) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        when {
-            isAdLoading ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(12.dp),
-                        strokeWidth = 1.dp,
-                        color = Color(0xFF4ECDC4)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text =
-                            "กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
-                        color = Color(0xFF666666),
-                        fontSize = 12.sp
-                    )
-                }
-            //            isAdLoaded -> Text(
-            //                text = "✅ โฆษณาเต็มจอพร้อมแสดง",
-            //                color = Color(0xFF06D6A0),
-            //                fontSize = 12.sp
-            //            )
-            //            else -> Text(
-            //                text = "❌ โฆษณาเต็มจอยังไม่พร้อม",
-            //                color = Color(0xFFFF6B6B),
-            //                fontSize = 12.sp
-            //            )
+        if (isAdLoading) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(12.dp),
+                    strokeWidth = 1.dp,
+                    color = Color(0xFF4ECDC4)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "กำลังโหลดโฆษณาเต็มจอ... (ครั้งที่ $adLoadAttempt)",
+                    color = KidTheme.TextMuted,
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }
@@ -1886,46 +2158,43 @@ fun AnimatedIconButton(
     icon: ImageVector,
     contentDescription: String,
     buttonColor: Color,
-    size: androidx.compose.ui.unit.Dp = 40.dp
+    size: Dp = 40.dp
 ) {
     var isClicked by remember { mutableStateOf(false) }
-    val scale by
-    animateFloatAsState(
+    val scale by animateFloatAsState(
         targetValue = if (isClicked) 0.8f else 1f,
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-        label = "icon button scale"
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "iconScale"
     )
-
-    val rotation by
-    animateFloatAsState(
+    val rotation by animateFloatAsState(
         targetValue = if (isClicked) 360f else 0f,
-        animationSpec = tween(durationMillis = 500),
-        label = "icon button rotation"
+        animationSpec = tween(500),
+        label = "iconRotation"
     )
 
-    IconButton(
-        onClick = {
-            isClicked = true
-            onClick()
+    LaunchedEffect(isClicked) {
+        if (isClicked) {
+            delay(500)
+            isClicked = false
         }
-    ) {
+    }
+
+    IconButton(onClick = {
+        isClicked = true
+        onClick()
+    }) {
         Box(
-            modifier =
-                Modifier
-                    .size(size)
-                    .background(
-                        color = buttonColor,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        rotationZ = rotation
-                    },
+            modifier = Modifier
+                .size(size)
+                .background(buttonColor, RoundedCornerShape(10.dp))
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = rotation
+                },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1941,27 +2210,17 @@ fun AnimatedIconButton(
 @Composable
 fun ViewModeSelector(currentMode: ViewMode, onModeSelected: (ViewMode) -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Box(
-            modifier =
-                Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        brush =
-                            Brush.horizontalGradient(
-                                colors =
-                                    listOf(
-                                        Color(0xFFFFD166),
-                                        Color(0xFFFF6B6B)
-                                    )
-                            )
-                    )
-                    .padding(4.dp)
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.horizontalGradient(listOf(Color(0xFFFFD166), Color(0xFFFF6B6B)))
+                )
+                .padding(4.dp)
         ) {
             Row(horizontalArrangement = Arrangement.Center) {
                 AnimatedSelectorButton(
@@ -1971,9 +2230,7 @@ fun ViewModeSelector(currentMode: ViewMode, onModeSelected: (ViewMode) -> Unit) 
                     selectedColor = Color(0xFF7209B7),
                     unselectedColor = Color.Transparent
                 )
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 AnimatedSelectorButton(
                     text = "แบบรายการ",
                     isSelected = currentMode == ViewMode.LIST,
@@ -1995,37 +2252,36 @@ fun AnimatedSelectorButton(
     unselectedColor: Color
 ) {
     var isClicked by remember { mutableStateOf(false) }
-    val scale by
-    animateFloatAsState(
+    val scale by animateFloatAsState(
         targetValue = if (isClicked) 0.95f else 1f,
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-        label = "selector button scale"
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "selectorScale"
     )
 
+    LaunchedEffect(isClicked) {
+        if (isClicked) {
+            delay(150)
+            isClicked = false
+        }
+    }
+
     Box(
-        modifier =
-            Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    color = if (isSelected) selectedColor else unselectedColor
-                )
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clickableNoRipple {
-                    isClicked = true
-                    onClick()
-                }
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (isSelected) selectedColor else unselectedColor)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickableNoRipple {
+                isClicked = true
+                onClick()
+            }
     ) {
         Text(
             text = text,
-            color = if (isSelected) Color.White else Color(0xFF2D3047),
+            color = if (isSelected) Color.White else KidTheme.TextDark,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(4.dp)
@@ -2036,7 +2292,7 @@ fun AnimatedSelectorButton(
 @Composable
 fun GridView(items: List<MenuItem>, onItemClick: (MenuItem) -> Unit) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Adaptive(minSize = 160.dp),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -2061,41 +2317,30 @@ fun ListView(items: List<MenuItem>, onItemClick: (MenuItem) -> Unit) {
 
 @Composable
 fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
-    var isHovered by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
 
-    val cardColor =
-        when (item.targetActivity) {
-            4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
-            else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
-        }
+    val cardColor = when (item.targetActivity) {
+        4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
+        else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
+    }
 
-    val darkerColor =
-        Color(
-            red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
-            green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
-            blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
-        )
+    val darkerColor = Color(
+        red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
+        green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
+        blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
+    )
 
-    val scale by
-    animateFloatAsState(
-        targetValue =
-            when {
-                isClicked -> 0.95f
-                isHovered -> 1.05f
-                else -> 1f
-            },
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-        label = "grid item scale"
+    val scale by animateFloatAsState(
+        targetValue = if (isClicked) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "gridScale"
     )
 
     val bounceScale = remember { Animatable(1f) }
 
-    // Floating idle animation
     val infiniteTransition = rememberInfiniteTransition(label = "gridItemFloat")
     val floatOffset by infiniteTransition.animateFloat(
         initialValue = -3f,
@@ -2111,11 +2356,10 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
         if (isClicked) {
             bounceScale.animateTo(
                 0.9f,
-                animationSpec =
-                    spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
+                spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
             )
             bounceScale.animateTo(1f)
             isClicked = false
@@ -2123,82 +2367,60 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
     }
 
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale * bounceScale.value
-                    scaleY = scale * bounceScale.value
-                    translationY = floatOffset
-                    rotationZ = if (isClicked) 2f else 0f
-                }
-                .then(
-                    if (item.isLive) {
-                        Modifier.border(
-                            width = 4.dp,
-                            brush = Brush.sweepGradient(
-                                listOf(Color.Red, Color.White, Color.Blue, Color.Red)
-                            ),
-                            shape = RoundedCornerShape(32.dp)
-                        )
-                    } else Modifier
-                )
-                .clickable {
-                    isClicked = true
-                    onClick()
-                },
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale * bounceScale.value
+                scaleY = scale * bounceScale.value
+                translationY = floatOffset
+                rotationZ = if (isClicked) 2f else 0f
+            }
+            .then(
+                if (item.isLive) Modifier.border(
+                    width = 4.dp,
+                    brush = Brush.sweepGradient(
+                        listOf(Color.Red, Color.White, Color.Blue, Color.Red)
+                    ),
+                    shape = RoundedCornerShape(32.dp)
+                ) else Modifier
+            )
+            .clickableNoRipple {
+                isClicked = true
+                onClick()
+            },
         shape = RoundedCornerShape(32.dp),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation =
-                    when {
-                        isClicked -> 12.dp
-                        isHovered -> 8.dp
-                        else -> 4.dp
-                    }
-            ),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = if (isClicked) darkerColor else cardColor
-            ),
-        border = androidx.compose.foundation.BorderStroke(4.dp, Color.White)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isClicked) 12.dp else 4.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isClicked) darkerColor else cardColor
+        ),
+        border = BorderStroke(4.dp, Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
                 if (item.isLive) {
                     KidsTvThailandLogo(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF2D3047))
+                        modifier = Modifier.fillMaxSize().background(KidTheme.TextDark)
                     )
                     LiveBadge(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(12.dp)
+                        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
                     )
                 } else {
                     PulsingImage(
                         painter = painterResource(id = item.iconRes),
                         contentDescription = item.title,
-                        modifier =
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .height(160.dp)
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = 24.dp,
-                                    topEnd = 24.dp
-                                )
-                            )
+                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     )
                 }
             }
 
             Text(
                 text = item.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -2212,50 +2434,38 @@ fun AnimatedGridItem(item: MenuItem, onClick: () -> Unit) {
 
 @Composable
 fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
-    var isHovered by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
 
-    val cardColor =
-        when (item.targetActivity) {
-            4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
-            else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
-        }
+    val cardColor = when (item.targetActivity) {
+        4 -> ActivityColorPalette[(item.id - 1) % ActivityColorPalette.size]
+        else -> KidsColorPalette[(item.id - 1) % KidsColorPalette.size]
+    }
 
-    val darkerColor =
-        Color(
-            red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
-            green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
-            blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
-        )
+    val darkerColor = Color(
+        red = (cardColor.red * 0.8f).coerceIn(0f, 1f),
+        green = (cardColor.green * 0.8f).coerceIn(0f, 1f),
+        blue = (cardColor.blue * 0.8f).coerceIn(0f, 1f)
+    )
 
-    val scale by
-    animateFloatAsState(
-        targetValue =
-            when {
-                isClicked -> 0.98f
-                isHovered -> 1.02f
-                else -> 1f
-            },
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-        label = "list item scale"
+    val scale by animateFloatAsState(
+        targetValue = if (isClicked) 0.98f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "listScale"
     )
 
     val slideOffset = remember { Animatable(100f) }
-
     val pressOffset = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         slideOffset.animateTo(
             targetValue = 0f,
-            animationSpec =
-                spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
         )
     }
 
@@ -2268,82 +2478,56 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
     }
 
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = slideOffset.value + pressOffset.value
-                    translationY = pressOffset.value * 0.5f
-                }
-                .then(
-                    if (item.isLive) {
-                        Modifier.border(
-                            width = 2.dp,
-                            brush = Brush.linearGradient(
-                                listOf(Color.Red, Color.White, Color.Blue)
-                            ),
-                            shape = RoundedCornerShape(32.dp)
-                        )
-                    } else Modifier
-                )
-                .clickable {
-                    isClicked = true
-                    onClick()
-                },
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                translationX = slideOffset.value + pressOffset.value
+                translationY = pressOffset.value * 0.5f
+            }
+            .then(
+                if (item.isLive) Modifier.border(
+                    width = 2.dp,
+                    brush = Brush.linearGradient(listOf(Color.Red, Color.White, Color.Blue)),
+                    shape = RoundedCornerShape(32.dp)
+                ) else Modifier
+            )
+            .clickableNoRipple {
+                isClicked = true
+                onClick()
+            },
         shape = RoundedCornerShape(32.dp),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation =
-                    when {
-                        isClicked -> 12.dp
-                        isHovered -> 8.dp
-                        else -> 4.dp
-                    }
-            ),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = if (isClicked) darkerColor else cardColor
-            ),
-        border = androidx.compose.foundation.BorderStroke(4.dp, Color.White)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isClicked) 12.dp else 4.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isClicked) darkerColor else cardColor
+        ),
+        border = BorderStroke(4.dp, Color.White)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
                 if (item.isLive) {
                     KidsTvThailandLogo(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF2D3047))
+                        modifier = Modifier.fillMaxSize().background(KidTheme.TextDark)
                     )
-                    LiveBadge(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(12.dp)
-                    )
+                    LiveBadge(modifier = Modifier.align(Alignment.TopEnd).padding(12.dp))
                 } else {
                     FadeInImage(
                         painter = painterResource(id = item.iconRes),
                         contentDescription = item.title,
-                        modifier =
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .height(160.dp)
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = 24.dp,
-                                    topEnd = 24.dp
-                                )
-                            )
+                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     )
                 }
             }
 
             Text(
                 text = item.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -2357,43 +2541,32 @@ fun AnimatedListItem(item: MenuItem, onClick: () -> Unit) {
 
 @Composable
 fun PulsingImage(painter: Painter, contentDescription: String?, modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse transition")
-    val pulseScale by
-    infiniteTransition.animateFloat(
+    val infiniteTransition = rememberInfiniteTransition(label = "pulseTransition")
+    val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.98f,
         targetValue = 1.02f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(1500, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-        label = "pulse scale"
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
     )
 
     Box(
-        modifier =
-            modifier.background(
-                brush =
-                    Brush.radialGradient(
-                        colors =
-                            listOf(
-                                Color.White.copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                    )
-            )
+        modifier = modifier.background(
+            Brush.radialGradient(listOf(Color.White.copy(alpha = 0.3f), Color.Transparent))
+        )
     ) {
         Image(
             painter = painter,
             contentDescription = contentDescription,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .graphicsLayer {
-                        scaleX = pulseScale
-                        scaleY = pulseScale
-                    },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                },
             contentScale = ContentScale.Crop
         )
     }
@@ -2402,11 +2575,10 @@ fun PulsingImage(painter: Painter, contentDescription: String?, modifier: Modifi
 @Composable
 fun FadeInImage(painter: Painter, contentDescription: String?, modifier: Modifier = Modifier) {
     var isVisible by remember { mutableStateOf(false) }
-    val alpha by
-    animateFloatAsState(
+    val alphaValue by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 800),
-        label = "fade in animation"
+        animationSpec = tween(800),
+        label = "fadeIn"
     )
 
     LaunchedEffect(Unit) {
@@ -2415,28 +2587,17 @@ fun FadeInImage(painter: Painter, contentDescription: String?, modifier: Modifie
     }
 
     Box(
-        modifier =
-            modifier.background(
-                brush =
-                    Brush.radialGradient(
-                        colors =
-                            listOf(
-                                Color.White.copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                    )
-            )
+        modifier = modifier.background(
+            Brush.radialGradient(listOf(Color.White.copy(alpha = 0.3f), Color.Transparent))
+        )
     ) {
         Image(
             painter = painter,
             contentDescription = contentDescription,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .graphicsLayer {
-                        this.alpha = alpha
-                    },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .graphicsLayer { this.alpha = alphaValue },
             contentScale = ContentScale.Crop
         )
     }
@@ -2444,7 +2605,7 @@ fun FadeInImage(painter: Painter, contentDescription: String?, modifier: Modifie
 
 @Composable
 fun KidsTvThailandLogo(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "logo animation")
+    val infiniteTransition = rememberInfiniteTransition(label = "logoAnimation")
     val rotation by infiniteTransition.animateFloat(
         initialValue = -5f,
         targetValue = 5f,
@@ -2452,7 +2613,7 @@ fun KidsTvThailandLogo(modifier: Modifier = Modifier) {
             animation = tween(2000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "logo rotation"
+        label = "logoRotation"
     )
 
     Box(
@@ -2463,7 +2624,6 @@ fun KidsTvThailandLogo(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // "Kids" Row with 3D blocks
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 LogoBlock(char = "K", color = Color(0xFF0055AA))
                 LogoBlock(char = "i", color = Color(0xFF0055AA))
@@ -2473,32 +2633,18 @@ fun KidsTvThailandLogo(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // "tv" blocks
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                LogoBlock(
-                    char = "t",
-                    color = Color.White,
-                    bgColor = Color(0xFF003388),
-                    size = 45.dp
-                )
-                LogoBlock(
-                    char = "v",
-                    color = Color.White,
-                    bgColor = Color(0xFF003388),
-                    size = 45.dp
-                )
+                LogoBlock("t", Color.White, Color(0xFF003388), 45.dp)
+                LogoBlock("v", Color.White, Color(0xFF003388), 45.dp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // "CHANNEL Thailand" banner
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
                     .background(
-                        Brush.verticalGradient(
-                            listOf(Color.White, Color(0xFFE0E0E0))
-                        )
+                        Brush.verticalGradient(listOf(Color.White, Color(0xFFE0E0E0)))
                     )
                     .border(2.dp, Color(0xFF003388), RoundedCornerShape(4.dp))
                     .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -2520,7 +2666,7 @@ fun LogoBlock(
     char: String,
     color: Color,
     bgColor: Color = Color.White,
-    size: androidx.compose.ui.unit.Dp = 40.dp
+    size: Dp = 40.dp
 ) {
     Box(
         modifier = Modifier
@@ -2530,11 +2676,7 @@ fun LogoBlock(
                 shape = RoundedCornerShape(8.dp)
                 clip = true
             }
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color.Red, bgColor)
-                )
-            )
+            .background(Brush.verticalGradient(listOf(Color.Red, bgColor)))
             .border(2.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center
     ) {
@@ -2550,48 +2692,32 @@ fun LogoBlock(
 
 @Composable
 fun LiveBadge(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "live badge")
-    val alpha by infiniteTransition.animateFloat(
+    val infiniteTransition = rememberInfiniteTransition(label = "liveBadge")
+    val alphaValue by infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(800, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "alpha"
+        label = "liveAlpha"
     )
 
     Row(
         modifier = modifier
-            .graphicsLayer { this.alpha = alpha }
+            .graphicsLayer { this.alpha = alphaValue }
             .clip(RoundedCornerShape(12.dp))
             .background(Color.Red)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(Color.White)
-        )
+        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = "LIVE",
-            color = Color.White,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Text(text = "LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }
 
-fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
-    this.then(
-        Modifier.clickable(
-            interactionSource = MutableInteractionSource(),
-            indication = null
-        ) { onClick() }
-    )
+// ==================== DATA & NAVIGATION ====================
 
 data class MenuItem(
     val id: Int,
@@ -2601,24 +2727,18 @@ data class MenuItem(
     val isLive: Boolean = false
 )
 
-enum class ViewMode {
-    GRID,
-    LIST
-}
+enum class ViewMode { GRID, LIST }
 
-private fun getMenuItems(): List<MenuItem> {
-    return listOf(
-        MenuItem(1, "ฝึกอ่าน",         R.drawable.doing_learn_01,  0),
-        MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one,        1),
-        MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two,        2),
-        MenuItem(4, "กิจกรรมเสริม",   R.drawable.card_three,      3),
-        MenuItem(5, "บทความน่ารู้",   R.drawable.leraning_kid,    4),
-        MenuItem(6, "แบบทดสอบ",      R.drawable.card_three_two,  5),
-        // ── เมนูใหม่ ──
-        MenuItem(7, "ดู DLTV Live",   R.drawable.card_four,       6, isLive = true),
-        MenuItem(8, "วาดระบายสี",    R.drawable.home_color,      7),
-    )
-}
+private fun getMenuItems(): List<MenuItem> = listOf(
+    MenuItem(1, "ฝึกอ่าน", R.drawable.doing_learn_01, 0),
+    MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one, 1),
+    MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two, 2),
+    MenuItem(4, "กิจกรรมเสริม", R.drawable.card_three, 3),
+    MenuItem(5, "บทความน่ารู้", R.drawable.leraning_kid, 4),
+    MenuItem(6, "แบบทดสอบ", R.drawable.card_three_two, 5),
+    MenuItem(7, "ดู DLTV Live", R.drawable.card_four, 6, isLive = true),
+    MenuItem(8, "วาดระบายสี", R.drawable.home_color, 7)
+)
 
 private fun handleItemClickDirectly(
     context: Context,
@@ -2626,107 +2746,64 @@ private fun handleItemClickDirectly(
     navController: NavController?
 ) {
     when (item.targetActivity) {
-        0 -> {
-            val intent = Intent(context, LeaningActvity::class.java)
-            context.startActivity(intent)
-        }
-
-        1 -> {
-            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+        0 -> context.startActivity(Intent(context, LeaningActvity::class.java))
+        1 -> context.startActivity(
+            Intent(context, MenuThaiLettersActivity::class.java).apply {
                 putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
             }
-            context.startActivity(intent)
-        }
-
-        2 -> {
-            val intent = Intent(context, MenuThaiLettersActivity::class.java).apply {
+        )
+        2 -> context.startActivity(
+            Intent(context, MenuThaiLettersActivity::class.java).apply {
                 putExtra(MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
             }
-            context.startActivity(intent)
-        }
-
-        3 -> {
-            showKidsActivitiesDialog(context)
-        }
-
-        4 -> {
-            val intent =
-                Intent(context, KidsWebViewActivity::class.java).apply {
-                    putExtra("extra_url", "https://www.youngciety.com/")
-                    putExtra("extra_title", "Youngciety - สนุกสนาน")
-                }
-            context.startActivity(intent)
-        }
-
-        5 -> {
-            val intent = Intent(context, QuizActivity::class.java)
-            context.startActivity(intent)
-        }
-
-        // ── เมนูใหม่: ดู DLTV Live ──
-        6 -> {
-            val intent = Intent(context, LiveListActivity::class.java)
-            context.startActivity(intent)
-        }
-
-        // ── เมนูใหม่: วาดระบายสี (ColoringGameActivity) ──
-        7 -> {
-            val intent = Intent(context, ColoringGameActivity::class.java)
-            context.startActivity(intent)
-        }
+        )
+        3 -> showKidsActivitiesDialog(context)
+        4 -> context.startActivity(
+            Intent(context, KidsWebViewActivity::class.java).apply {
+                putExtra("extra_url", "https://www.youngciety.com/")
+                putExtra("extra_title", "Youngciety - สนุกสนาน")
+            }
+        )
+        5 -> context.startActivity(Intent(context, QuizActivity::class.java))
+        6 -> context.startActivity(Intent(context, LiveListActivity::class.java))
+        7 -> context.startActivity(Intent(context, ColoringGameActivity::class.java))
     }
 }
 
-private fun showAdSuccessMessage(context: Context) {
-    Toast.makeText(context, "🙏 ขอบคุณสำหรับการสนับสนุน!", Toast.LENGTH_SHORT).show()
-}
-
-private fun showAdFailedMessage(context: Context) {
-    Toast.makeText(context, "⚠️ โฆษณาไม่พร้อมใช้งาน", Toast.LENGTH_SHORT).show()
-}
-
 private fun showKidsActivitiesDialog(context: Context) {
-    val activities =
-        listOf(
-            "🎨 ระบายสีสร้างสรรค์" to { startColoringActivity(context) },
-            "🔤 เกมจับคู่ตัวอักษร" to { startAbcMatchGame(context) }
-        )
+    val activities = listOf(
+        "🎨 ระบายสีสร้างสรรค์" to { startColoringActivity(context) },
+        "🔤 เกมจับคู่ตัวอักษร" to { startAbcMatchGame(context) }
+    )
 
-    val layout =
-        LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(50, 30, 50, 30)
-        }
+    val layout = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(50, 30, 50, 30)
+    }
 
-    val titleText =
-        TextView(context).apply {
-            text = "เลือกกิจกรรมที่สนใจ:"
-            textSize = 18f
-            setTextColor(android.graphics.Color.BLACK)
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 20)
-        }
+    val titleText = TextView(context).apply {
+        text = "เลือกกิจกรรมที่สนใจ:"
+        textSize = 18f
+        setTextColor(android.graphics.Color.BLACK)
+        gravity = Gravity.CENTER
+        setPadding(0, 0, 0, 20)
+    }
     layout.addView(titleText)
 
     activities.forEach { (activityName, onClick) ->
-        val button =
-            android.widget.Button(context).apply {
-                text = activityName
-                textSize = 16f
-                setBackgroundColor(getRandomColor())
-                setTextColor(android.graphics.Color.WHITE)
-                gravity = Gravity.CENTER
-                setPadding(20, 30, 20, 30)
-
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                        .apply { setMargins(0, 8, 0, 8) }
-
-                setOnClickListener { onClick() }
-            }
+        val button = android.widget.Button(context).apply {
+            text = activityName
+            textSize = 16f
+            setBackgroundColor(getRandomColor())
+            setTextColor(android.graphics.Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(20, 30, 20, 30)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 8, 0, 8) }
+            setOnClickListener { onClick() }
+        }
         layout.addView(button)
     }
 
@@ -2738,31 +2815,25 @@ private fun showKidsActivitiesDialog(context: Context) {
 }
 
 private fun startColoringActivity(context: Context) {
-    val intent = Intent(context, ColoringGameActivity::class.java)
-    context.startActivity(intent)
+    context.startActivity(Intent(context, ColoringGameActivity::class.java))
 }
 
 private fun startAbcMatchGame(context: Context) {
-    val intent = Intent(context, AbcMatchGameActivity::class.java)
-    context.startActivity(intent)
+    context.startActivity(Intent(context, AbcMatchGameActivity::class.java))
 }
 
-private fun getRandomColor(): Int {
-    val colors =
-        listOf(
-            android.graphics.Color.parseColor("#FF6B6B"),
-            android.graphics.Color.parseColor("#4ECDC4"),
-            android.graphics.Color.parseColor("#FFD166"),
-            android.graphics.Color.parseColor("#06D6A0"),
-            android.graphics.Color.parseColor("#118AB2"),
-            android.graphics.Color.parseColor("#7209B7")
-        )
-    return colors.random()
-}
+private fun getRandomColor(): Int = listOf(
+    android.graphics.Color.parseColor("#FF6B6B"),
+    android.graphics.Color.parseColor("#4ECDC4"),
+    android.graphics.Color.parseColor("#FFD166"),
+    android.graphics.Color.parseColor("#06D6A0"),
+    android.graphics.Color.parseColor("#118AB2"),
+    android.graphics.Color.parseColor("#7209B7")
+).random()
 
+// ==================== PREVIEW ====================
 
-
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 400, heightDp = 900)
 @Composable
 fun PreviewMainComposeScreen() {
     MainComposeScreen()

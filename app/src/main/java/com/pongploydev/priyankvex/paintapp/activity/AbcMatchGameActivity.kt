@@ -227,7 +227,7 @@ fun GameGrid(onWin: () -> Unit, timeSeconds: Int) {
             border = BorderStroke(4.dp, Color(0xFFFFD54F))
         ) {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(5),
+                columns = GridCells.Adaptive(minSize = 75.dp),
                 contentPadding = PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
