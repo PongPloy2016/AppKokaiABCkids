@@ -4,12 +4,15 @@ import android.graphics.Color
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.card.MaterialCardView
 import com.google.firebase.auth.FirebaseAuth
@@ -67,6 +70,30 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         binding = ActivityQuizSessionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Apply WindowInsets so toolbar & btnNext are never overlapped by status bar or bottom navigation bar
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val statusBarTop = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val navBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+            if (statusBarTop > 0) {
+                binding.toolbar.setPadding(
+                    binding.toolbar.paddingLeft,
+                    statusBarTop,
+                    binding.toolbar.paddingRight,
+                    binding.toolbar.paddingBottom
+                )
+            }
+
+            val params = binding.btnNext.layoutParams as? ViewGroup.MarginLayoutParams
+            if (params != null) {
+                val defaultMargin = (16 * resources.displayMetrics.density).toInt()
+                params.bottomMargin = defaultMargin + navBarBottom
+                binding.btnNext.layoutParams = params
+            }
+
+            insets
+        }
 
         topicId = intent.getIntExtra("EXTRA_TOPIC_ID", 1)
         topicTitle = intent.getStringExtra("EXTRA_TOPIC_TITLE") ?: "Quiz"

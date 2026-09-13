@@ -103,12 +103,12 @@
     <!-- Image card with colorful border -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cvImage"
-        android:layout_width="210dp"
-        android:layout_height="210dp"
-        android:layout_marginTop="12dp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_marginTop="8dp"
         app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="10dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvQuestion"
@@ -120,7 +120,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/white"
-            android:padding="12dp"
+            android:padding="10dp"
             android:scaleType="fitCenter"
             android:src="@drawable/e_a" />
 
@@ -131,7 +131,7 @@
         android:id="@+id/tvTapHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:background="@drawable/quiz_badge_bg"
         android:backgroundTint="#EDE7F6"
         android:elevation="2dp"
