@@ -57,21 +57,32 @@ class SupabaseDataManager private constructor(context: Context) {
         return "Bearer $token"
     }
 
+    // Helper to ensure userId matches PostgreSQL UUID format if custom or guest id string is provided
+    private fun ensureValidUuid(id: String): String {
+        return try {
+            java.util.UUID.fromString(id)
+            id
+        } catch (e: Exception) {
+            java.util.UUID.nameUUIDFromBytes(id.toByteArray()).toString()
+        }
+    }
+
     // ==================== PROFILE ====================
 
     suspend fun fetchUserProfile(userId: String): Result<UserProfile> = withContext(Dispatchers.IO) {
+        val validId = ensureValidUuid(userId)
         try {
             val response = dataApiService.getProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
-                idFilter = "eq.$userId"
+                idFilter = "eq.$validId"
             )
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
                 Result.success(response.body()!!.first())
             } else {
                 // If profile doesn't exist yet in Supabase, auto-create (upsert) default profile!
                 val defaultProfile = UserProfile(
-                    id = userId,
+                    id = validId,
                     displayName = "นักอ่านตัวน้อย",
                     totalStars = 0,
                     currentLevel = 1
@@ -85,32 +96,38 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     suspend fun updateUserProfile(userId: String, updates: UserProfileUpdate): Result<UserProfile> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseAvatarUpload"
+        val validId = ensureValidUuid(userId)
         try {
             val response = dataApiService.updateProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
-                idFilter = "eq.$userId",
+                idFilter = "eq.$validId",
                 updates = updates
             )
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
+                Log.d(tag, "updateUserProfile SUCCESS: ${response.body()?.firstOrNull()?.avatarUrl}")
                 Result.success(response.body()!!.first())
             } else {
+                val errStr = response.errorBody()?.string() ?: "Empty body"
+                Log.w(tag, "updateUserProfile HTTP ${response.code()} ${response.message()}: $errStr. Attempting upsert...")
                 // Row didn't exist in Supabase database; construct full profile and upsert!
-                val existing = fetchUserProfile(userId).getOrDefault(UserProfile(id = userId, displayName = "นักอ่านตัวน้อย"))
+                val existing = fetchUserProfile(validId).getOrDefault(UserProfile(id = validId, displayName = "นักอ่านตัวน้อย"))
                 val newProfile = UserProfile(
-                    id = userId,
+                    id = validId,
                     displayName = updates.displayName ?: existing.displayName,
-                    avatarUrl = existing.avatarUrl,
+                    avatarUrl = updates.avatarUrl ?: existing.avatarUrl,
                     totalStars = updates.totalStars ?: existing.totalStars,
                     currentLevel = updates.currentLevel ?: existing.currentLevel
                 )
                 upsertUserProfile(newProfile)
             }
         } catch (e: Exception) {
+            Log.e(tag, "updateUserProfile Exception: ${e.localizedMessage}", e)
             val existing = UserProfile(
-                id = userId,
+                id = validId,
                 displayName = updates.displayName ?: "นักอ่านตัวน้อย",
-                avatarUrl = "",
+                avatarUrl = updates.avatarUrl ?: "",
                 totalStars = updates.totalStars ?: 0,
                 currentLevel = updates.currentLevel ?: 1
             )
@@ -119,18 +136,24 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     suspend fun upsertUserProfile(profile: UserProfile): Result<UserProfile> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseAvatarUpload"
+        val validProfile = profile.copy(id = ensureValidUuid(profile.id))
         try {
             val response = dataApiService.upsertProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
-                profile = profile
+                profile = validProfile
             )
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
+                Log.d(tag, "upsertUserProfile SUCCESS: ${response.body()?.firstOrNull()?.id}")
                 Result.success(response.body()!!.first())
             } else {
-                Result.failure(Exception("Failed to upsert profile"))
+                val errBody = response.errorBody()?.string() ?: "Empty response body"
+                Log.e(tag, "upsertUserProfile API FAILED (HTTP ${response.code()} ${response.message()}): $errBody")
+                Result.failure(Exception("HTTP ${response.code()} ${response.message()}: $errBody"))
             }
         } catch (e: Exception) {
+            Log.e(tag, "upsertUserProfile Exception: ${e.localizedMessage}", e)
             Result.failure(e)
         }
     }
