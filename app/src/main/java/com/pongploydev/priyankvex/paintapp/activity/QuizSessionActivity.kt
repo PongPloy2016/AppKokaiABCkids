@@ -650,90 +650,85 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             withContext(Dispatchers.Main) {
                 if (isFinishing) return@withContext
 
-                val memberName = userProf?.displayName?.ifBlank { null } ?: supabaseUser?.email?.substringBefore("@")
+                val memberName = userProf?.displayName?.ifBlank { null }
+                    ?: supabaseUser?.userMetadata?.displayName?.ifBlank { null }
+                    ?: firebaseUser?.displayName?.ifBlank { null }
+                    ?: supabaseUser?.email?.substringBefore("@")?.ifBlank { null }
+                    ?: firebaseUser?.email?.substringBefore("@")?.ifBlank { null }
+
                 val avatarUrl = userProf?.avatarUrl?.ifBlank { null }
                 val isMember = !memberName.isNullOrBlank()
 
                 val container = LinearLayout(this@QuizSessionActivity).apply {
                     orientation = LinearLayout.VERTICAL
                     gravity = android.view.Gravity.CENTER_HORIZONTAL
-                    setPadding(60, 30, 60, 10)
+                    setPadding(50, 20, 50, 10)
                 }
 
-                var guestInput: EditText? = null
-
-                if (isMember && memberName != null) {
-                    // Profile picture container card
-                    val avatarCard = com.google.android.material.card.MaterialCardView(this@QuizSessionActivity).apply {
-                        radius = 36 * resources.displayMetrics.density
-                        cardElevation = 4 * resources.displayMetrics.density
-                        strokeWidth = (2 * resources.displayMetrics.density).toInt()
-                        strokeColor = Color.parseColor("#4CAF50")
-                        layoutParams = LinearLayout.LayoutParams(
-                            (72 * resources.displayMetrics.density).toInt(),
-                            (72 * resources.displayMetrics.density).toInt()
-                        ).apply {
-                            bottomMargin = (12 * resources.displayMetrics.density).toInt()
-                        }
+                // Profile picture container card
+                val avatarCard = com.google.android.material.card.MaterialCardView(this@QuizSessionActivity).apply {
+                    radius = 36 * resources.displayMetrics.density
+                    cardElevation = 4 * resources.displayMetrics.density
+                    strokeWidth = (2 * resources.displayMetrics.density).toInt()
+                    strokeColor = Color.parseColor(if (isMember) "#4CAF50" else "#2196F3")
+                    layoutParams = LinearLayout.LayoutParams(
+                        (72 * resources.displayMetrics.density).toInt(),
+                        (72 * resources.displayMetrics.density).toInt()
+                    ).apply {
+                        bottomMargin = (12 * resources.displayMetrics.density).toInt()
                     }
+                }
 
-                    val ivAvatar = android.widget.ImageView(this@QuizSessionActivity).apply {
-                        scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                    }
+                val ivAvatar = android.widget.ImageView(this@QuizSessionActivity).apply {
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                }
 
-                    if (!avatarUrl.isNullOrEmpty()) {
-                        com.bumptech.glide.Glide.with(this@QuizSessionActivity)
-                            .load(avatarUrl)
-                            .placeholder(R.drawable.ic_nav_profile)
-                            .error(R.drawable.ic_nav_profile)
-                            .into(ivAvatar)
-                    } else {
-                        ivAvatar.setImageResource(R.drawable.ic_nav_profile)
-                        ivAvatar.setColorFilter(Color.parseColor("#4CAF50"))
-                    }
-
-                    avatarCard.addView(ivAvatar)
-                    container.addView(avatarCard)
-
-                    val tvName = android.widget.TextView(this@QuizSessionActivity).apply {
-                        text = "👤 $memberName"
-                        textSize = 18f
-                        setTypeface(null, android.graphics.Typeface.BOLD)
-                        setTextColor(Color.parseColor("#1B5E20"))
-                        gravity = android.view.Gravity.CENTER
-                        setPadding(0, 0, 0, 8)
-                    }
-                    container.addView(tvName)
-
-                    val tvSub = android.widget.TextView(this@QuizSessionActivity).apply {
-                        text = "✅ สมาชิก (บันทึกคะแนนอัตโนมัติ)"
-                        textSize = 13f
-                        setTextColor(Color.parseColor("#666666"))
-                        gravity = android.view.Gravity.CENTER
-                    }
-                    container.addView(tvSub)
-
+                if (!avatarUrl.isNullOrEmpty()) {
+                    com.bumptech.glide.Glide.with(this@QuizSessionActivity)
+                        .load(avatarUrl)
+                        .placeholder(R.drawable.ic_nav_profile)
+                        .error(R.drawable.ic_nav_profile)
+                        .into(ivAvatar)
                 } else {
-                    // Guest user input field
-                    val tvGuestHint = android.widget.TextView(this@QuizSessionActivity).apply {
-                        text = "กรอกชื่อเล่นเพื่อบันทึกคะแนน:"
-                        textSize = 14f
-                        setTextColor(Color.parseColor("#333333"))
-                        setPadding(0, 0, 0, 12)
-                    }
-                    container.addView(tvGuestHint)
-
-                    guestInput = EditText(this@QuizSessionActivity).apply {
-                        hint = "ใส่ชื่อเล่นของคุณที่นี่"
-                        setPadding(40, 30, 40, 30)
-                        setBackgroundResource(android.R.drawable.editbox_background)
-                    }
-                    container.addView(guestInput)
+                    ivAvatar.setImageResource(R.drawable.ic_nav_profile)
+                    ivAvatar.setColorFilter(Color.parseColor(if (isMember) "#4CAF50" else "#2196F3"))
                 }
+
+                avatarCard.addView(ivAvatar)
+                container.addView(avatarCard)
+
+                val tvLabel = android.widget.TextView(this@QuizSessionActivity).apply {
+                    text = if (isMember) "👤 ชื่อสมาชิก (สามารถแก้ไขได้):" else "👤 กรอกชื่อเล่นของคุณ:"
+                    textSize = 14f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(Color.parseColor("#333333"))
+                    setPadding(0, 0, 0, 8)
+                }
+                container.addView(tvLabel)
+
+                val nameInput = EditText(this@QuizSessionActivity).apply {
+                    if (isMember && memberName != null) {
+                        setText(memberName)
+                    } else {
+                        hint = "ใส่ชื่อเล่นของคุณที่นี่"
+                    }
+                    setPadding(40, 24, 40, 24)
+                    setBackgroundResource(android.R.drawable.editbox_background)
+                }
+                container.addView(nameInput)
+
+                val tvSub = android.widget.TextView(this@QuizSessionActivity).apply {
+                    text = if (isMember) "✅ สมาชิก (นำชื่อและรูปโปรไฟล์มาใช้ให้อัตโนมัติ)" else "💡 คุณยังไม่ได้เข้าสู่ระบบ (สามารถกรอกชื่อเพื่อบันทึกคะแนน)"
+                    textSize = 12f
+                    setTextColor(Color.parseColor("#666666"))
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, 10, 0, 0)
+                }
+                container.addView(tvSub)
 
                 androidx.appcompat.app.AlertDialog.Builder(this@QuizSessionActivity)
                     .setTitle("สรุปผลคะแนน 🏆")
@@ -742,10 +737,8 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     )
                     .setView(container)
                     .setPositiveButton("บันทึกคะแนน") { _, _ ->
-                        val finalName = if (isMember && memberName != null) {
-                            memberName
-                        } else {
-                            guestInput?.text?.toString()?.trim()?.ifEmpty { "ผู้เล่นนิรนาม" } ?: "ผู้เล่นนิรนาม"
+                        val finalName = nameInput.text.toString().trim().ifEmpty {
+                            memberName ?: "ผู้เล่นนิรนาม"
                         }
                         saveScoreToFirestore(finalName, score, duration)
                     }
