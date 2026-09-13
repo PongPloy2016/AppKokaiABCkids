@@ -50,7 +50,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
-import com.facebook.shimmer.BuildConfig;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -686,7 +685,7 @@ public class Tools {
 
 
     public static void rateUs(Activity activity) {
-        String rateUrl = "https://play.google.com/store/apps/details?id=" + BuildConfig.APPLICATION_ID;
+        String rateUrl = "https://play.google.com/store/apps/details?id=" + activity.getPackageName();
         activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(rateUrl)));
     }
 

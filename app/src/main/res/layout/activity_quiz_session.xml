@@ -18,110 +18,131 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:titleTextColor="@color/white" />
 
-    <!-- Score emoji badge -->
-    <TextView
-        android:id="@+id/tvScoreBadge"
-        android:layout_width="wrap_content"
+    <!-- Top Header Info Row (Progress Pill & Score Badge Pill) -->
+    <LinearLayout
+        android:id="@+id/headerInfoRow"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginTop="12dp"
-        android:layout_marginEnd="24dp"
-        android:text="⭐ ๐"
-        android:textColor="@color/color_orange"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <!-- Progress pill badge -->
+        <TextView
+            android:id="@+id/tvProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/quiz_badge_bg"
+            android:backgroundTint="#EDE7F6"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"
+            android:text="ข้อ ๑ / ๒๐"
+            android:textColor="#673AB7"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Score emoji badge -->
+        <TextView
+            android:id="@+id/tvScoreBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/quiz_badge_bg"
+            android:backgroundTint="#FFF8E1"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"
+            android:text="⭐ ๐ คะแนน"
+            android:textColor="#FF8F00"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <!-- Rainbow progress bar -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="0dp"
-        android:layout_height="14dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="14dp"
-        android:layout_marginEnd="12dp"
+        android:layout_height="12dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="10dp"
         android:progressDrawable="@drawable/quiz_progress_bar"
-        app:layout_constraintEnd_toStartOf="@id/tvScoreBadge"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar" />
-
-    <!-- Progress text -->
-    <TextView
-        android:id="@+id/tvProgress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="๑/๒๐"
-        android:textColor="@color/color_purple"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="@id/progressBar"
-        app:layout_constraintStart_toStartOf="@id/progressBar"
-        app:layout_constraintTop_toBottomOf="@id/progressBar" />
+        app:layout_constraintTop_toBottomOf="@id/headerInfoRow" />
 
     <!-- Question bubble with gradient -->
     <TextView
         android:id="@+id/tvQuestion"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="12dp"
         android:background="@drawable/quiz_question_bg"
+        android:elevation="6dp"
         android:gravity="center"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="20dp"
         android:paddingVertical="14dp"
-        android:text="What letter is this?"
-        android:textColor="@color/white"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:shadowColor="#40000000"
+        android:shadowColor="#30000000"
         android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="4"
+        android:shadowDy="3"
+        android:shadowRadius="6"
+        android:text="❓ นี่คือตัวอะไร?"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvProgress" />
+        app:layout_constraintTop_toBottomOf="@id/progressBar" />
 
     <!-- Image card with colorful border -->
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/cvImage"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_marginTop="14dp"
+        android:layout_width="210dp"
+        android:layout_height="210dp"
+        android:layout_marginTop="12dp"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="24dp"
-        app:cardElevation="12dp"
+        app:cardElevation="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvQuestion">
+        app:layout_constraintTop_toBottomOf="@id/tvQuestion"
+        app:strokeColor="#F15BB5"
+        app:strokeWidth="3dp">
 
         <ImageView
             android:id="@+id/ivQuestionImage"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/white"
-            android:padding="8dp"
+            android:padding="12dp"
             android:scaleType="fitCenter"
             android:src="@drawable/e_a" />
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/quiz_image_border" />
-
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Tap hint -->
     <TextView
         android:id="@+id/tvTapHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="🔊 แตะรูปเพื่อฟังเสียง"
-        android:textColor="@color/text_secondary"
-        android:textSize="11sp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/quiz_badge_bg"
+        android:backgroundTint="#EDE7F6"
+        android:elevation="2dp"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp"
+        android:text="🔊 แตะที่รูปเพื่อฟังเสียงอ่าน 🎵"
+        android:textColor="#5E35B1"
+        android:textSize="12sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/cvImage" />
 
     <!-- 2x2 Options Grid -->
@@ -129,8 +150,9 @@
         android:id="@+id/gridOptions"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:orientation="vertical"
         android:weightSum="2"
         app:layout_constraintBottom_toTopOf="@id/btnNext"
@@ -146,34 +168,35 @@
             android:orientation="horizontal"
             android:weightSum="2">
 
-            <!-- Option 1 -->
+            <!-- Option 1 (A) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOption1"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_margin="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="#FFF0F3"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
-                app:strokeColor="@color/color_red"
-                app:strokeWidth="2dp">
+                app:cardElevation="6dp"
+                app:strokeColor="#FF5252"
+                app:strokeWidth="2.5dp">
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
-                    <!-- Option label emoji -->
+                    <!-- Option label badge -->
                     <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
                         android:layout_gravity="top|start"
                         android:layout_margin="8dp"
                         android:background="@drawable/quiz_badge_bg"
+                        android:backgroundTint="#FF5252"
                         android:gravity="center"
                         android:text="A"
-                        android:textColor="@color/color_red"
-                        android:textSize="11sp"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -185,8 +208,8 @@
 
                         <ImageView
                             android:id="@+id/ivOption1"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
                             android:scaleType="fitCenter"
                             tools:src="@drawable/e_a" />
 
@@ -198,15 +221,15 @@
                             android:id="@+id/tvOption1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:text="A"
-                            android:textColor="@color/color_red"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:maxLines="1"
+                            android:autoSizeMaxTextSize="26sp"
+                            android:autoSizeMinTextSize="14sp"
                             android:autoSizeTextType="uniform"
-                            android:autoSizeMinTextSize="12sp"
-                            android:autoSizeMaxTextSize="24sp" />
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="A"
+                            android:textColor="#D32F2F"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <ImageView
@@ -219,33 +242,34 @@
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Option 2 -->
+            <!-- Option 2 (B) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOption2"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_margin="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="#F0F7FF"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
-                app:strokeColor="@color/color_blue"
-                app:strokeWidth="2dp">
+                app:cardElevation="6dp"
+                app:strokeColor="#29B6F6"
+                app:strokeWidth="2.5dp">
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
                     <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
                         android:layout_gravity="top|start"
                         android:layout_margin="8dp"
                         android:background="@drawable/quiz_badge_bg"
+                        android:backgroundTint="#29B6F6"
                         android:gravity="center"
                         android:text="B"
-                        android:textColor="@color/color_blue"
-                        android:textSize="11sp"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -257,8 +281,8 @@
 
                         <ImageView
                             android:id="@+id/ivOption2"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
                             android:scaleType="fitCenter"
                             tools:src="@drawable/e_b" />
 
@@ -270,15 +294,15 @@
                             android:id="@+id/tvOption2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:text="B"
-                            android:textColor="@color/color_blue"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:maxLines="1"
+                            android:autoSizeMaxTextSize="26sp"
+                            android:autoSizeMinTextSize="14sp"
                             android:autoSizeTextType="uniform"
-                            android:autoSizeMinTextSize="12sp"
-                            android:autoSizeMaxTextSize="24sp" />
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="B"
+                            android:textColor="#0288D1"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <ImageView
@@ -300,33 +324,34 @@
             android:orientation="horizontal"
             android:weightSum="2">
 
-            <!-- Option 3 -->
+            <!-- Option 3 (C) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOption3"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_margin="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="#F0FFF4"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
-                app:strokeColor="@color/color_green"
-                app:strokeWidth="2dp">
+                app:cardElevation="6dp"
+                app:strokeColor="#66BB6A"
+                app:strokeWidth="2.5dp">
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
                     <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
                         android:layout_gravity="top|start"
                         android:layout_margin="8dp"
                         android:background="@drawable/quiz_badge_bg"
+                        android:backgroundTint="#66BB6A"
                         android:gravity="center"
                         android:text="C"
-                        android:textColor="@color/color_green"
-                        android:textSize="11sp"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -338,8 +363,8 @@
 
                         <ImageView
                             android:id="@+id/ivOption3"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
                             android:scaleType="fitCenter"
                             tools:src="@drawable/e_c" />
 
@@ -351,15 +376,15 @@
                             android:id="@+id/tvOption3"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:text="C"
-                            android:textColor="@color/color_green"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:maxLines="1"
+                            android:autoSizeMaxTextSize="26sp"
+                            android:autoSizeMinTextSize="14sp"
                             android:autoSizeTextType="uniform"
-                            android:autoSizeMinTextSize="12sp"
-                            android:autoSizeMaxTextSize="24sp" />
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="C"
+                            android:textColor="#388E3C"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <ImageView
@@ -372,33 +397,34 @@
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Option 4 -->
+            <!-- Option 4 (D) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOption4"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_margin="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="#FFF8E7"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
-                app:strokeColor="@color/color_orange"
-                app:strokeWidth="2dp">
+                app:cardElevation="6dp"
+                app:strokeColor="#FFA726"
+                app:strokeWidth="2.5dp">
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
                     <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
                         android:layout_gravity="top|start"
                         android:layout_margin="8dp"
                         android:background="@drawable/quiz_badge_bg"
+                        android:backgroundTint="#FFA726"
                         android:gravity="center"
                         android:text="D"
-                        android:textColor="@color/color_orange"
-                        android:textSize="11sp"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -410,8 +436,8 @@
 
                         <ImageView
                             android:id="@+id/ivOption4"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
                             android:scaleType="fitCenter"
                             tools:src="@drawable/e_d" />
 
@@ -423,15 +449,15 @@
                             android:id="@+id/tvOption4"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:text="D"
-                            android:textColor="@color/color_orange"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:maxLines="1"
+                            android:autoSizeMaxTextSize="26sp"
+                            android:autoSizeMinTextSize="14sp"
                             android:autoSizeTextType="uniform"
-                            android:autoSizeMinTextSize="12sp"
-                            android:autoSizeMaxTextSize="24sp" />
+                            android:gravity="start|center_vertical"
+                            android:maxLines="1"
+                            android:text="D"
+                            android:textColor="#F57C00"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <ImageView
@@ -450,18 +476,17 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnNext"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginBottom="32dp"
+        android:layout_height="54dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="24dp"
         android:background="@drawable/quiz_btn_next_bg"
-        android:paddingVertical="14dp"
         android:text="ข้อถัดไป ▶"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold"
         app:backgroundTint="@null"
-        app:cornerRadius="28dp"
+        app:cornerRadius="27dp"
         app:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

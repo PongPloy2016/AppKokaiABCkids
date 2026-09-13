@@ -1,58 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- พื้นหลังหลัก gradient ครีมอุ่น -->
+    <!-- Primary soft warm gradient -->
     <item>
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="#FFF8E7"
-                android:centerColor="#FFF0F5"
-                android:endColor="#F0F4FF"
-                android:angle="180" />
+                android:startColor="#FFF5F7"
+                android:centerColor="#F5F3FF"
+                android:endColor="#EBF4FF"
+                android:angle="135" />
         </shape>
     </item>
 
-    <!-- ฟองสบู่ มุมบนซ้าย - ชมพูอ่อน -->
+    <!-- Top-left pink pastel bubble -->
     <item
-        android:top="-50dp"
-        android:left="-50dp"
-        android:width="200dp"
-        android:height="200dp">
+        android:top="-60dp"
+        android:left="-60dp"
+        android:width="220dp"
+        android:height="220dp">
         <shape android:shape="oval">
-            <solid android:color="#35FFB6C1" />
+            <solid android:color="#25FF80AB" />
         </shape>
     </item>
 
-    <!-- ฟองสบู่ มุมบนขวา - ฟ้าอ่อน -->
+    <!-- Top-right sky blue bubble -->
     <item
-        android:top="40dp"
-        android:left="200dp"
-        android:width="160dp"
-        android:height="160dp">
-        <shape android:shape="oval">
-            <solid android:color="#3087CEEB" />
-        </shape>
-    </item>
-
-    <!-- ฟองสบู่ กลาง - เขียวมิ้นต์ -->
-    <item
-        android:top="400dp"
-        android:left="-40dp"
-        android:width="150dp"
-        android:height="150dp">
-        <shape android:shape="oval">
-            <solid android:color="#2598FB98" />
-        </shape>
-    </item>
-
-    <!-- ฟองสบู่ ล่างขวา - ม่วงอ่อน -->
-    <item
-        android:top="600dp"
-        android:left="180dp"
+        android:top="20dp"
+        android:left="220dp"
         android:width="180dp"
         android:height="180dp">
         <shape android:shape="oval">
-            <solid android:color="#25DDA0DD" />
+            <solid android:color="#2080D8FF" />
+        </shape>
+    </item>
+
+    <!-- Mid-left mint bubble -->
+    <item
+        android:top="380dp"
+        android:left="-50dp"
+        android:width="170dp"
+        android:height="170dp">
+        <shape android:shape="oval">
+            <solid android:color="#20A7F3D0" />
+        </shape>
+    </item>
+
+    <!-- Bottom-right purple bubble -->
+    <item
+        android:top="580dp"
+        android:left="180dp"
+        android:width="200dp"
+        android:height="200dp">
+        <shape android:shape="oval">
+            <solid android:color="#20E1BEE7" />
         </shape>
     </item>
 

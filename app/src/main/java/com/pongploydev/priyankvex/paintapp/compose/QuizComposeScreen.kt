@@ -1,12 +1,12 @@
 package com.pongploydev.priyankvex.paintapp.compose
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,33 +17,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
+import com.pongploydev.profilefeature.data.SupabaseDataManager
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity
 import com.pongploydev.priyankvex.paintapp.activity.QuizSessionActivity
 import com.pongploydev.priyankvex.paintapp.adapter.QuizTopic
-import kotlin.math.PI
-import kotlin.math.sin
+import com.pongploydev.priyankvex.paintapp.utils.QuizProgressManager
 
 // ─────────────────────────────────────────────
 //  Color Palette
@@ -59,8 +57,6 @@ private val topicGradients = listOf(
     listOf(Color(0xFFF3E5F5), Color(0xFFE3F2FD)),
 )
 
-// Background components removed, using CommonComposeComponents.kt
-
 // ─────────────────────────────────────────────
 //  Main Screen
 // ─────────────────────────────────────────────
@@ -68,7 +64,38 @@ private val topicGradients = listOf(
 @Composable
 fun QuizComposeScreen() {
     val context = LocalContext.current
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     val topics = remember { getQuizTopics() }
+
+    // Read current profile & progress
+    val supabaseUser = remember { SupabaseAuthManager.getInstance(context).getStoredUser() }
+    val firebaseUser = remember { FirebaseAuth.getInstance().currentUser }
+    val userId = supabaseUser?.id ?: firebaseUser?.uid
+
+    var refreshTrigger by remember { mutableStateOf(0) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                refreshTrigger++
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(userId, refreshTrigger) {
+        if (!userId.isNullOrEmpty()) {
+            val dataManager = SupabaseDataManager.getInstance(context)
+            dataManager.fetchUserProfile(userId).onSuccess { profile ->
+                if (profile.currentLevel > 1) {
+                    QuizProgressManager.setMaxUnlockedLesson(context, profile.currentLevel + 1)
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -106,9 +133,18 @@ fun QuizComposeScreen() {
                 }
 
                 itemsIndexed(topics) { index, topic ->
+                    val isUnlocked = remember(refreshTrigger, topic.id) {
+                        QuizProgressManager.isTopicUnlocked(context, topic.id)
+                    }
+                    val highScore = remember(refreshTrigger, topic.id) {
+                        QuizProgressManager.getTopicHighScore(context, topic.id)
+                    }
+
                     QuizTopicItem(
                         topic = topic,
                         index = index,
+                        isUnlocked = isUnlocked,
+                        highScore = highScore,
                         gradientColors = topicGradients[index % topicGradients.size]
                     ) {
                         val intent = Intent(context, QuizSessionActivity::class.java).apply {
@@ -193,12 +229,16 @@ fun PulsingTargetDot() {
 fun QuizTopicItem(
     topic: QuizTopic,
     index: Int,
+    isUnlocked: Boolean,
+    highScore: Int,
     gradientColors: List<Color>,
     onClick: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
     val context = LocalContext.current
     LaunchedEffect(Unit) { visible = true }
+
+    val cardAlpha = if (isUnlocked) 1.0f else 0.55f
 
     AnimatedVisibility(
         visible = visible,
@@ -208,13 +248,18 @@ fun QuizTopicItem(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .alpha(cardAlpha)
                 .clickable {
-                    com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(context, "หัวข้อแบบทดสอบ_${topic.title}", "หน้าแบบทดสอบ (Quiz)")
-                    onClick()
+                    if (isUnlocked) {
+                        com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(context, "หัวข้อแบบทดสอบ_${topic.title}", "หน้าแบบทดสอบ (Quiz)")
+                        onClick()
+                    } else {
+                        Toast.makeText(context, "🔒 ต้องสอบผ่านบทเรียนก่อนหน้าก่อนนะ!", Toast.LENGTH_SHORT).show()
+                    }
                 },
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = if (isUnlocked) 6.dp else 1.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -230,7 +275,7 @@ fun QuizTopicItem(
                     Surface(
                         modifier = Modifier.size(72.dp),
                         shape = RoundedCornerShape(20.dp),
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = if (isUnlocked) 0.6f else 0.4f),
                         border = BorderStroke(2.dp, Color.White)
                     ) {
                         Image(
@@ -248,12 +293,12 @@ fun QuizTopicItem(
                             text = topic.title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A2E)
+                            color = if (isUnlocked) Color(0xFF1A1A2E) else Color(0xFF555555)
                         )
                         Text(
                             text = topic.description,
                             fontSize = 13.sp,
-                            color = Color(0xFF444444),
+                            color = Color(0xFF555555),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             lineHeight = 18.sp
@@ -263,7 +308,7 @@ fun QuizTopicItem(
                         
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
-                                color = colorResource(id = topic.colorRes).copy(alpha = 0.2f),
+                                color = if (isUnlocked) colorResource(id = topic.colorRes).copy(alpha = 0.2f) else Color.Gray.copy(alpha = 0.2f),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
@@ -271,18 +316,26 @@ fun QuizTopicItem(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = colorResource(id = topic.colorRes)
+                                    color = if (isUnlocked) colorResource(id = topic.colorRes) else Color.DarkGray
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("👉 เริ่มเลย!", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = KidDeepBlue)
+                            if (isUnlocked) {
+                                if (highScore >= 0) {
+                                    Text("✅ ผ่านแล้ว (${highScore}/20)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                                } else {
+                                    Text("👉 เริ่มเลย!", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = KidDeepBlue)
+                                }
+                            } else {
+                                Text("🔒 ล็อคอยู่", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC62828))
+                            }
                         }
                     }
 
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        imageVector = if (isUnlocked) Icons.AutoMirrored.Filled.ArrowForward else Icons.Filled.Lock,
                         contentDescription = null,
-                        tint = KidDeepBlue.copy(alpha = 0.6f),
+                        tint = if (isUnlocked) KidDeepBlue.copy(alpha = 0.7f) else Color.Gray,
                         modifier = Modifier.size(28.dp)
                     )
                 }

@@ -367,7 +367,8 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         selectedOption = -1
         currentQuestion++
 
-        binding.tvProgress.text = "${currentQuestion.toThai()}/${totalQuestions.toThai()}"
+        binding.tvProgress.text = "ข้อ ${currentQuestion.toThai()} / ${totalQuestions.toThai()}"
+        binding.tvScoreBadge.text = "⭐ ${score.toThai()} คะแนน"
         binding.progressBar.progress = (currentQuestion * 100) / totalQuestions
 
         currentItem = quizList[Random.nextInt(quizList.size)]
@@ -378,19 +379,19 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         binding.tvQuestion.text =
                 when (topicId) {
-                    1 -> "นี่คือตัวอะไร?"
-                    2 -> "นี่คือตัวอักษรอะไร?"
-                    3 -> "นี่คือเลขอะไร?"
-                    4 -> "นี่คืออะไร?"
-                    5 -> "รูปนี้คืออะไร?"
-                    6 -> "นี่คือเลขอะไร?"
-                    7 -> "นี่คือสัตว์อะไร?"
-                    8 -> "นี่คือผลไม้อะไร?"
-                    9 -> "นี่คือสีอะไร?"
-                    10 -> "นี่คือผักอะไร?"
-                    11 -> "นี่คือกีฬาอะไร?"
-                    12 -> "นี่คือยานพาหนะอะไร?"
-                    else -> "ทายสิคืออะไร?"
+                    1 -> "❓ นี่คือตัวอะไร?"
+                    2 -> "❓ นี่คือตัวอักษรอะไร?"
+                    3 -> "❓ นี่คือเลขอะไร?"
+                    4 -> "❓ นี่คืออะไร?"
+                    5 -> "❓ รูปนี้คืออะไร?"
+                    6 -> "❓ นี่คือเลขอะไร?"
+                    7 -> "❓ นี่คือสัตว์อะไร?"
+                    8 -> "❓ นี่คือผลไม้อะไร?"
+                    9 -> "❓ นี่คือสีอะไร?"
+                    10 -> "❓ นี่คือผักอะไร?"
+                    11 -> "❓ นี่คือกีฬาอะไร?"
+                    12 -> "❓ นี่คือยานพาหนะอะไร?"
+                    else -> "❓ ทายสิคืออะไร?"
                 }
 
         binding.tvOption1.text = options[0].displayValue
@@ -445,7 +446,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         showAnswerResult(optionIndex)
         if (optionIndex == correctAnswerIndex) {
             score++
-            binding.tvScoreBadge.text = "⭐ ${score.toThai()}"
+            binding.tvScoreBadge.text = "⭐ ${score.toThai()} คะแนน"
             playCorrectSound()
             isAutoNavigating = true
             binding.root.postDelayed(
@@ -458,6 +459,15 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             )
         } else {
             playWrongSound()
+            isAutoNavigating = true
+            binding.root.postDelayed(
+                    {
+                        if (!isFinishing) {
+                            goToNextOrResults()
+                        }
+                    },
+                    1500
+            )
         }
     }
 
@@ -471,7 +481,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts?.stop()
         tts?.language = Locale("th")
         tts?.speak(
-                "ไม่ถูกค่ะ ลองไปอีกครั้งค่ะ ตัวนี้คือ ${currentItem.displayValue}",
+                "ไม่ถูกค่ะ ตัวนี้คือ ${currentItem.displayValue}",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 null
@@ -491,18 +501,16 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val imageView = getOptionImageView(index)
         val resultIconView = getOptionIconView(index)
 
-        val highlightColor = if (isCorrect) {
-            ContextCompat.getColor(this, R.color.green_light)
-        } else {
-            ContextCompat.getColor(this, R.color.red_light)
-        }
+        val cardBg = if (isCorrect) Color.parseColor("#E8F5E9") else Color.parseColor("#FFEBEE")
+        val strokeColor = if (isCorrect) Color.parseColor("#4CAF50") else Color.parseColor("#EF5350")
+        val textColor = if (isCorrect) Color.parseColor("#1B5E20") else Color.parseColor("#B71C1C")
 
-        cardView.setCardBackgroundColor(highlightColor)
-        cardView.strokeColor = highlightColor
-        textView.setTextColor(Color.WHITE)
-        imageView.setColorFilter(Color.WHITE)
+        cardView.setCardBackgroundColor(cardBg)
+        cardView.strokeColor = strokeColor
+        textView.setTextColor(textColor)
+        imageView.clearColorFilter()
         resultIconView.setImageResource(if (isCorrect) R.drawable.ic_check_24 else R.drawable.ic_close_24)
-        resultIconView.setColorFilter(Color.WHITE)
+        resultIconView.setColorFilter(strokeColor)
         resultIconView.visibility = View.VISIBLE
     }
 
@@ -512,38 +520,41 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val imageView = getOptionImageView(correctAnswerIndex)
         val resultIconView = getOptionIconView(correctAnswerIndex)
 
-        val greenColor = ContextCompat.getColor(this, R.color.green_light)
-        cardView.setCardBackgroundColor(greenColor)
-        cardView.strokeColor = greenColor
-        textView.setTextColor(Color.WHITE)
-        imageView.setColorFilter(Color.WHITE)
+        val greenBg = Color.parseColor("#E8F5E9")
+        val greenStroke = Color.parseColor("#4CAF50")
+        val greenText = Color.parseColor("#1B5E20")
+
+        cardView.setCardBackgroundColor(greenBg)
+        cardView.strokeColor = greenStroke
+        textView.setTextColor(greenText)
+        imageView.clearColorFilter()
         resultIconView.setImageResource(R.drawable.ic_check_24)
-        resultIconView.setColorFilter(Color.WHITE)
+        resultIconView.setColorFilter(greenStroke)
         resultIconView.visibility = View.VISIBLE
     }
 
     private fun resetOptionsUI() {
-        binding.cardOption1.setCardBackgroundColor(Color.WHITE)
-        binding.cardOption1.strokeColor = ContextCompat.getColor(this, R.color.color_red)
-        binding.tvOption1.setTextColor(ContextCompat.getColor(this, R.color.color_red))
+        binding.cardOption1.setCardBackgroundColor(Color.parseColor("#FFF0F3"))
+        binding.cardOption1.strokeColor = Color.parseColor("#FF5252")
+        binding.tvOption1.setTextColor(Color.parseColor("#D32F2F"))
         binding.ivOption1.clearColorFilter()
         binding.ivResult1.visibility = View.GONE
 
-        binding.cardOption2.setCardBackgroundColor(Color.WHITE)
-        binding.cardOption2.strokeColor = ContextCompat.getColor(this, R.color.color_blue)
-        binding.tvOption2.setTextColor(ContextCompat.getColor(this, R.color.color_blue))
+        binding.cardOption2.setCardBackgroundColor(Color.parseColor("#F0F7FF"))
+        binding.cardOption2.strokeColor = Color.parseColor("#29B6F6")
+        binding.tvOption2.setTextColor(Color.parseColor("#0288D1"))
         binding.ivOption2.clearColorFilter()
         binding.ivResult2.visibility = View.GONE
 
-        binding.cardOption3.setCardBackgroundColor(Color.WHITE)
-        binding.cardOption3.strokeColor = ContextCompat.getColor(this, R.color.color_green)
-        binding.tvOption3.setTextColor(ContextCompat.getColor(this, R.color.color_green))
+        binding.cardOption3.setCardBackgroundColor(Color.parseColor("#F0FFF4"))
+        binding.cardOption3.strokeColor = Color.parseColor("#66BB6A")
+        binding.tvOption3.setTextColor(Color.parseColor("#388E3C"))
         binding.ivOption3.clearColorFilter()
         binding.ivResult3.visibility = View.GONE
 
-        binding.cardOption4.setCardBackgroundColor(Color.WHITE)
-        binding.cardOption4.strokeColor = ContextCompat.getColor(this, R.color.color_orange)
-        binding.tvOption4.setTextColor(ContextCompat.getColor(this, R.color.color_orange))
+        binding.cardOption4.setCardBackgroundColor(Color.parseColor("#FFF8E7"))
+        binding.cardOption4.strokeColor = Color.parseColor("#FFA726")
+        binding.tvOption4.setTextColor(Color.parseColor("#F57C00"))
         binding.ivOption4.clearColorFilter()
         binding.ivResult4.visibility = View.GONE
     }
@@ -605,6 +616,9 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             setPadding(60, 20, 60, 0)
             addView(input)
         }
+
+        // Record quiz progress and unlock next lesson if passed
+        com.pongploydev.priyankvex.paintapp.utils.QuizProgressManager.recordQuizResult(this, topicId, score, totalQuestions)
 
         androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("สรุปผลคะแนน")
