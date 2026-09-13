@@ -75,6 +75,22 @@ interface SupabaseDataApiService {
         @Query("select") select: String = "*"
     ): Response<List<UserQuizResult>>
 
+    @GET("rest/v1/user_quiz_results")
+    suspend fun getAllQuizResults(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") auth: String,
+        @Query("order") order: String = "created_at.desc",
+        @Query("limit") limit: Int = 100,
+        @Query("select") select: String = "*"
+    ): Response<List<UserQuizResult>>
+
+    @GET("rest/v1/profiles")
+    suspend fun getAllProfiles(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") auth: String,
+        @Query("select") select: String = "*"
+    ): Response<List<UserProfile>>
+
     @POST("rest/v1/user_quiz_results")
     suspend fun insertQuizResult(
         @Header("apikey") apiKey: String,

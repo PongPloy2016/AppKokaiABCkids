@@ -89,6 +89,7 @@ dependencies {
     implementation(project(":livefeature"))
     implementation(project(":kidswebviewfeature"))
     implementation(project(":profilefeature"))
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.appcompat:appcompat:1.6.1")

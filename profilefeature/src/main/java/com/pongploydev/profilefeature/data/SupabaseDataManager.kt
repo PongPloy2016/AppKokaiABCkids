@@ -352,15 +352,77 @@ class SupabaseDataManager private constructor(context: Context) {
 
     suspend fun fetchQuizResults(userId: String): Result<List<UserQuizResult>> = withContext(Dispatchers.IO) {
         try {
-            val response = dataApiService.getQuizResults(
+            var response = dataApiService.getQuizResults(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
                 userIdFilter = "eq.$userId"
             )
+            if (response.code() == 401) {
+                authManager.signOut()
+                response = dataApiService.getQuizResults(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader(),
+                    userIdFilter = "eq.$userId"
+                )
+            }
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
             } else {
                 Result.failure(Exception("Failed to fetch quiz results"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun fetchAllQuizResults(): Result<List<UserQuizResult>> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseDataManager"
+        try {
+            var response = dataApiService.getAllQuizResults(
+                apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                auth = getAuthHeader(),
+                order = "created_at.desc"
+            )
+            if (response.code() == 401) {
+                authManager.signOut()
+                response = dataApiService.getAllQuizResults(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader(),
+                    order = "created_at.desc"
+                )
+            }
+            if (response.isSuccessful) {
+                val list = response.body() ?: emptyList()
+                Result.success(list)
+            } else {
+                val err = response.errorBody()?.string()
+                Log.e(tag, "fetchAllQuizResults HTTP ${response.code()}: $err")
+                Result.failure(Exception("Failed to fetch all quiz results"))
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "fetchAllQuizResults Exception: ${e.localizedMessage}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun fetchAllUserProfiles(): Result<List<UserProfile>> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseDataManager"
+        try {
+            var response = dataApiService.getAllProfiles(
+                apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                auth = getAuthHeader()
+            )
+            if (response.code() == 401) {
+                authManager.signOut()
+                response = dataApiService.getAllProfiles(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader()
+                )
+            }
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception("Failed to fetch all user profiles"))
             }
         } catch (e: Exception) {
             Result.failure(e)
