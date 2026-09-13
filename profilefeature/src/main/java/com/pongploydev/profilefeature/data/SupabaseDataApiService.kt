@@ -41,6 +41,7 @@ interface SupabaseDataApiService {
     suspend fun uploadStorageObject(
         @Header("apikey") apiKey: String,
         @Header("Authorization") auth: String,
+        @Header("Content-Type") contentType: String = "image/jpeg",
         @Header("x-upsert") upsert: String = "true",
         @retrofit2.http.Path("bucket") bucket: String,
         @retrofit2.http.Path(value = "path", encoded = true) path: String,

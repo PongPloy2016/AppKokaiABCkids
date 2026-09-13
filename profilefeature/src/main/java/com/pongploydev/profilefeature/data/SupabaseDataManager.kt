@@ -149,31 +149,37 @@ class SupabaseDataManager private constructor(context: Context) {
             val fileName = "avatar_${cleanId}_${System.currentTimeMillis()}.jpg"
             val requestBody = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
 
-            // 1. Attempt uploading to Supabase Storage bucket "avatars"
+            // 1. Try uploading to candidate Supabase Storage buckets ("avatars", "files", "profiles")
+            val candidateBuckets = listOf("avatars", "files", "profiles")
             var publicUrl: String? = null
-            try {
-                val storageResp = dataApiService.uploadStorageObject(
-                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
-                    auth = getAuthHeader(),
-                    upsert = "true",
-                    bucket = "avatars",
-                    path = fileName,
-                    body = requestBody
-                )
-                if (storageResp.isSuccessful) {
-                    publicUrl = "${SupabaseAuthManager.SUPABASE_URL}/storage/v1/object/public/avatars/$fileName"
+
+            for (bucket in candidateBuckets) {
+                try {
+                    val storageResp = dataApiService.uploadStorageObject(
+                        apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                        auth = getAuthHeader(),
+                        contentType = mimeType,
+                        upsert = "true",
+                        bucket = bucket,
+                        path = fileName,
+                        body = requestBody
+                    )
+                    if (storageResp.isSuccessful) {
+                        publicUrl = "${SupabaseAuthManager.SUPABASE_URL}/storage/v1/object/public/$bucket/$fileName"
+                        break
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
 
-            // 2. Fallback to compact Base64 data URL if storage bucket fails/doesn't exist
+            // 2. Fallback to compact Base64 data URL if storage bucket fails or doesn't exist
             val finalAvatarUrl = publicUrl ?: run {
                 val base64Str = android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
                 "data:$mimeType;base64,$base64Str"
             }
 
-            // 3. Update profile record in Supabase PostgreSQL
+            // 3. Update user_profiles record in Supabase PostgreSQL (qriqerrkxccpnwabphdc)
             val updateResult = updateUserProfile(userId, UserProfileUpdate(avatarUrl = finalAvatarUrl))
             if (updateResult.isSuccess) {
                 Result.success(finalAvatarUrl)
