@@ -188,6 +188,8 @@ class SupabaseDataManager private constructor(context: Context) {
                 val errBody = errBodyInitial ?: response.errorBody()?.string() ?: "Empty response body"
                 if (response.code() == 403 || errBody.contains("42501") || errBody.contains("row-level security policy", ignoreCase = true)) {
                     Log.w(tag, "upsertUserProfile RLS WARNING (HTTP ${response.code()}): Supabase Row-Level Security blocked profile insert/update for anon user. Run 'ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;' in Supabase SQL Editor to allow database sync for anonymous users.")
+                } else if (response.code() == 409 || errBody.contains("23503") || errBody.contains("violates foreign key constraint", ignoreCase = true)) {
+                    Log.w(tag, "upsertUserProfile FOREIGN KEY WARNING (HTTP 409): User ID is not registered in Supabase auth.users table. Run 'ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;' in Supabase SQL Editor to allow saving profiles for guest/local users.")
                 } else {
                     Log.e(tag, "upsertUserProfile API FAILED (HTTP ${response.code()} ${response.message()}): $errBody")
                 }
