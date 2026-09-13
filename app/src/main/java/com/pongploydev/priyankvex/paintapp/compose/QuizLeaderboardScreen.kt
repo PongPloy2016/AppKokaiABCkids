@@ -54,7 +54,11 @@ data class UserLeaderboardSummary(
     val totalGamesPlayed: Int,
     val totalStars: Int,
     val latestDateString: String,
-    val rawLatestTimestamp: String
+    val rawLatestTimestamp: String,
+    val latestTopicTitle: String = "",
+    val latestDurationSeconds: Int = 0,
+    val latestScore: Int = 0,
+    val latestTotalQuestions: Int = 10
 )
 
 private fun extractDateKey(isoTimestamp: String?): String {
@@ -139,7 +143,11 @@ private fun aggregateUserSummaries(
             totalGamesPlayed = totalGames,
             totalStars = totalStars,
             latestDateString = latest.dateString,
-            rawLatestTimestamp = latest.rawTimestamp
+            rawLatestTimestamp = latest.rawTimestamp,
+            latestTopicTitle = latest.topicTitle,
+            latestDurationSeconds = latest.durationSeconds,
+            latestScore = latest.score,
+            latestTotalQuestions = latest.totalQuestions
         )
     }.sortedByDescending { it.totalScore }
 }
@@ -498,10 +506,42 @@ fun PodiumUserItem(
     currentProfileName: String?
 ) {
     val isCurrentUser = !currentProfileName.isNullOrBlank() && summary.userName == currentProfileName
+    var showDetailDialog by remember { mutableStateOf(false) }
+
+    if (showDetailDialog) {
+        AlertDialog(
+            onDismissRequest = { showDetailDialog = false },
+            title = {
+                Text(
+                    text = "🏆 รายละเอียดเกม (${summary.userName})",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("• userName: \"${summary.userName}\"", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text("• topicTitle: \"${if (summary.latestTopicTitle.isNotBlank()) summary.latestTopicTitle else "ตัวเลข 0-9"}\"", fontSize = 14.sp)
+                    Text("• score: ${summary.latestScore} (คะแนนรวม: ${summary.totalScore})", fontSize = 14.sp)
+                    Text("• totalQuestions: ${summary.latestTotalQuestions}", fontSize = 14.sp)
+                    Text("• durationSeconds: ${summary.latestDurationSeconds} วินาที", fontSize = 14.sp)
+                    Text("• timestamp: ${summary.latestDateString}", fontSize = 14.sp)
+                    Text("• avatarUrl: ${summary.avatarUrl ?: "null"}", fontSize = 13.sp, color = Color.Gray)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDetailDialog = false }) {
+                    Text("ปิด")
+                }
+            }
+        )
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(96.dp)
+        modifier = Modifier
+            .width(96.dp)
+            .clickable { showDetailDialog = true }
     ) {
         // Crown for Rank 1
         if (rank == 1) {
@@ -608,72 +648,132 @@ fun LeaderboardRowCard(
 ) {
     val isCurrentUser = !currentProfileName.isNullOrBlank() && summary.userName == currentProfileName
     val cardBgColor = if (isCurrentUser) Color(0xFF5E35B1) else Color(0xFF7E57C2)
+    var isExpanded by remember { mutableStateOf(true) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 5.dp),
+            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = cardBgColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(14.dp)
         ) {
-            // Rank Number
-            Text(
-                text = "$rank",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
-                modifier = Modifier.width(36.dp)
-            )
-
-            // Avatar Photo Circle
-            Surface(
-                modifier = Modifier.size(42.dp),
-                shape = CircleShape,
-                color = Color.White.copy(alpha = 0.25f)
+            // Main Top Row (Rank, Avatar, Player Name, Points)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (!summary.avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = summary.avatarUrl,
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
+                // Rank Number
+                Text(
+                    text = "$rank",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    modifier = Modifier.width(32.dp)
+                )
+
+                // Avatar Photo Circle
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.25f)
+                ) {
+                    if (!summary.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = summary.avatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("👤", fontSize = 22.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Player Name & Topic Subtitle
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (isCurrentUser) "${summary.userName} (YOU)" else summary.userName,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1
                     )
-                } else {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("👤", fontSize = 22.sp)
+                    if (summary.latestTopicTitle.isNotBlank()) {
+                        Text(
+                            text = "📚 ${summary.latestTopicTitle}",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.85f),
+                            maxLines = 1
+                        )
+                    }
+                }
+
+                // Points Badge
+                Text(
+                    text = "${summary.totalScore} points",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
+                )
+            }
+
+            // Expanded Details Section inside the Purple Card
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.Black.copy(alpha = 0.18f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        DetailRow("userName:", "\"${summary.userName}\"")
+                        DetailRow("topicTitle:", "\"${if (summary.latestTopicTitle.isNotBlank()) summary.latestTopicTitle else "ตัวเลข 0-9"}\"")
+                        DetailRow("score:", "${summary.latestScore}")
+                        DetailRow("totalQuestions:", "${summary.latestTotalQuestions}")
+                        DetailRow("durationSeconds:", "${summary.latestDurationSeconds}")
+                        DetailRow("timestamp:", summary.latestDateString)
+                        DetailRow("avatarUrl:", if (summary.avatarUrl.isNullOrBlank()) "null" else summary.avatarUrl)
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // Player Name
-            Text(
-                text = if (isCurrentUser) "${summary.userName} (YOU)" else summary.userName,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.weight(1f),
-                maxLines = 1
-            )
-
-            // Points
-            Text(
-                text = "${summary.totalScore} points",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White
-            )
         }
+    }
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White.copy(alpha = 0.8f)
+        )
+        Text(
+            text = value,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFFFD54F)
+        )
     }
 }
 
