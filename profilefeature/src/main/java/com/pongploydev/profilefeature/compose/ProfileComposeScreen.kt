@@ -72,6 +72,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -694,80 +695,134 @@ fun ProfileDetailsViewDual(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
-                        .background(KidTheme.DualHeaderGradient)
-                        .padding(top = 28.dp, bottom = 32.dp, start = 20.dp, end = 20.dp)
+                        .clip(RoundedCornerShape(bottomStart = 38.dp, bottomEnd = 38.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF536DFE),
+                                    Color(0xFF7C4DFF),
+                                    Color(0xFF00B0FF)
+                                )
+                            )
+                        )
+                        .padding(top = 32.dp, bottom = 36.dp, start = 20.dp, end = 20.dp)
                 ) {
+                    // Floating decorative circles for glassmorphic depth
+                    Box(
+                        modifier = Modifier
+                            .size(160.dp)
+                            .align(Alignment.TopEnd)
+                            .graphicsLayer { translationX = 50f; translationY = -50f }
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.12f))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .align(Alignment.BottomStart)
+                            .graphicsLayer { translationX = -30f; translationY = 30f }
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.1f))
+                    )
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Surface(
-                            modifier = Modifier.size(90.dp),
-                            shape = CircleShape,
-                            color = Color.White,
-                            border = BorderStroke(4.dp, KidTheme.Accent),
-                            shadowElevation = 8.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Profile Avatar",
-                                    tint = KidTheme.Primary,
-                                    modifier = Modifier.size(56.dp)
-                                )
+                        // Avatar Container with Crown Badge Overlay
+                        Box(contentAlignment = Alignment.BottomEnd) {
+                            Surface(
+                                modifier = Modifier.size(96.dp),
+                                shape = CircleShape,
+                                color = Color.White,
+                                border = BorderStroke(4.dp, Color(0xFFFFD166)),
+                                shadowElevation = 12.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = "Profile Avatar",
+                                        tint = Color(0xFF536DFE),
+                                        modifier = Modifier.size(60.dp)
+                                    )
+                                }
+                            }
+
+                            // Crown / Level Badge
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFFFC107),
+                                border = BorderStroke(2.dp, Color.White),
+                                shadowElevation = 4.dp,
+                                modifier = Modifier.size(30.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(text = "👑", fontSize = 15.sp)
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
+                        // User Display Name & Edit Button
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = displayName,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
                             if (firebaseUser?.isAnonymous != true) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "แก้ไขชื่อ",
-                                    tint = Color.White.copy(alpha = 0.8f),
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color.White.copy(alpha = 0.25f),
                                     modifier = Modifier
-                                        .size(18.dp)
+                                        .size(28.dp)
                                         .clickable { showEditNameDialog = true }
-                                )
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "แก้ไขชื่อ",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
+                        // Status Pills (Firebase & Supabase)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             val isFirebaseActive = firebaseUser != null || firebaseAuth.currentUser != null
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isFirebaseActive) Color.White.copy(alpha = 0.25f) else Color.Red.copy(alpha = 0.3f)
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isFirebaseActive) Color.White.copy(alpha = 0.22f) else Color(0xFFFF5252).copy(alpha = 0.4f),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
                             ) {
                                 Text(
-                                    text = if (isFirebaseActive) "🔥 Firebase Active" else "🔥 Firebase Disconnected",
+                                    text = if (isFirebaseActive) "🔥 Firebase Active" else "🔥 Firebase Off",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
 
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (supabaseUser != null) KidTheme.SupabasePrimary.copy(alpha = 0.4f) else Color.Red.copy(alpha = 0.3f)
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (supabaseUser != null) Color(0xFF00E676).copy(alpha = 0.35f) else Color(0xFFFF5252).copy(alpha = 0.4f),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
                             ) {
                                 Text(
-                                    text = if (supabaseUser != null) "⚡ Supabase Active" else "⚡ Supabase Disconnected",
+                                    text = if (supabaseUser != null) "⚡ Supabase Active" else "⚡ Supabase Off",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
                         }
@@ -810,21 +865,67 @@ fun ProfileDetailsViewDual(
                     val totalQuizzes = quizResults.size
                     val totalAchievements = achievements.size
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ProfileStatCard("ดาวสะสม", "$totalStars ⭐", Color(0xFFFFF9E6), Color(0xFFFFD166), Color(0xFFFF9800), Modifier.weight(1f)) {
-                            switchToAppTab(context, 0)
+                    // 2x2 STAT GRID (Spacious, modern & clean layout)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            ProfileStatCard(
+                                title = "ดาวสะสม",
+                                value = "$totalStars ⭐",
+                                subtitle = "สะสมจากควิซและบทเรียน",
+                                icon = "⭐",
+                                bgGradient = listOf(Color(0xFFFFFDF0), Color(0xFFFFF8D6)),
+                                borderColor = Color(0xFFFFD166),
+                                textColor = Color(0xFFF59E0B),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                switchToAppTab(context, 0)
+                            }
+                            ProfileStatCard(
+                                title = "เลเวลเรียนรู้",
+                                value = "Lv.$currentLevel 🏆",
+                                subtitle = "ระดับความเก่ง",
+                                icon = "🏆",
+                                bgGradient = listOf(Color(0xFFF0FDF4), Color(0xFFDCFCE7)),
+                                borderColor = Color(0xFF86EFAC),
+                                textColor = Color(0xFF16A34A),
+                                progress = ((totalStars % 100) / 100f).coerceIn(0.15f, 1.0f),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                switchToAppTab(context, 0)
+                            }
                         }
-                        ProfileStatCard("เลเวล", "Lv.$currentLevel 🏆", Color(0xFFE8F5E9), Color(0xFF81C784), Color(0xFF2E7D32), Modifier.weight(1f)) {
-                            switchToAppTab(context, 0)
-                        }
-                        ProfileStatCard("ควิซที่ผ่าน", "$totalQuizzes 📚", Color(0xFFE3F2FD), Color(0xFF64B5F6), Color(0xFF1976D2), Modifier.weight(1f)) {
-                            showQuizHistoryDetail = true
-                        }
-                        ProfileStatCard("เหรียญตรา", "$totalAchievements 🎖️", Color(0xFFF3E5F5), Color(0xFFBA68C8), Color(0xFF7B1FA2), Modifier.weight(1f)) {
-                            Toast.makeText(context, "เหรียญตราทั้งหมดที่ปลดล็อกแล้ว 🏆", Toast.LENGTH_SHORT).show()
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            ProfileStatCard(
+                                title = "ควิซที่ผ่าน",
+                                value = "$totalQuizzes รายการ",
+                                subtitle = "กดเพื่อดูประวัติ",
+                                icon = "📚",
+                                bgGradient = listOf(Color(0xFFF0F9FF), Color(0xFFE0F2FE)),
+                                borderColor = Color(0xFF7DD3FC),
+                                textColor = Color(0xFF0284C7),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                showQuizHistoryDetail = true
+                            }
+                            ProfileStatCard(
+                                title = "เหรียญตราเกียรติยศ",
+                                value = "$totalAchievements เหรียญ",
+                                subtitle = "ปลดล็อกแล้ว",
+                                icon = "🎖️",
+                                bgGradient = listOf(Color(0xFFFAF5FF), Color(0xFFF3E8FF)),
+                                borderColor = Color(0xFFD8B4FE),
+                                textColor = Color(0xFF9333EA),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Toast.makeText(context, "เหรียญตราทั้งหมดที่ปลดล็อกแล้ว 🏆", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
 
@@ -1174,6 +1275,7 @@ fun ProfileDetailsViewDual(
 @Composable
 fun QuickEarnScoreCard(
     icon: String,
+    accentColor: Color = KidTheme.Primary,
     title: String,
     subtitle: String,
     tagText: String,
@@ -1185,19 +1287,21 @@ fun QuickEarnScoreCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
-                color = KidTheme.Primary.copy(alpha = 0.1f),
-                modifier = Modifier.size(50.dp)
+                color = accentColor.copy(alpha = 0.12f),
+                modifier = Modifier.size(52.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(text = icon, fontSize = 26.sp)
@@ -1225,7 +1329,7 @@ fun QuickEarnScoreCard(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = tagTextColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
                         )
                     }
                 }
@@ -1239,12 +1343,20 @@ fun QuickEarnScoreCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "ไปยังหน้ากิจกรรม",
-                tint = KidTheme.Primary,
-                modifier = Modifier.size(20.dp)
-            )
+            Surface(
+                shape = CircleShape,
+                color = KidTheme.Primary.copy(alpha = 0.08f),
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "ไปยังหน้ากิจกรรม",
+                        tint = KidTheme.Primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -1254,25 +1366,80 @@ fun QuickEarnScoreCard(
 fun ProfileStatCard(
     title: String,
     value: String,
-    bgColor: Color,
+    subtitle: String? = null,
+    icon: String,
+    bgGradient: List<Color>,
     borderColor: Color,
     textColor: Color,
+    progress: Float? = null,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        color = bgColor,
-        border = BorderStroke(1.5.dp, borderColor)
+        shape = RoundedCornerShape(22.dp),
+        color = Color.White,
+        border = BorderStroke(1.5.dp, borderColor),
+        shadowElevation = 4.dp
     ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .background(Brush.linearGradient(bgGradient))
+                .padding(14.dp)
         ) {
-            Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = title, fontSize = 11.sp, color = KidTheme.TextDark, textAlign = TextAlign.Center)
+            Column(horizontalAlignment = Alignment.Start) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.85f),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(text = icon, fontSize = 20.sp)
+                        }
+                    }
+                    Text(
+                        text = value,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = textColor
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+
+                if (progress != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(CircleShape),
+                        color = textColor,
+                        trackColor = textColor.copy(alpha = 0.2f),
+                    )
+                } else if (!subtitle.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        fontSize = 11.sp,
+                        color = KidTheme.TextMuted
+                    )
+                }
+            }
         }
     }
 }
@@ -1288,13 +1455,13 @@ fun ProfileOptionItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = CircleShape,
             color = KidTheme.Primary.copy(alpha = 0.1f),
-            modifier = Modifier.size(42.dp)
+            modifier = Modifier.size(44.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = KidTheme.Primary, modifier = Modifier.size(22.dp))
@@ -1308,6 +1475,6 @@ fun ProfileOptionItem(
             Text(text = subtitle, fontSize = 12.sp, color = KidTheme.TextMuted)
         }
 
-        Text(text = "›", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.LightGray)
+        Text(text = "›", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.LightGray)
     }
 }
