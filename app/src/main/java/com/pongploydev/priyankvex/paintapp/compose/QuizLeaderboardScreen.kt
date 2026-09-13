@@ -1,11 +1,13 @@
 package com.pongploydev.priyankvex.paintapp.compose
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +42,18 @@ data class DisplayQuizScore(
     val dateString: String,
     val rawTimestamp: String,
     val dateKey: String = ""
+)
+
+data class UserLeaderboardSummary(
+    val userId: String,
+    val userName: String,
+    val avatarUrl: String?,
+    val totalScore: Int,
+    val totalQuestions: Int,
+    val totalGamesPlayed: Int,
+    val totalStars: Int,
+    val latestDateString: String,
+    val rawLatestTimestamp: String
 )
 
 private fun extractDateKey(isoTimestamp: String?): String {
@@ -95,6 +109,30 @@ private fun formatThaiDateTime(isoTimestamp: String?): String {
     }
 }
 
+private fun aggregateUserSummaries(scores: List<DisplayQuizScore>): List<UserLeaderboardSummary> {
+    val grouped = scores.groupBy { it.userName }
+    return grouped.map { (userName, userScores) ->
+        val firstScore = userScores.first()
+        val totalScore = userScores.sumOf { it.score }
+        val totalQuestions = userScores.sumOf { it.totalQuestions }
+        val totalGames = userScores.size
+        val totalStars = totalScore
+        val latest = userScores.maxByOrNull { it.rawTimestamp } ?: firstScore
+
+        UserLeaderboardSummary(
+            userId = firstScore.userName,
+            userName = userName,
+            avatarUrl = firstScore.avatarUrl,
+            totalScore = totalScore,
+            totalQuestions = totalQuestions,
+            totalGamesPlayed = totalGames,
+            totalStars = totalStars,
+            latestDateString = latest.dateString,
+            rawLatestTimestamp = latest.rawTimestamp
+        )
+    }.sortedByDescending { it.totalScore }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizLeaderboardScreen(onBack: () -> Unit) {
@@ -103,6 +141,7 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedDateKey by remember { mutableStateOf<String?>(null) }
+    var currentTab by remember { mutableStateOf(0) } // 0 = 🏆 คะแนนรวมรายคน, 1 = 📅 ประวัติการเล่น
 
     LaunchedEffect(Unit) {
         val dataManager = SupabaseDataManager.getInstance(context)
@@ -148,6 +187,8 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
         }
     }
 
+    val userSummaries = remember(scores) { aggregateUserSummaries(scores) }
+
     val filteredScores = remember(scores, selectedDateKey) {
         if (selectedDateKey.isNullOrBlank()) {
             scores
@@ -158,17 +199,49 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Table Calendar Demo", fontWeight = FontWeight.Bold, color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "กลับ", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF1E88E5) // Blue theme matching the screenshot
+            Column {
+                CenterAlignedTopAppBar(
+                    title = { Text("🏆 ตารางอันดับคะแนน", fontWeight = FontWeight.Bold, color = Color.White) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "กลับ", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color(0xFF1E88E5)
+                    )
                 )
-            )
+
+                // Tab Row Switcher (🏆 คะแนนรวมรายคน vs 📅 ประวัติการเล่น)
+                TabRow(
+                    selectedTabIndex = currentTab,
+                    containerColor = Color(0xFF1565C0),
+                    contentColor = Color.White
+                ) {
+                    Tab(
+                        selected = currentTab == 0,
+                        onClick = { currentTab = 0 },
+                        text = {
+                            Text(
+                                "🏆 คะแนนรวมรายคน",
+                                fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 14.sp
+                            )
+                        }
+                    )
+                    Tab(
+                        selected = currentTab == 1,
+                        onClick = { currentTab = 1 },
+                        text = {
+                            Text(
+                                "📅 ประวัติการเล่น",
+                                fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 14.sp
+                            )
+                        }
+                    )
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -176,67 +249,90 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Table Calendar Component (Matching screenshot exactly!)
-            TableCalendarView(
-                scores = scores,
-                selectedDateKey = selectedDateKey,
-                onSelectDate = { key -> selectedDateKey = key }
-            )
-
-            // Reset Filter Button bar if a date is filtered
-            if (selectedDateKey != null) {
-                Row(
+            if (currentTab == 0) {
+                // TAB 0: 🏆 คะแนนรวมรายคน (Aggregated Cumulative Total Scores & Stars)
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFE3F2FD))
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .weight(1f)
                 ) {
-                    Text(
-                        text = "กรองวันที่: $selectedDateKey (${filteredScores.size} รายการ)",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF1565C0)
-                    )
-                    TextButton(onClick = { selectedDateKey = null }) {
-                        Text("แสดงทั้งหมด ✕", fontSize = 12.sp, color = Color(0xFFD32F2F))
+                    KidBackground(modifier = Modifier.fillMaxSize())
+
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else if (userSummaries.isEmpty()) {
+                        Text(
+                            "ยังไม่มีคะแนนรวมในขณะนี้ 🌟",
+                            modifier = Modifier.align(Alignment.Center),
+                            fontSize = 18.sp,
+                            color = Color.Gray
+                        )
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            itemsIndexed(userSummaries) { index, summary ->
+                                UserLeaderboardCard(rank = index + 1, userSummary = summary)
+                            }
+                        }
                     }
                 }
-            }
+            } else {
+                // TAB 1: 📅 ประวัติการเล่น (Table Calendar Filter View)
+                TableCalendarView(
+                    scores = scores,
+                    selectedDateKey = selectedDateKey,
+                    onSelectDate = { key -> selectedDateKey = key }
+                )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                KidBackground(modifier = Modifier.fillMaxSize())
-
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                } else if (errorMessage != null) {
-                    Text(
-                        errorMessage!!,
-                        modifier = Modifier.align(Alignment.Center).padding(24.dp),
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
-                        color = Color.Red
-                    )
-                } else if (filteredScores.isEmpty()) {
-                    Text(
-                        if (selectedDateKey != null) "ไม่มีรายการคะแนนในวันที่เลือก 📅" else "ยังไม่มีคะแนนในขณะนี้\nมาเป็นคนแรกกันเถอะ! 🌟",
-                        modifier = Modifier.align(Alignment.Center),
-                        textAlign = TextAlign.Center,
-                        fontSize = 18.sp,
-                        color = Color.Gray
-                    )
-                } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                // Reset Filter Button bar if a date is filtered
+                if (selectedDateKey != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFE3F2FD))
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items(filteredScores) { score ->
-                            LeaderboardItem(score)
+                        Text(
+                            text = "กรองวันที่: $selectedDateKey (${filteredScores.size} รายการ)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF1565C0)
+                        )
+                        TextButton(onClick = { selectedDateKey = null }) {
+                            Text("แสดงทั้งหมด ✕", fontSize = 12.sp, color = Color(0xFFD32F2F))
+                        }
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    KidBackground(modifier = Modifier.fillMaxSize())
+
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else if (filteredScores.isEmpty()) {
+                        Text(
+                            if (selectedDateKey != null) "ไม่มีรายการคะแนนในวันที่เลือก 📅" else "ยังไม่มีคะแนนในขณะนี้\nมาเป็นคนแรกกันเถอะ! 🌟",
+                            modifier = Modifier.align(Alignment.Center),
+                            textAlign = TextAlign.Center,
+                            fontSize = 18.sp,
+                            color = Color.Gray
+                        )
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(filteredScores) { score ->
+                                LeaderboardItem(score)
+                            }
                         }
                     }
                 }
@@ -244,6 +340,137 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun UserLeaderboardCard(rank: Int, userSummary: UserLeaderboardSummary) {
+    val rankBadgeColor = when (rank) {
+        1 -> Color(0xFFFFD700) // Gold
+        2 -> Color(0xFFC0C0C0) // Silver
+        3 -> Color(0xFFCD7F32) // Bronze
+        else -> Color(0xFFE0E0E0)
+    }
+
+    val rankIcon = when (rank) {
+        1 -> "🥇"
+        2 -> "🥈"
+        3 -> "🥉"
+        else -> "#$rank"
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Rank Badge (Gold, Silver, Bronze)
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = rankBadgeColor.copy(alpha = 0.25f),
+                border = BorderStroke(2.dp, rankBadgeColor)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = rankIcon,
+                        fontSize = if (rank <= 3) 22.sp else 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (rank <= 3) Color.Unspecified else Color.DarkGray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // User Avatar Photo
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = CircleShape,
+                color = Color(0xFFE1F5FE)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (!userSummary.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = userSummary.avatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text("👤", fontSize = 26.sp)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // User Info & Aggregate Stats
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = userSummary.userName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A2E)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "⭐ ${userSummary.totalStars} ดาว",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFFF8F00)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "🎮 เล่น ${userSummary.totalGamesPlayed} ครั้ง",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+                val accuracy = if (userSummary.totalQuestions > 0) {
+                    (userSummary.totalScore * 100) / userSummary.totalQuestions
+                } else 0
+                Text(
+                    text = "ตอบถูกสะสม: ${userSummary.totalScore}/${userSummary.totalQuestions} ข้อ ($accuracy%)",
+                    fontSize = 11.sp,
+                    color = Color(0xFF0288D1)
+                )
+            }
+
+            // Total Cumulative Score Pill
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFFFFF3E0)
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "${userSummary.totalScore}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFFE65100)
+                    )
+                    Text(
+                        text = "คะแนนรวม",
+                        fontSize = 10.sp,
+                        color = Color(0xFFEF6C00)
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun TableCalendarView(
