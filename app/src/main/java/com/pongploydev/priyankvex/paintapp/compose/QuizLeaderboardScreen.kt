@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
 import com.pongploydev.profilefeature.data.SupabaseDataManager
 import com.pongploydev.priyankvex.paintapp.model.QuizScore
 import java.text.SimpleDateFormat
@@ -109,7 +110,12 @@ private fun formatThaiDateTime(isoTimestamp: String?): String {
     }
 }
 
-private fun aggregateUserSummaries(scores: List<DisplayQuizScore>): List<UserLeaderboardSummary> {
+private fun aggregateUserSummaries(
+    scores: List<DisplayQuizScore>,
+    profilesList: List<com.pongploydev.profilefeature.data.UserProfile> = emptyList(),
+    currentProfile: com.pongploydev.profilefeature.data.UserProfile? = null
+): List<UserLeaderboardSummary> {
+    val nameToProfileMap = profilesList.filter { !it.displayName.isNullOrBlank() }.associateBy { it.displayName }
     val grouped = scores.groupBy { it.userName }
     return grouped.map { (userName, userScores) ->
         val firstScore = userScores.first()
@@ -119,10 +125,15 @@ private fun aggregateUserSummaries(scores: List<DisplayQuizScore>): List<UserLea
         val totalStars = totalScore
         val latest = userScores.maxByOrNull { it.rawTimestamp } ?: firstScore
 
+        val matchingProfile = nameToProfileMap[userName]
+        val avatarUrl = firstScore.avatarUrl?.ifBlank { null }
+            ?: matchingProfile?.avatarUrl?.ifBlank { null }
+            ?: if (userName == currentProfile?.displayName) currentProfile?.avatarUrl?.ifBlank { null } else null
+
         UserLeaderboardSummary(
             userId = firstScore.userName,
             userName = userName,
-            avatarUrl = firstScore.avatarUrl,
+            avatarUrl = avatarUrl,
             totalScore = totalScore,
             totalQuestions = totalQuestions,
             totalGamesPlayed = totalGames,
@@ -138,26 +149,43 @@ private fun aggregateUserSummaries(scores: List<DisplayQuizScore>): List<UserLea
 fun QuizLeaderboardScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var scores by remember { mutableStateOf<List<DisplayQuizScore>>(emptyList()) }
+    var profilesList by remember { mutableStateOf<List<com.pongploydev.profilefeature.data.UserProfile>>(emptyList()) }
+    var currentProfile by remember { mutableStateOf<com.pongploydev.profilefeature.data.UserProfile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedDateKey by remember { mutableStateOf<String?>(null) }
     var currentTab by remember { mutableStateOf(0) } // 0 = 🏆 คะแนนรวมรายคน, 1 = 📅 ประวัติการเล่น
 
     LaunchedEffect(Unit) {
         val dataManager = SupabaseDataManager.getInstance(context)
-        try {
-            // 1. Fetch Supabase Quiz Results
-            val supabaseResults = dataManager.fetchAllQuizResults()
-            val profilesMap = dataManager.fetchAllUserProfiles().getOrDefault(emptyList()).associateBy { it.id }
+        val authManager = SupabaseAuthManager.getInstance(context)
+        val currentUserId = authManager.getStoredUser()?.id ?: "guest_user"
 
+        try {
+            // 1. Fetch Supabase Profiles & Quiz Results
+            val profilesResult = dataManager.fetchAllUserProfiles().getOrDefault(emptyList())
+            profilesList = profilesResult
+            currentProfile = dataManager.fetchUserProfile(currentUserId).getOrNull()
+
+            val profilesMap = profilesResult.associateBy { it.id }
+            val nameToProfileMap = profilesResult.filter { !it.displayName.isNullOrBlank() }.associateBy { it.displayName }
+
+            val supabaseResults = dataManager.fetchAllQuizResults()
             val listFromSupabase = supabaseResults.getOrNull() ?: emptyList()
 
             if (listFromSupabase.isNotEmpty()) {
                 val mapped = listFromSupabase.map { res ->
-                    val userProf = profilesMap[res.userId]
+                    val userProf = profilesMap[res.userId] ?: nameToProfileMap[res.userId]
+                    val userProfAvatar = userProf?.avatarUrl?.ifBlank { null }
+                    val currentProfAvatar = if (res.userId == currentProfile?.id) currentProfile?.avatarUrl?.ifBlank { null } else null
+                    val avatar = userProfAvatar ?: currentProfAvatar
+
+                    val userProfName = userProf?.displayName?.ifBlank { null }
+                    val currentProfName = if (res.userId == currentProfile?.id) currentProfile?.displayName?.ifBlank { null } else null
+                    val name = userProfName ?: currentProfName ?: "ผู้เล่นนิรนาม"
+
                     DisplayQuizScore(
-                        userName = userProf?.displayName?.ifBlank { null } ?: "ผู้เล่นนิรนาม",
-                        avatarUrl = userProf?.avatarUrl?.ifBlank { null },
+                        userName = name,
+                        avatarUrl = avatar,
                         topicTitle = res.quizTopicName.ifBlank { "แบบทดสอบวัดความรู้" },
                         score = res.score,
                         totalQuestions = if (res.totalQuestions > 0) res.totalQuestions else 10,
@@ -170,24 +198,26 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                 // Sort by date descending - latest date first!
                 scores = mapped.sortedByDescending { it.rawTimestamp }
                 isLoading = false
-                Log.d("Leaderboard", "Loaded ${scores.size} scores from Supabase sorted by date desc")
+                Log.d("Leaderboard", "Loaded ${scores.size} scores from Supabase sorted by date desc with avatars")
             } else {
                 // Fallback to Firebase Firestore if Supabase database is empty
-                fetchFirestoreScores { firestoreScores ->
+                fetchFirestoreScores(profilesResult, currentProfile) { firestoreScores ->
                     scores = firestoreScores
                     isLoading = false
                 }
             }
         } catch (e: Exception) {
             Log.e("Leaderboard", "Error fetching scores from Supabase, fallback to Firestore", e)
-            fetchFirestoreScores { firestoreScores ->
+            fetchFirestoreScores(profilesList, currentProfile) { firestoreScores ->
                 scores = firestoreScores
                 isLoading = false
             }
         }
     }
 
-    val userSummaries = remember(scores) { aggregateUserSummaries(scores) }
+    val userSummaries = remember(scores, profilesList, currentProfile) {
+        aggregateUserSummaries(scores, profilesList, currentProfile)
+    }
 
     val filteredScores = remember(scores, selectedDateKey) {
         if (selectedDateKey.isNullOrBlank()) {
@@ -688,9 +718,15 @@ fun TableCalendarView(
 }
 
 
-private fun fetchFirestoreScores(onResult: (List<DisplayQuizScore>) -> Unit) {
+private fun fetchFirestoreScores(
+    profilesList: List<com.pongploydev.profilefeature.data.UserProfile> = emptyList(),
+    currentProfile: com.pongploydev.profilefeature.data.UserProfile? = null,
+    onResult: (List<DisplayQuizScore>) -> Unit
+) {
     val dateFormat = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("th", "TH"))
     val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    val nameToProfileMap = profilesList.filter { !it.displayName.isNullOrBlank() }.associateBy { it.displayName }
+
     FirebaseFirestore.getInstance().collection("quiz_scores")
         .orderBy("timestamp", Query.Direction.DESCENDING)
         .limit(50)
@@ -700,9 +736,13 @@ private fun fetchFirestoreScores(onResult: (List<DisplayQuizScore>) -> Unit) {
                 val list = result.toObjects(QuizScore::class.java).map { s ->
                     val dateStr = s.timestamp?.let { dateFormat.format(it) } ?: "เพิ่งเมื่อสักครู่"
                     val key = s.timestamp?.let { dateKeyFormat.format(it) } ?: ""
+                    val matchingProf = nameToProfileMap[s.userName]
+                    val avatar = matchingProf?.avatarUrl?.ifBlank { null }
+                        ?: if (s.userName == currentProfile?.displayName) currentProfile?.avatarUrl?.ifBlank { null } else null
+
                     DisplayQuizScore(
                         userName = s.userName.ifBlank { "ผู้เล่นนิรนาม" },
-                        avatarUrl = null,
+                        avatarUrl = avatar,
                         topicTitle = s.topicTitle.ifBlank { "แบบทดสอบทั่วไป" },
                         score = s.score,
                         totalQuestions = if (s.totalQuestions > 0) s.totalQuestions else 10,
