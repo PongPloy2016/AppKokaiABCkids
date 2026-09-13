@@ -22,8 +22,8 @@ android {
         minSdk = 24
         //noinspection EditedTargetSdkVersion,OldTargetApi
         targetSdk = 35
-        versionCode = 45
-        versionName = "3.0.1"
+        versionCode = 46
+        versionName = "3.0.2"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
