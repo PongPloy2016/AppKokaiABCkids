@@ -865,67 +865,21 @@ fun ProfileDetailsViewDual(
                     val totalQuizzes = quizResults.size
                     val totalAchievements = achievements.size
 
-                    // 2x2 STAT GRID (Spacious, modern & clean layout)
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            ProfileStatCard(
-                                title = "ดาวสะสม",
-                                value = "$totalStars ⭐",
-                                subtitle = "สะสมจากควิซและบทเรียน",
-                                icon = "⭐",
-                                bgGradient = listOf(Color(0xFFFFFDF0), Color(0xFFFFF8D6)),
-                                borderColor = Color(0xFFFFD166),
-                                textColor = Color(0xFFF59E0B),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                switchToAppTab(context, 0)
-                            }
-                            ProfileStatCard(
-                                title = "เลเวลเรียนรู้",
-                                value = "Lv.$currentLevel 🏆",
-                                subtitle = "ระดับความเก่ง",
-                                icon = "🏆",
-                                bgGradient = listOf(Color(0xFFF0FDF4), Color(0xFFDCFCE7)),
-                                borderColor = Color(0xFF86EFAC),
-                                textColor = Color(0xFF16A34A),
-                                progress = ((totalStars % 100) / 100f).coerceIn(0.15f, 1.0f),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                switchToAppTab(context, 0)
-                            }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ProfileStatCard("ดาวสะสม", "$totalStars ⭐", Color(0xFFFFF9E6), Color(0xFFFFD166), Color(0xFFFF9800), Modifier.weight(1f)) {
+                            switchToAppTab(context, 0)
                         }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            ProfileStatCard(
-                                title = "ควิซที่ผ่าน",
-                                value = "$totalQuizzes รายการ",
-                                subtitle = "กดเพื่อดูประวัติ",
-                                icon = "📚",
-                                bgGradient = listOf(Color(0xFFF0F9FF), Color(0xFFE0F2FE)),
-                                borderColor = Color(0xFF7DD3FC),
-                                textColor = Color(0xFF0284C7),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                showQuizHistoryDetail = true
-                            }
-                            ProfileStatCard(
-                                title = "เหรียญตราเกียรติยศ",
-                                value = "$totalAchievements เหรียญ",
-                                subtitle = "ปลดล็อกแล้ว",
-                                icon = "🎖️",
-                                bgGradient = listOf(Color(0xFFFAF5FF), Color(0xFFF3E8FF)),
-                                borderColor = Color(0xFFD8B4FE),
-                                textColor = Color(0xFF9333EA),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Toast.makeText(context, "เหรียญตราทั้งหมดที่ปลดล็อกแล้ว 🏆", Toast.LENGTH_SHORT).show()
-                            }
+                        ProfileStatCard("เลเวล", "Lv.$currentLevel 🏆", Color(0xFFE8F5E9), Color(0xFF81C784), Color(0xFF2E7D32), Modifier.weight(1f)) {
+                            switchToAppTab(context, 0)
+                        }
+                        ProfileStatCard("ควิซที่ผ่าน", "$totalQuizzes 📚", Color(0xFFE3F2FD), Color(0xFF64B5F6), Color(0xFF1976D2), Modifier.weight(1f)) {
+                            showQuizHistoryDetail = true
+                        }
+                        ProfileStatCard("เหรียญตรา", "$totalAchievements 🎖️", Color(0xFFF3E5F5), Color(0xFFBA68C8), Color(0xFF7B1FA2), Modifier.weight(1f)) {
+                            Toast.makeText(context, "เหรียญตราทั้งหมดที่ปลดล็อกแล้ว 🏆", Toast.LENGTH_SHORT).show()
                         }
                     }
 
@@ -1366,80 +1320,39 @@ fun QuickEarnScoreCard(
 fun ProfileStatCard(
     title: String,
     value: String,
-    subtitle: String? = null,
-    icon: String,
-    bgGradient: List<Color>,
+    bgColor: Color,
     borderColor: Color,
     textColor: Color,
-    progress: Float? = null,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(22.dp),
-        color = Color.White,
+        shape = RoundedCornerShape(20.dp),
+        color = bgColor,
         border = BorderStroke(1.5.dp, borderColor),
-        shadowElevation = 4.dp
+        shadowElevation = 3.dp
     ) {
-        Box(
-            modifier = Modifier
-                .background(Brush.linearGradient(bgGradient))
-                .padding(14.dp)
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(horizontalAlignment = Alignment.Start) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.85f),
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(text = icon, fontSize = 20.sp)
-                        }
-                    }
-                    Text(
-                        text = value,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = textColor
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = title,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = KidTheme.TextDark
-                )
-
-                if (progress != null) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(CircleShape),
-                        color = textColor,
-                        trackColor = textColor.copy(alpha = 0.2f),
-                    )
-                } else if (!subtitle.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = subtitle,
-                        fontSize = 11.sp,
-                        color = KidTheme.TextMuted
-                    )
-                }
-            }
+            Text(
+                text = value,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = textColor,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = KidTheme.TextDark,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
         }
     }
 }
