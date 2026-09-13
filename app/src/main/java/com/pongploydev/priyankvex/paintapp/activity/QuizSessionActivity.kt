@@ -759,6 +759,8 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val dataManager = SupabaseDataManager.getInstance(this@QuizSessionActivity)
             val userProf = dataManager.fetchUserProfile(userId).getOrNull()
             val avatarUrl = userProf?.avatarUrl?.ifBlank { null }
+            val email = userProf?.email?.ifBlank { null } ?: supabaseUser?.email?.ifBlank { null }
+            val supabaseUserId = supabaseUser?.id ?: userProf?.id
 
             val quizScore = QuizScore(
                 userName = name,
@@ -766,7 +768,9 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 totalQuestions = totalQuestions,
                 topicTitle = topicTitle,
                 durationSeconds = duration,
-                avatarUrl = avatarUrl
+                avatarUrl = avatarUrl,
+                email = email,
+                user_id_supabase = supabaseUserId
             )
 
             // 1. Save to Firebase Firestore under "quiz_scores_game" (with fallback to "quiz_scores")

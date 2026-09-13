@@ -42,12 +42,14 @@ data class DisplayQuizScore(
     val durationSeconds: Int,
     val dateString: String,
     val rawTimestamp: String,
-    val dateKey: String = ""
+    val dateKey: String = "",
+    val email: String? = null
 )
 
 data class UserLeaderboardSummary(
     val userId: String,
     val userName: String,
+    val userEmail: String?,
     val avatarUrl: String?,
     val totalScore: Int,
     val totalQuestions: Int,
@@ -134,9 +136,15 @@ private fun aggregateUserSummaries(
             ?: matchingProfile?.avatarUrl?.ifBlank { null }
             ?: if (userName == currentProfile?.displayName) currentProfile?.avatarUrl?.ifBlank { null } else null
 
+        val userEmail = firstScore.email?.ifBlank { null }
+            ?: userScores.mapNotNull { it.email?.ifBlank { null } }.firstOrNull()
+            ?: matchingProfile?.email?.ifBlank { null }
+            ?: if (userName == currentProfile?.displayName) currentProfile?.email?.ifBlank { null } else null
+
         UserLeaderboardSummary(
             userId = firstScore.userName,
             userName = userName,
+            userEmail = userEmail,
             avatarUrl = avatarUrl,
             totalScore = totalScore,
             totalQuestions = totalQuestions,
@@ -180,42 +188,37 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
             val supabaseResults = dataManager.fetchAllQuizResults()
             val listFromSupabase = supabaseResults.getOrNull() ?: emptyList()
 
-            if (listFromSupabase.isNotEmpty()) {
-                val mapped = listFromSupabase.map { res ->
-                    val userProf = profilesMap[res.userId] ?: nameToProfileMap[res.userId]
-                    val userProfAvatar = userProf?.avatarUrl?.ifBlank { null }
-                    val currentProfAvatar = if (res.userId == currentProfile?.id) currentProfile?.avatarUrl?.ifBlank { null } else null
-                    val avatar = userProfAvatar ?: currentProfAvatar
+            val supabaseMapped = listFromSupabase.map { res ->
+                val userProf = profilesMap[res.userId] ?: nameToProfileMap[res.userId]
+                val userProfAvatar = userProf?.avatarUrl?.ifBlank { null }
+                val currentProfAvatar = if (res.userId == currentProfile?.id) currentProfile?.avatarUrl?.ifBlank { null } else null
+                val avatar = userProfAvatar ?: currentProfAvatar
 
-                    val userProfName = userProf?.displayName?.ifBlank { null }
-                    val currentProfName = if (res.userId == currentProfile?.id) currentProfile?.displayName?.ifBlank { null } else null
-                    val name = userProfName ?: currentProfName ?: "ผู้เล่นนิรนาม"
+                val userProfName = userProf?.displayName?.ifBlank { null }
+                val currentProfName = if (res.userId == currentProfile?.id) currentProfile?.displayName?.ifBlank { null } else null
+                val name = userProfName ?: currentProfName ?: if (res.userId.isNotBlank()) res.userId else "ผู้เล่นนิรนาม"
 
-                    DisplayQuizScore(
-                        userName = name,
-                        avatarUrl = avatar,
-                        topicTitle = res.quizTopicName.ifBlank { "แบบทดสอบวัดความรู้" },
-                        score = res.score,
-                        totalQuestions = if (res.totalQuestions > 0) res.totalQuestions else 10,
-                        durationSeconds = res.timeSpentSeconds,
-                        dateString = formatThaiDateTime(res.createdAt),
-                        rawTimestamp = res.createdAt ?: "",
-                        dateKey = extractDateKey(res.createdAt)
-                    )
-                }
-                // Sort by date descending - latest date first!
-                scores = mapped.sortedByDescending { it.rawTimestamp }
+                DisplayQuizScore(
+                    userName = name,
+                    avatarUrl = avatar,
+                    topicTitle = res.quizTopicName.ifBlank { "แบบทดสอบวัดความรู้" },
+                    score = res.score,
+                    totalQuestions = if (res.totalQuestions > 0) res.totalQuestions else 10,
+                    durationSeconds = res.timeSpentSeconds,
+                    dateString = formatThaiDateTime(res.createdAt),
+                    rawTimestamp = res.createdAt ?: "",
+                    dateKey = extractDateKey(res.createdAt)
+                )
+            }
+
+            // Combine Supabase scores with Firestore scores so no scores/users are lost
+            fetchFirestoreScores(profilesResult, currentProfile) { firestoreScores ->
+                scores = (supabaseMapped + firestoreScores).sortedByDescending { it.rawTimestamp }
                 isLoading = false
-                Log.d("Leaderboard", "Loaded ${scores.size} scores from Supabase sorted by date desc with avatars")
-            } else {
-                // Fallback to Firebase Firestore if Supabase database is empty
-                fetchFirestoreScores(profilesResult, currentProfile) { firestoreScores ->
-                    scores = firestoreScores
-                    isLoading = false
-                }
+                Log.d("Leaderboard", "Loaded total ${scores.size} scores (Supabase + Firestore)")
             }
         } catch (e: Exception) {
-            Log.e("Leaderboard", "Error fetching scores from Supabase, fallback to Firestore", e)
+            Log.e("Leaderboard", "Error fetching scores from Supabase/Firestore", e)
             fetchFirestoreScores(profilesList, currentProfile) { firestoreScores ->
                 scores = firestoreScores
                 isLoading = false
@@ -323,7 +326,7 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                                 )
                             }
 
-                            // 2. Table Header Bar (Rank | Player | Points)
+                            // 2. Table Header Bar (อันดับ | ผู้เล่น | คะแนนรวม)
                             item {
                                 Row(
                                     modifier = Modifier
@@ -333,14 +336,14 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "Rank",
+                                        "อันดับ",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.Gray,
-                                        modifier = Modifier.width(40.dp)
+                                        modifier = Modifier.width(44.dp)
                                     )
                                     Text(
-                                        "Player",
+                                        "ผู้เล่น",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.Gray,
@@ -348,7 +351,7 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                                         textAlign = TextAlign.Center
                                     )
                                     Text(
-                                        "Points",
+                                        "คะแนนรวม",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.Gray
@@ -513,20 +516,19 @@ fun PodiumUserItem(
             onDismissRequest = { showDetailDialog = false },
             title = {
                 Text(
-                    text = "🏆 รายละเอียดเกม (${summary.userName})",
+                    text = "🏆 รายละเอียดคะแนน (${summary.userName})",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("• userName: \"${summary.userName}\"", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                    Text("• topicTitle: \"${if (summary.latestTopicTitle.isNotBlank()) summary.latestTopicTitle else "ตัวเลข 0-9"}\"", fontSize = 14.sp)
-                    Text("• score: ${summary.latestScore} (คะแนนรวม: ${summary.totalScore})", fontSize = 14.sp)
-                    Text("• totalQuestions: ${summary.latestTotalQuestions}", fontSize = 14.sp)
-                    Text("• durationSeconds: ${summary.latestDurationSeconds} วินาที", fontSize = 14.sp)
-                    Text("• timestamp: ${summary.latestDateString}", fontSize = 14.sp)
-                    Text("• avatarUrl: ${summary.avatarUrl ?: "null"}", fontSize = 13.sp, color = Color.Gray)
+                    Text("• ชื่อผู้เล่น: \"${summary.userName}\"", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text("• หมวดหมู่แบบทดสอบ: \"${if (summary.latestTopicTitle.isNotBlank()) summary.latestTopicTitle else "แบบทดสอบทั่วไป"}\"", fontSize = 14.sp)
+                    Text("• คะแนนที่ได้: ${summary.latestScore} / ${summary.latestTotalQuestions} ข้อ (คะแนนรวม: ${summary.totalScore})", fontSize = 14.sp)
+                    Text("• เวลาที่ใช้: ${summary.latestDurationSeconds} วินาที", fontSize = 14.sp)
+                    Text("• วันเวลาที่เล่น: ${summary.latestDateString}", fontSize = 14.sp)
+                    Text("• อีเมลสมาชิก: ${maskEmail(summary.userEmail)}", fontSize = 14.sp, color = Color(0xFF1E88E5))
                 }
             },
             confirmButton = {
@@ -631,7 +633,7 @@ fun PodiumUserItem(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "${summary.totalScore} points",
+                text = "${summary.totalScore} คะแนน",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF7C4DFF)
@@ -648,7 +650,7 @@ fun LeaderboardRowCard(
 ) {
     val isCurrentUser = !currentProfileName.isNullOrBlank() && summary.userName == currentProfileName
     val cardBgColor = if (isCurrentUser) Color(0xFF5E35B1) else Color(0xFF7E57C2)
-    var isExpanded by remember { mutableStateOf(true) }
+    var isExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -723,7 +725,7 @@ fun LeaderboardRowCard(
 
                 // Points Badge
                 Text(
-                    text = "${summary.totalScore} points",
+                    text = "${summary.totalScore} คะแนน",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White
@@ -742,18 +744,33 @@ fun LeaderboardRowCard(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        DetailRow("userName:", "\"${summary.userName}\"")
-                        DetailRow("topicTitle:", "\"${if (summary.latestTopicTitle.isNotBlank()) summary.latestTopicTitle else "ตัวเลข 0-9"}\"")
-                        DetailRow("score:", "${summary.latestScore}")
-                        DetailRow("totalQuestions:", "${summary.latestTotalQuestions}")
-                        DetailRow("durationSeconds:", "${summary.latestDurationSeconds}")
-                        DetailRow("timestamp:", summary.latestDateString)
-                        DetailRow("avatarUrl:", if (summary.avatarUrl.isNullOrBlank()) "null" else summary.avatarUrl)
+                        DetailRow("ชื่อผู้เล่น:", "\"${summary.userName}\"")
+                        DetailRow("หมวดหมู่แบบทดสอบ:", "\"${if (summary.latestTopicTitle.isNotBlank()) summary.latestTopicTitle else "แบบทดสอบทั่วไป"}\"")
+                        DetailRow("คะแนนที่ได้:", "${summary.latestScore}")
+                        DetailRow("จำนวนข้อทั้งหมด:", "${summary.latestTotalQuestions}")
+                        DetailRow("เวลาที่ใช้:", "${summary.latestDurationSeconds} วินาที")
+                        DetailRow("วันเวลาที่เล่น:", summary.latestDateString)
+                        DetailRow("อีเมลสมาชิก:", maskEmail(summary.userEmail))
                     }
                 }
             }
         }
     }
+}
+
+private fun maskEmail(email: String?): String {
+    if (email.isNullOrBlank()) return "-"
+    val parts = email.split("@")
+    if (parts.size != 2) return email
+    val username = parts[0]
+    val domain = parts[1]
+
+    val maskedUsername = if (username.length > 2) {
+        username.dropLast(2) + "XX"
+    } else {
+        username.take(1) + "XX"
+    }
+    return "$maskedUsername@$domain"
 }
 
 @Composable
@@ -1023,7 +1040,8 @@ private fun fetchFirestoreScores(
                 durationSeconds = s.durationSeconds.toInt(),
                 dateString = dateStr,
                 rawTimestamp = s.timestamp?.time?.toString() ?: "",
-                dateKey = key
+                dateKey = key,
+                email = s.email?.ifBlank { null }
             )
         }
     }
@@ -1032,18 +1050,17 @@ private fun fetchFirestoreScores(
         .orderBy("timestamp", Query.Direction.DESCENDING)
         .limit(50)
         .get()
-        .addOnSuccessListener { result ->
-            val list = parseSnapshot(result)
-            if (list.isNotEmpty()) {
-                onResult(list)
-            } else {
-                firestore.collection("quiz_scores")
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .limit(50)
-                    .get()
-                    .addOnSuccessListener { res2 -> onResult(parseSnapshot(res2)) }
-                    .addOnFailureListener { onResult(emptyList()) }
-            }
+        .addOnSuccessListener { result1 ->
+            val list1 = parseSnapshot(result1)
+            firestore.collection("quiz_scores")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(50)
+                .get()
+                .addOnSuccessListener { result2 ->
+                    val list2 = parseSnapshot(result2)
+                    onResult((list1 + list2).sortedByDescending { it.rawTimestamp })
+                }
+                .addOnFailureListener { onResult(list1) }
         }
         .addOnFailureListener {
             firestore.collection("quiz_scores")

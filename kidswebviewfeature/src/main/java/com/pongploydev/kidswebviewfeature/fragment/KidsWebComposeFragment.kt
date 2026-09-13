@@ -39,8 +39,8 @@ class KidsWebComposeFragment : Fragment() {
                             title = "ท่องเว็บสนุก (Youngciety)",
                             onBackClick = {
                                 val act = activity
-                                if (act != null && !act.isFinishing) {
-                                    if (parentFragmentManager.backStackEntryCount > 0) {
+                                if (act != null && !act.isFinishing && !act.isDestroyed) {
+                                    if (isAdded && !parentFragmentManager.isStateSaved && parentFragmentManager.backStackEntryCount > 0) {
                                         parentFragmentManager.popBackStack()
                                     } else {
                                         act.finish()

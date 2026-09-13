@@ -61,6 +61,7 @@ fun KidsWebViewScreen(
             webView?.goBack()
             canGoBack = webView?.canGoBack() == true
         } else {
+            canGoBack = false
             onBackClick()
         }
     }
@@ -70,6 +71,9 @@ fun KidsWebViewScreen(
         if (webView?.canGoBack() == true) {
             webView?.goBack()
             canGoBack = webView?.canGoBack() == true
+        } else {
+            canGoBack = false
+            onBackClick()
         }
     }
 

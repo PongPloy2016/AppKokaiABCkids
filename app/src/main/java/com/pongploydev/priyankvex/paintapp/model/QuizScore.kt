@@ -10,6 +10,8 @@ data class QuizScore(
     val topicTitle: String = "",
     val durationSeconds: Long = 0,
     val avatarUrl: String? = null,
+    val email: String? = null,
+    val user_id_supabase: String? = null,
     @ServerTimestamp
     val timestamp: Date? = null
 )
