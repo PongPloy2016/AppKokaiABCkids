@@ -44,10 +44,11 @@ android {
 
         release {
             isDebuggable = false
-            isMinifyEnabled = false // ⭐ เปิด minify แต่ต้องมี proguard rules ถูกต้อง
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro" // ⭐ ต้องมีไฟล์นี้
+                    "proguard-rules.pro"
             )
             buildConfigField("boolean", "SHOW_TEST_ADS", "false")
             buildConfigField("String", "BUILD_MODE", "\"RELEASE\"")

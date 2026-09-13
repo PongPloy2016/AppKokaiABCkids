@@ -19,3 +19,25 @@
 -keep class androidx.compose.foundation.lazy.** { *; }
 -keep interface androidx.compose.foundation.lazy.** { *; }
 
+# Keep Data Models (Firebase & Supabase)
+-keep class com.pongploydev.priyankvex.paintapp.model.** { *; }
+-keep class com.pongploydev.profilefeature.data.** { *; }
+-keep class com.pongploydev.videowatchfeaturesupabase.databases.models.** { *; }
+-keepclassmembers class * {
+    @com.google.firebase.firestore.ServerTimestamp <fields>;
+}
+
+# Keep Supabase / Ktor / Serialization
+-keep class io.github.jan.supabase.** { *; }
+-keep class kotlinx.serialization.** { *; }
+
+# Keep Glide Modules
+-keep public class * extends com.bumptech.glide.module.AppGlideModule
+-keep class com.bumptech.glide.generated.GeneratedAppGlideModule
+-keep class com.pongploydev.priyankvex.paintapp.MyAppGlideModule { *; }
+
+# Keep WebView JavaScript Interfaces
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+

@@ -1134,7 +1134,22 @@ fun ProfileDetailsViewDual(
                                 ProfileOptionItem(Icons.Default.Security, "⚡ Supabase User ID", supabaseUser.id.take(16) + "...") {}
                             }
                             ProfileOptionItem(Icons.Default.Share, "แชร์แอปฝึกเขียน ก ไก่", "บอกต่อเพื่อนๆ ให้มาเรียนรู้ด้วยกัน") {
-                                Toast.makeText(context, "ขอบคุณที่ร่วมแชร์แอปจ้า! ❤️", Toast.LENGTH_SHORT).show()
+                                try {
+                                    val appPackageName = context.packageName
+                                    val playStoreUrl = "https://play.google.com/store/apps/details?id=$appPackageName"
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_SUBJECT, "แชร์แอปฝึกเขียน ก ไก่")
+                                        putExtra(
+                                            Intent.EXTRA_TEXT,
+                                            "มาเรียนรู้และฝึกเขียน ก ไก่ / A-Z กับแอป Paint App for Kids กันเถอะ! 🎨\nดาวน์โหลดได้ที่: $playStoreUrl"
+                                        )
+                                    }
+                                    val chooserIntent = Intent.createChooser(shareIntent, "แชร์แอปไปที่")
+                                    context.startActivity(chooserIntent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "ไม่สามารถเปิดเมนูแชร์ได้", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     }
