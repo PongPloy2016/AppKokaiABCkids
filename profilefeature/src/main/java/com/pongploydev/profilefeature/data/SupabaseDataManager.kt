@@ -1,6 +1,7 @@
 package com.pongploydev.profilefeature.data
 
 import android.content.Context
+import android.util.Log
 import com.google.gson.Gson
 import com.pongploydev.profilefeature.auth.SupabaseAuthManager
 import kotlinx.coroutines.Dispatchers
@@ -144,6 +145,10 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     suspend fun uploadAvatarImage(userId: String, imageBytes: ByteArray, mimeType: String = "image/jpeg"): Result<String> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseAvatarUpload"
+        Log.d(tag, "=== [START AVATAR UPLOAD] ===")
+        Log.d(tag, "UserId: $userId, Image size: ${imageBytes.size} bytes, MimeType: $mimeType")
+
         try {
             val cleanId = userId.replace(Regex("[^a-zA-Z0-9]"), "")
             val fileName = "avatar_${cleanId}_${System.currentTimeMillis()}.jpg"
@@ -154,6 +159,7 @@ class SupabaseDataManager private constructor(context: Context) {
             var publicUrl: String? = null
 
             for (bucket in candidateBuckets) {
+                Log.d(tag, "Attempting upload to Supabase Storage bucket: '$bucket' with fileName: '$fileName'...")
                 try {
                     val storageResp = dataApiService.uploadStorageObject(
                         apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
@@ -164,33 +170,52 @@ class SupabaseDataManager private constructor(context: Context) {
                         path = fileName,
                         body = requestBody
                     )
+
+                    val code = storageResp.code()
+                    val msg = storageResp.message()
+
                     if (storageResp.isSuccessful) {
                         publicUrl = "${SupabaseAuthManager.SUPABASE_URL}/storage/v1/object/public/$bucket/$fileName"
+                        Log.d(tag, "SUCCESS! Uploaded to Storage bucket '$bucket' ($code $msg). Public URL: $publicUrl")
                         break
+                    } else {
+                        val errorBody = storageResp.errorBody()?.string() ?: "No error body"
+                        Log.w(tag, "Failed uploading to Storage bucket '$bucket' ($code $msg): $errorBody")
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(tag, "Exception during upload to bucket '$bucket': ${e.localizedMessage}", e)
                 }
             }
 
             // 2. Fallback to compact Base64 data URL if storage bucket fails or doesn't exist
             val finalAvatarUrl = publicUrl ?: run {
+                Log.w(tag, "Storage bucket upload returned null. Fallback to Base64 data URL encoding...")
                 val base64Str = android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
-                "data:$mimeType;base64,$base64Str"
+                val dataUrl = "data:$mimeType;base64,$base64Str"
+                Log.d(tag, "Base64 data URL created successfully (length: ${dataUrl.length} chars)")
+                dataUrl
             }
 
             // 3. Update user_profiles record in Supabase PostgreSQL (qriqerrkxccpnwabphdc)
+            Log.d(tag, "Updating user_profiles table in Supabase PostgreSQL for userId: '$userId'...")
             val updateResult = updateUserProfile(userId, UserProfileUpdate(avatarUrl = finalAvatarUrl))
             if (updateResult.isSuccess) {
+                Log.d(tag, "=== [SUCCESS AVATAR UPLOAD] Avatar URL saved to user_profiles table ===")
                 Result.success(finalAvatarUrl)
             } else {
+                Log.w(tag, "updateUserProfile failed, executing upsertUserProfile...")
                 val existing = fetchUserProfile(userId).getOrDefault(UserProfile(id = userId))
                 val newProfile = existing.copy(avatarUrl = finalAvatarUrl)
-                upsertUserProfile(newProfile)
+                val upsertRes = upsertUserProfile(newProfile)
+                if (upsertRes.isSuccess) {
+                    Log.d(tag, "=== [SUCCESS AVATAR UPLOAD] Upsert profile completed ===")
+                } else {
+                    Log.e(tag, "Upsert profile failed: ${upsertRes.exceptionOrNull()?.localizedMessage}")
+                }
                 Result.success(finalAvatarUrl)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(tag, "=== [ERROR AVATAR UPLOAD] Exception: ${e.localizedMessage} ===", e)
             Result.failure(e)
         }
     }

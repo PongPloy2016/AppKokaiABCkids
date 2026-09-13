@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -657,6 +658,7 @@ fun ProfileDetailsViewDual(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
+        Log.d("ProfileComposeScreen", "Selected photo Uri: $uri")
         if (uri != null) {
             scope.launch {
                 isUploadingAvatar = true
@@ -667,6 +669,7 @@ fun ProfileDetailsViewDual(
                     inputStream?.close()
 
                     if (originalBitmap != null) {
+                        Log.d("ProfileComposeScreen", "Loaded bitmap size: ${originalBitmap.width}x${originalBitmap.height}")
                         val maxDimension = 512
                         val scale = Math.min(
                             maxDimension.toFloat() / originalBitmap.width,
@@ -680,22 +683,29 @@ fun ProfileDetailsViewDual(
                         val outputStream = java.io.ByteArrayOutputStream()
                         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
                         val imageBytes = outputStream.toByteArray()
+                        Log.d("ProfileComposeScreen", "Compressed image bytes: ${imageBytes.size} bytes. Calling uploadAvatarImage...")
 
                         val uploadResult = dataManager.uploadAvatarImage(userId, imageBytes)
                         uploadResult.onSuccess { newUrl ->
+                            Log.d("ProfileComposeScreen", "uploadAvatarImage succeeded! New URL: $newUrl")
                             loadSupabaseLiveData()
                             Toast.makeText(context, "อัปโหลดรูปโปรไฟล์เข้า Supabase สำเร็จแล้ว! 📸", Toast.LENGTH_SHORT).show()
                         }.onFailure { e ->
+                            Log.e("ProfileComposeScreen", "uploadAvatarImage failed: ${e.localizedMessage}", e)
                             Toast.makeText(context, "อัปโหลดรูปไม่สำเร็จ: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
+                    } else {
+                        Log.e("ProfileComposeScreen", "Failed to decode bitmap from Uri: $uri")
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("ProfileComposeScreen", "Error reading image file: ${e.localizedMessage}", e)
                     Toast.makeText(context, "เกิดข้อผิดพลาดในการอ่านไฟล์รูป", Toast.LENGTH_SHORT).show()
                 } finally {
                     isUploadingAvatar = false
                 }
             }
+        } else {
+            Log.d("ProfileComposeScreen", "Photo selection cancelled by user.")
         }
     }
 
