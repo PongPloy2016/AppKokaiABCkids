@@ -186,7 +186,11 @@ class SupabaseDataManager private constructor(context: Context) {
                 Result.success(response.body()!!.first())
             } else {
                 val errBody = errBodyInitial ?: response.errorBody()?.string() ?: "Empty response body"
-                Log.e(tag, "upsertUserProfile API FAILED (HTTP ${response.code()} ${response.message()}): $errBody")
+                if (response.code() == 403 || errBody.contains("42501") || errBody.contains("row-level security policy", ignoreCase = true)) {
+                    Log.w(tag, "upsertUserProfile RLS WARNING (HTTP ${response.code()}): Supabase Row-Level Security blocked profile insert/update for anon user. Run 'ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;' in Supabase SQL Editor to allow database sync for anonymous users.")
+                } else {
+                    Log.e(tag, "upsertUserProfile API FAILED (HTTP ${response.code()} ${response.message()}): $errBody")
+                }
                 Result.failure(Exception("HTTP ${response.code()} ${response.message()}: $errBody"))
             }
         } catch (e: Exception) {
