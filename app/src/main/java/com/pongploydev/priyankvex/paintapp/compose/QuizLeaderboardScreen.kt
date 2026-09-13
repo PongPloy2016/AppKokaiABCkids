@@ -2,6 +2,7 @@ package com.pongploydev.priyankvex.paintapp.compose
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,8 +38,25 @@ data class DisplayQuizScore(
     val totalQuestions: Int,
     val durationSeconds: Int,
     val dateString: String,
-    val rawTimestamp: String
+    val rawTimestamp: String,
+    val dateKey: String = ""
 )
+
+private fun extractDateKey(isoTimestamp: String?): String {
+    if (isoTimestamp.isNullOrBlank()) return ""
+    return try {
+        val cleanIso = isoTimestamp.replace(" ", "T")
+        if (cleanIso.contains("T")) {
+            cleanIso.substringBefore("T")
+        } else if (cleanIso.contains("-")) {
+            cleanIso.take(10)
+        } else {
+            ""
+        }
+    } catch (e: Exception) {
+        ""
+    }
+}
 
 private fun formatThaiDateTime(isoTimestamp: String?): String {
     val thaiZone = TimeZone.getTimeZone("Asia/Bangkok")
@@ -84,6 +102,7 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
     var scores by remember { mutableStateOf<List<DisplayQuizScore>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var selectedDateKey by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         val dataManager = SupabaseDataManager.getInstance(context)
@@ -105,7 +124,8 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                         totalQuestions = if (res.totalQuestions > 0) res.totalQuestions else 10,
                         durationSeconds = res.timeSpentSeconds,
                         dateString = formatThaiDateTime(res.createdAt),
-                        rawTimestamp = res.createdAt ?: ""
+                        rawTimestamp = res.createdAt ?: "",
+                        dateKey = extractDateKey(res.createdAt)
                     )
                 }
                 // Sort by date descending - latest date first!
@@ -128,53 +148,96 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
         }
     }
 
+    val filteredScores = remember(scores, selectedDateKey) {
+        if (selectedDateKey.isNullOrBlank()) {
+            scores
+        } else {
+            scores.filter { it.dateKey == selectedDateKey }
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("🏆 ตารางคะแนน", fontWeight = FontWeight.Bold, color = Color.White) },
+                title = { Text("Table Calendar Demo", fontWeight = FontWeight.Bold, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "กลับ", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF673AB7)
+                    containerColor = Color(0xFF1E88E5) // Blue theme matching the screenshot
                 )
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            KidBackground(modifier = Modifier.fillMaxSize())
+            // Table Calendar Component (Matching screenshot exactly!)
+            TableCalendarView(
+                scores = scores,
+                selectedDateKey = selectedDateKey,
+                onSelectDate = { key -> selectedDateKey = key }
+            )
 
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (errorMessage != null) {
-                Text(
-                    errorMessage!!,
-                    modifier = Modifier.align(Alignment.Center).padding(24.dp),
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                    color = Color.Red
-                )
-            } else if (scores.isEmpty()) {
-                Text(
-                    "ยังไม่มีคะแนนในขณะนี้\nมาเป็นคนแรกกันเถอะ! 🌟",
-                    modifier = Modifier.align(Alignment.Center),
-                    textAlign = TextAlign.Center,
-                    fontSize = 18.sp,
-                    color = Color.Gray
-                )
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            // Reset Filter Button bar if a date is filtered
+            if (selectedDateKey != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFE3F2FD))
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(scores) { score ->
-                        LeaderboardItem(score)
+                    Text(
+                        text = "กรองวันที่: $selectedDateKey (${filteredScores.size} รายการ)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF1565C0)
+                    )
+                    TextButton(onClick = { selectedDateKey = null }) {
+                        Text("แสดงทั้งหมด ✕", fontSize = 12.sp, color = Color(0xFFD32F2F))
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                KidBackground(modifier = Modifier.fillMaxSize())
+
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else if (errorMessage != null) {
+                    Text(
+                        errorMessage!!,
+                        modifier = Modifier.align(Alignment.Center).padding(24.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        color = Color.Red
+                    )
+                } else if (filteredScores.isEmpty()) {
+                    Text(
+                        if (selectedDateKey != null) "ไม่มีรายการคะแนนในวันที่เลือก 📅" else "ยังไม่มีคะแนนในขณะนี้\nมาเป็นคนแรกกันเถอะ! 🌟",
+                        modifier = Modifier.align(Alignment.Center),
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        color = Color.Gray
+                    )
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(filteredScores) { score ->
+                            LeaderboardItem(score)
+                        }
                     }
                 }
             }
@@ -182,8 +245,225 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
     }
 }
 
+@Composable
+fun TableCalendarView(
+    scores: List<DisplayQuizScore>,
+    selectedDateKey: String?,
+    onSelectDate: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var currentMonthCalendar by remember {
+        mutableStateOf(Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")))
+    }
+    var isFullMonthMode by remember { mutableStateOf(false) }
+
+    // Count events per dateKey
+    val eventCountsMap = remember(scores) {
+        scores.groupingBy { it.dateKey }.eachCount()
+    }
+
+    val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
+    val keyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    val dayNumFormat = SimpleDateFormat("d", Locale.US)
+
+    val currentMonthTitle = remember(currentMonthCalendar.time) {
+        monthFormat.format(currentMonthCalendar.time)
+    }
+
+    // Build the grid of days
+    val daysInGrid = remember(currentMonthCalendar.time, isFullMonthMode) {
+        val cal = (currentMonthCalendar.clone() as Calendar).apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+        }
+        val daysList = mutableListOf<Date?>()
+
+        if (isFullMonthMode) {
+            val firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+            val offset = (firstDayOfWeek + 5) % 7
+            cal.add(Calendar.DAY_OF_MONTH, -offset)
+
+            for (i in 0 until 35) {
+                daysList.add(cal.time)
+                cal.add(Calendar.DAY_OF_MONTH, 1)
+            }
+        } else {
+            val targetCal = (currentMonthCalendar.clone() as Calendar)
+            val dayOfWeek = targetCal.get(Calendar.DAY_OF_WEEK)
+            val offset = (dayOfWeek + 5) % 7
+            targetCal.add(Calendar.DAY_OF_MONTH, -offset)
+
+            for (i in 0 until 7) {
+                daysList.add(targetCal.time)
+                targetCal.add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+        daysList
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 12.dp)
+        ) {
+            // 1. Navigation Header (<  March 2019  [Full/Week]  >)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(onClick = {
+                    val newCal = (currentMonthCalendar.clone() as Calendar).apply {
+                        if (isFullMonthMode) add(Calendar.MONTH, -1) else add(Calendar.WEEK_OF_YEAR, -1)
+                    }
+                    currentMonthCalendar = newCal
+                }) {
+                    Text("<", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = currentMonthTitle,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121)
+                    )
+
+                    // View Mode Toggle Button (Full / Week)
+                    Surface(
+                        onClick = { isFullMonthMode = !isFullMonthMode },
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFFF5722),
+                        contentColor = Color.White
+                    ) {
+                        Text(
+                            text = if (isFullMonthMode) "Full" else "Week",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                IconButton(onClick = {
+                    val newCal = (currentMonthCalendar.clone() as Calendar).apply {
+                        if (isFullMonthMode) add(Calendar.MONTH, 1) else add(Calendar.WEEK_OF_YEAR, 1)
+                    }
+                    currentMonthCalendar = newCal
+                }) {
+                    Text(">", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 2. Day of Week Header Row (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
+            val weekDays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                weekDays.forEachIndexed { index, day ->
+                    val isWeekend = index >= 5 // Sat & Sun
+                    Text(
+                        text = day,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isWeekend) Color(0xFFE53935) else Color.Gray,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 3. Days Grid (Rows of 7 days)
+            val rows = daysInGrid.chunked(7)
+            rows.forEach { weekRow ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    weekRow.forEachIndexed { index, date ->
+                        if (date != null) {
+                            val dateKey = keyFormat.format(date)
+                            val dayNumStr = dayNumFormat.format(date)
+                            val isSelected = dateKey == selectedDateKey
+                            val eventCount = eventCountsMap[dateKey] ?: 0
+                            val isWeekend = index >= 5
+
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        if (isSelected) onSelectDate(null) else onSelectDate(dateKey)
+                                    }
+                                    .padding(vertical = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                // Date Number Indicator (Circular if selected)
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isSelected) Color(0xFFFF5722) else Color.Transparent),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = dayNumStr,
+                                        fontSize = 15.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = when {
+                                            isSelected -> Color.White
+                                            isWeekend -> Color(0xFFE53935)
+                                            else -> Color(0xFF212121)
+                                        }
+                                    )
+                                }
+
+                                // Event Dots (• • •) underneath date
+                                if (eventCount > 0) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    ) {
+                                        val dotsToShow = eventCount.coerceAtMost(4)
+                                        repeat(dotsToShow) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(5.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF5D4037))
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.height(7.dp))
+                                }
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 private fun fetchFirestoreScores(onResult: (List<DisplayQuizScore>) -> Unit) {
     val dateFormat = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("th", "TH"))
+    val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     FirebaseFirestore.getInstance().collection("quiz_scores")
         .orderBy("timestamp", Query.Direction.DESCENDING)
         .limit(50)
@@ -192,6 +472,7 @@ private fun fetchFirestoreScores(onResult: (List<DisplayQuizScore>) -> Unit) {
             try {
                 val list = result.toObjects(QuizScore::class.java).map { s ->
                     val dateStr = s.timestamp?.let { dateFormat.format(it) } ?: "เพิ่งเมื่อสักครู่"
+                    val key = s.timestamp?.let { dateKeyFormat.format(it) } ?: ""
                     DisplayQuizScore(
                         userName = s.userName.ifBlank { "ผู้เล่นนิรนาม" },
                         avatarUrl = null,
@@ -200,7 +481,8 @@ private fun fetchFirestoreScores(onResult: (List<DisplayQuizScore>) -> Unit) {
                         totalQuestions = if (s.totalQuestions > 0) s.totalQuestions else 10,
                         durationSeconds = s.durationSeconds.toInt(),
                         dateString = dateStr,
-                        rawTimestamp = s.timestamp?.time?.toString() ?: ""
+                        rawTimestamp = s.timestamp?.time?.toString() ?: "",
+                        dateKey = key
                     )
                 }
                 onResult(list)
@@ -286,4 +568,5 @@ fun LeaderboardItem(score: DisplayQuizScore) {
         }
     }
 }
+
 
