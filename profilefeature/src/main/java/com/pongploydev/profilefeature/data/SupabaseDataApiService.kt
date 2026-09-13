@@ -36,6 +36,17 @@ interface SupabaseDataApiService {
         @Body profile: UserProfile
     ): Response<List<UserProfile>>
 
+    // STORAGE UPLOAD
+    @POST("storage/v1/object/{bucket}/{path}")
+    suspend fun uploadStorageObject(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") auth: String,
+        @Header("x-upsert") upsert: String = "true",
+        @retrofit2.http.Path("bucket") bucket: String,
+        @retrofit2.http.Path(value = "path", encoded = true) path: String,
+        @Body body: okhttp3.RequestBody
+    ): Response<okhttp3.ResponseBody>
+
     // LEARNING PROGRESS
     @GET("rest/v1/user_learning_progress")
     suspend fun getLearningProgress(

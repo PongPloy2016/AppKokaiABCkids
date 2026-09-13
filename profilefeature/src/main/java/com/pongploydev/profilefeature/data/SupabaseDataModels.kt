@@ -18,6 +18,7 @@ data class UserProfile(
 
 data class UserProfileUpdate(
     @SerializedName("display_name") val displayName: String? = null,
+    @SerializedName("avatar_url") val avatarUrl: String? = null,
     @SerializedName("total_stars") val totalStars: Int? = null,
     @SerializedName("total_coins") val totalCoins: Int? = null,
     @SerializedName("current_level") val currentLevel: Int? = null,

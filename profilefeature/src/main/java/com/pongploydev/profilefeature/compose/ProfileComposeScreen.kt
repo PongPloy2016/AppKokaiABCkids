@@ -2,9 +2,14 @@ package com.pongploydev.profilefeature.compose
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -40,6 +45,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
@@ -74,6 +80,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -622,24 +630,10 @@ fun ProfileDetailsViewDual(
     var achievements by remember { mutableStateOf<List<UserAchievement>>(emptyList()) }
 
     var isDataLoading by remember { mutableStateOf(false) }
+    var isUploadingAvatar by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showQuizHistoryDetail by remember { mutableStateOf(false) }
-
-    val initialName = profileData?.displayName
-        ?: firebaseUser?.displayName
-        ?: supabaseUser?.userMetadata?.displayName
-        ?: "นักอ่านตัวน้อย"
-
-    var newName by remember { mutableStateOf(initialName) }
-
-    val displayName = if (firebaseUser?.isAnonymous == true || supabaseUser?.isAnonymous == true) {
-        "ผู้ใช้ชั่วคราว (Guest)"
-    } else {
-        initialName
-    }
-
-    val emailText = firebaseUser?.email ?: supabaseUser?.email ?: profileData?.email ?: "ยังไม่ได้เชื่อมต่ออีเมล"
 
     // Load Live Data from Supabase
     fun loadSupabaseLiveData() {
@@ -658,6 +652,67 @@ fun ProfileDetailsViewDual(
             isDataLoading = false
         }
     }
+
+    // Image Picker Launcher for Supabase Storage Upload
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                isUploadingAvatar = true
+                Toast.makeText(context, "กำลังอัปโหลดรูปโปรไฟล์เข้า Supabase... ☁️", Toast.LENGTH_SHORT).show()
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream?.close()
+
+                    if (originalBitmap != null) {
+                        val maxDimension = 512
+                        val scale = Math.min(
+                            maxDimension.toFloat() / originalBitmap.width,
+                            maxDimension.toFloat() / originalBitmap.height
+                        ).coerceAtMost(1.0f)
+
+                        val scaledWidth = (originalBitmap.width * scale).toInt()
+                        val scaledHeight = (originalBitmap.height * scale).toInt()
+                        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, scaledWidth, scaledHeight, true)
+
+                        val outputStream = java.io.ByteArrayOutputStream()
+                        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                        val imageBytes = outputStream.toByteArray()
+
+                        val uploadResult = dataManager.uploadAvatarImage(userId, imageBytes)
+                        uploadResult.onSuccess { newUrl ->
+                            loadSupabaseLiveData()
+                            Toast.makeText(context, "อัปโหลดรูปโปรไฟล์เข้า Supabase สำเร็จแล้ว! 📸", Toast.LENGTH_SHORT).show()
+                        }.onFailure { e ->
+                            Toast.makeText(context, "อัปโหลดรูปไม่สำเร็จ: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "เกิดข้อผิดพลาดในการอ่านไฟล์รูป", Toast.LENGTH_SHORT).show()
+                } finally {
+                    isUploadingAvatar = false
+                }
+            }
+        }
+    }
+
+    val initialName = profileData?.displayName
+        ?: firebaseUser?.displayName
+        ?: supabaseUser?.userMetadata?.displayName
+        ?: "นักอ่านตัวน้อย"
+
+    var newName by remember { mutableStateOf(initialName) }
+
+    val displayName = if (firebaseUser?.isAnonymous == true || supabaseUser?.isAnonymous == true) {
+        "ผู้ใช้ชั่วคราว (Guest)"
+    } else {
+        initialName
+    }
+
+    val emailText = firebaseUser?.email ?: supabaseUser?.email ?: profileData?.email ?: "ยังไม่ได้เชื่อมต่ออีเมล"
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, userId) {
@@ -729,35 +784,58 @@ fun ProfileDetailsViewDual(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Avatar Container with Crown Badge Overlay
+                        // Avatar Container with Photo Picker & Camera Overlay
                         Box(contentAlignment = Alignment.BottomEnd) {
                             Surface(
-                                modifier = Modifier.size(96.dp),
+                                modifier = Modifier
+                                    .size(96.dp)
+                                    .clickable { imagePickerLauncher.launch("image/*") },
                                 shape = CircleShape,
                                 color = Color.White,
                                 border = BorderStroke(4.dp, Color(0xFFFFD166)),
                                 shadowElevation = 12.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = "Profile Avatar",
-                                        tint = Color(0xFF536DFE),
-                                        modifier = Modifier.size(60.dp)
-                                    )
+                                    val avatarUrl = profileData?.avatarUrl
+                                    if (isUploadingAvatar) {
+                                        CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 3.dp, color = Color(0xFF536DFE))
+                                    } else if (!avatarUrl.isNullOrBlank()) {
+                                        AsyncImage(
+                                            model = avatarUrl,
+                                            contentDescription = "Profile Avatar",
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = "Profile Avatar",
+                                            tint = Color(0xFF536DFE),
+                                            modifier = Modifier.size(60.dp)
+                                        )
+                                    }
                                 }
                             }
 
-                            // Crown / Level Badge
+                            // Camera Upload Icon Overlay
                             Surface(
                                 shape = CircleShape,
-                                color = Color(0xFFFFC107),
+                                color = Color(0xFF536DFE),
                                 border = BorderStroke(2.dp, Color.White),
-                                shadowElevation = 4.dp,
-                                modifier = Modifier.size(30.dp)
+                                shadowElevation = 6.dp,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable { imagePickerLauncher.launch("image/*") }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(text = "👑", fontSize = 15.sp)
+                                    Icon(
+                                        imageVector = Icons.Default.PhotoCamera,
+                                        contentDescription = "เปลี่ยนรูปโปรไฟล์",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(17.dp)
+                                    )
                                 }
                             }
                         }

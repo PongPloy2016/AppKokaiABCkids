@@ -5,7 +5,10 @@ import com.google.gson.Gson
 import com.pongploydev.profilefeature.auth.SupabaseAuthManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -138,6 +141,52 @@ class SupabaseDataManager private constructor(context: Context) {
         val newLevel = 1 + (newStars / 50) // Every 50 stars = +1 level
         val updates = UserProfileUpdate(totalStars = newStars, currentLevel = newLevel)
         return updateUserProfile(userId, updates)
+    }
+
+    suspend fun uploadAvatarImage(userId: String, imageBytes: ByteArray, mimeType: String = "image/jpeg"): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val cleanId = userId.replace(Regex("[^a-zA-Z0-9]"), "")
+            val fileName = "avatar_${cleanId}_${System.currentTimeMillis()}.jpg"
+            val requestBody = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
+
+            // 1. Attempt uploading to Supabase Storage bucket "avatars"
+            var publicUrl: String? = null
+            try {
+                val storageResp = dataApiService.uploadStorageObject(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAuthHeader(),
+                    upsert = "true",
+                    bucket = "avatars",
+                    path = fileName,
+                    body = requestBody
+                )
+                if (storageResp.isSuccessful) {
+                    publicUrl = "${SupabaseAuthManager.SUPABASE_URL}/storage/v1/object/public/avatars/$fileName"
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // 2. Fallback to compact Base64 data URL if storage bucket fails/doesn't exist
+            val finalAvatarUrl = publicUrl ?: run {
+                val base64Str = android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP)
+                "data:$mimeType;base64,$base64Str"
+            }
+
+            // 3. Update profile record in Supabase PostgreSQL
+            val updateResult = updateUserProfile(userId, UserProfileUpdate(avatarUrl = finalAvatarUrl))
+            if (updateResult.isSuccess) {
+                Result.success(finalAvatarUrl)
+            } else {
+                val existing = fetchUserProfile(userId).getOrDefault(UserProfile(id = userId))
+                val newProfile = existing.copy(avatarUrl = finalAvatarUrl)
+                upsertUserProfile(newProfile)
+                Result.success(finalAvatarUrl)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 
     // ==================== LEARNING PROGRESS ====================
