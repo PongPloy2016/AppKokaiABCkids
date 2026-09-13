@@ -242,10 +242,10 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                     )
                 )
 
-                // Tab Row Switcher (🏆 คะแนนรวมรายคน vs 📅 ประวัติการเล่น)
+                // Tab Row Switcher (🏆 ตารางอันดับ vs 📅 ประวัติการเล่น)
                 TabRow(
                     selectedTabIndex = currentTab,
-                    containerColor = Color(0xFF1565C0),
+                    containerColor = Color(0xFF5E35B1),
                     contentColor = Color.White
                 ) {
                     Tab(
@@ -253,7 +253,7 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                         onClick = { currentTab = 0 },
                         text = {
                             Text(
-                                "🏆 คะแนนรวมรายคน",
+                                "🏆 ตารางอันดับ",
                                 fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 14.sp
                             )
@@ -280,30 +280,82 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
                 .padding(padding)
         ) {
             if (currentTab == 0) {
-                // TAB 0: 🏆 คะแนนรวมรายคน (Aggregated Cumulative Total Scores & Stars)
+                // TAB 0: 🏆 ตารางอันดับ (Podium Top 3 + Purple List Rows)
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                        .fillMaxSize()
+                        .background(Color(0xFFF4F5F9))
                 ) {
-                    KidBackground(modifier = Modifier.fillMaxSize())
-
                     if (isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = Color(0xFF673AB7)
+                        )
                     } else if (userSummaries.isEmpty()) {
                         Text(
-                            "ยังไม่มีคะแนนรวมในขณะนี้ 🌟",
+                            "ยังไม่มีอันดับคะแนนในขณะนี้ 🌟",
                             modifier = Modifier.align(Alignment.Center),
                             fontSize = 18.sp,
                             color = Color.Gray
                         )
                     } else {
+                        val top3 = userSummaries.take(3)
+                        val rank4AndBelow = userSummaries.drop(3)
+                        val currentUserName = currentProfile?.displayName
+
                         LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            contentPadding = PaddingValues(bottom = 24.dp),
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            itemsIndexed(userSummaries) { index, summary ->
-                                UserLeaderboardCard(rank = index + 1, userSummary = summary)
+                            // 1. Podium Section for Top 3
+                            item {
+                                Top3PodiumSection(
+                                    top3List = top3,
+                                    currentProfileName = currentUserName
+                                )
+                            }
+
+                            // 2. Table Header Bar (Rank | Player | Points)
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 28.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Rank",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Gray,
+                                        modifier = Modifier.width(40.dp)
+                                    )
+                                    Text(
+                                        "Player",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Gray,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        "Points",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+
+                            // 3. List Rows for Rank 4 and below
+                            itemsIndexed(rank4AndBelow) { index, summary ->
+                                val rankNumber = index + 4
+                                LeaderboardRowCard(
+                                    rank = rankNumber,
+                                    summary = summary,
+                                    currentProfileName = currentUserName
+                                )
                             }
                         }
                     }
@@ -372,131 +424,255 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun UserLeaderboardCard(rank: Int, userSummary: UserLeaderboardSummary) {
-    val rankBadgeColor = when (rank) {
-        1 -> Color(0xFFFFD700) // Gold
-        2 -> Color(0xFFC0C0C0) // Silver
-        3 -> Color(0xFFCD7F32) // Bronze
-        else -> Color(0xFFE0E0E0)
-    }
+fun Top3PodiumSection(
+    top3List: List<UserLeaderboardSummary>,
+    currentProfileName: String?
+) {
+    if (top3List.isEmpty()) return
 
-    val rankIcon = when (rank) {
-        1 -> "🥇"
-        2 -> "🥈"
-        3 -> "🥉"
-        else -> "#$rank"
-    }
+    val rank1 = top3List.getOrNull(0)
+    val rank2 = top3List.getOrNull(1)
+    val rank3 = top3List.getOrNull(2)
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Bottom
         ) {
-            // Rank Badge (Gold, Silver, Bronze)
+            // Rank 2 (Left)
+            if (rank2 != null) {
+                PodiumUserItem(
+                    summary = rank2,
+                    rank = 2,
+                    avatarSize = 64.dp,
+                    isCenter = false,
+                    currentProfileName = currentProfileName
+                )
+            } else {
+                Spacer(modifier = Modifier.width(84.dp))
+            }
+
+            // Rank 1 (Center - Taller with Crown)
+            if (rank1 != null) {
+                PodiumUserItem(
+                    summary = rank1,
+                    rank = 1,
+                    avatarSize = 82.dp,
+                    isCenter = true,
+                    currentProfileName = currentProfileName
+                )
+            }
+
+            // Rank 3 (Right)
+            if (rank3 != null) {
+                PodiumUserItem(
+                    summary = rank3,
+                    rank = 3,
+                    avatarSize = 64.dp,
+                    isCenter = false,
+                    currentProfileName = currentProfileName
+                )
+            } else {
+                Spacer(modifier = Modifier.width(84.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun PodiumUserItem(
+    summary: UserLeaderboardSummary,
+    rank: Int,
+    avatarSize: androidx.compose.ui.unit.Dp,
+    isCenter: Boolean,
+    currentProfileName: String?
+) {
+    val isCurrentUser = !currentProfileName.isNullOrBlank() && summary.userName == currentProfileName
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(96.dp)
+    ) {
+        // Crown for Rank 1
+        if (rank == 1) {
+            Text(
+                text = "👑",
+                fontSize = 30.sp,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        Box(
+            contentAlignment = Alignment.BottomCenter,
+            modifier = Modifier.padding(bottom = 6.dp)
+        ) {
+            // Avatar Image with Colored Border
             Surface(
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier
+                    .size(avatarSize)
+                    .padding(bottom = 6.dp),
                 shape = CircleShape,
-                color = rankBadgeColor.copy(alpha = 0.25f),
-                border = BorderStroke(2.dp, rankBadgeColor)
+                color = Color(0xFFEDE7F6),
+                border = BorderStroke(
+                    width = if (rank == 1) 3.dp else 2.dp,
+                    color = when (rank) {
+                        1 -> Color(0xFFFFD700) // Gold
+                        2 -> Color(0xFFC0C0C0) // Silver
+                        else -> Color(0xFFCD7F32) // Bronze
+                    }
+                )
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = rankIcon,
-                        fontSize = if (rank <= 3) 22.sp else 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (rank <= 3) Color.Unspecified else Color.DarkGray
+                if (!summary.avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = summary.avatarUrl,
+                        contentDescription = summary.userName,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("👤", fontSize = (avatarSize.value * 0.45).sp)
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // User Avatar Photo
+            // Rank Number Badge (Purple Circle)
             Surface(
-                modifier = Modifier.size(52.dp),
                 shape = CircleShape,
-                color = Color(0xFFE1F5FE)
+                color = Color(0xFF6C5CE7),
+                modifier = Modifier
+                    .size(24.dp)
+                    .offset(y = 2.dp),
+                shadowElevation = 2.dp
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    if (!userSummary.avatarUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = userSummary.avatarUrl,
-                            contentDescription = "Avatar",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Text("👤", fontSize = 26.sp)
+                    Text(
+                        text = "$rank",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Player Name (with YOU badge if current user)
+        Text(
+            text = if (isCurrentUser) "${summary.userName}\n(YOU)" else summary.userName,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2D3748),
+            maxLines = 2,
+            textAlign = TextAlign.Center,
+            lineHeight = 15.sp
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // Points
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "${summary.totalScore} points",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF7C4DFF)
+            )
+        }
+    }
+}
+
+@Composable
+fun LeaderboardRowCard(
+    rank: Int,
+    summary: UserLeaderboardSummary,
+    currentProfileName: String?
+) {
+    val isCurrentUser = !currentProfileName.isNullOrBlank() && summary.userName == currentProfileName
+    val cardBgColor = if (isCurrentUser) Color(0xFF5E35B1) else Color(0xFF7E57C2)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 5.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBgColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Rank Number
+            Text(
+                text = "$rank",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                modifier = Modifier.width(36.dp)
+            )
+
+            // Avatar Photo Circle
+            Surface(
+                modifier = Modifier.size(42.dp),
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.25f)
+            ) {
+                if (!summary.avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = summary.avatarUrl,
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("👤", fontSize = 22.sp)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // User Info & Aggregate Stats
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = userSummary.userName,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1A2E)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "⭐ ${userSummary.totalStars} ดาว",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFFF8F00)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "🎮 เล่น ${userSummary.totalGamesPlayed} ครั้ง",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-                val accuracy = if (userSummary.totalQuestions > 0) {
-                    (userSummary.totalScore * 100) / userSummary.totalQuestions
-                } else 0
-                Text(
-                    text = "ตอบถูกสะสม: ${userSummary.totalScore}/${userSummary.totalQuestions} ข้อ ($accuracy%)",
-                    fontSize = 11.sp,
-                    color = Color(0xFF0288D1)
-                )
-            }
+            // Player Name
+            Text(
+                text = if (isCurrentUser) "${summary.userName} (YOU)" else summary.userName,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.weight(1f),
+                maxLines = 1
+            )
 
-            // Total Cumulative Score Pill
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = Color(0xFFFFF3E0)
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "${userSummary.totalScore}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFE65100)
-                    )
-                    Text(
-                        text = "คะแนนรวม",
-                        fontSize = 10.sp,
-                        color = Color(0xFFEF6C00)
-                    )
-                }
-            }
+            // Points
+            Text(
+                text = "${summary.totalScore} points",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White
+            )
         }
     }
 }
