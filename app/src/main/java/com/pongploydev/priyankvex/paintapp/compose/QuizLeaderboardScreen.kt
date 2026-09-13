@@ -727,39 +727,55 @@ private fun fetchFirestoreScores(
     val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val nameToProfileMap = profilesList.filter { !it.displayName.isNullOrBlank() }.associateBy { it.displayName }
 
-    FirebaseFirestore.getInstance().collection("quiz_scores_game")
+    val firestore = FirebaseFirestore.getInstance()
+
+    fun parseSnapshot(result: com.google.firebase.firestore.QuerySnapshot): List<DisplayQuizScore> {
+        return result.toObjects(QuizScore::class.java).map { s ->
+            val dateStr = s.timestamp?.let { dateFormat.format(it) } ?: "เพิ่งเมื่อสักครู่"
+            val key = s.timestamp?.let { dateKeyFormat.format(it) } ?: ""
+            val matchingProf = nameToProfileMap[s.userName]
+            val avatar = s.avatarUrl?.ifBlank { null }
+                ?: matchingProf?.avatarUrl?.ifBlank { null }
+                ?: if (s.userName == currentProfile?.displayName) currentProfile?.avatarUrl?.ifBlank { null } else null
+
+            DisplayQuizScore(
+                userName = s.userName.ifBlank { "ผู้เล่นนิรนาม" },
+                avatarUrl = avatar,
+                topicTitle = s.topicTitle.ifBlank { "แบบทดสอบทั่วไป" },
+                score = s.score,
+                totalQuestions = if (s.totalQuestions > 0) s.totalQuestions else 10,
+                durationSeconds = s.durationSeconds.toInt(),
+                dateString = dateStr,
+                rawTimestamp = s.timestamp?.time?.toString() ?: "",
+                dateKey = key
+            )
+        }
+    }
+
+    firestore.collection("quiz_scores_game")
         .orderBy("timestamp", Query.Direction.DESCENDING)
         .limit(50)
         .get()
         .addOnSuccessListener { result ->
-            try {
-                val list = result.toObjects(QuizScore::class.java).map { s ->
-                    val dateStr = s.timestamp?.let { dateFormat.format(it) } ?: "เพิ่งเมื่อสักครู่"
-                    val key = s.timestamp?.let { dateKeyFormat.format(it) } ?: ""
-                    val matchingProf = nameToProfileMap[s.userName]
-                    val avatar = s.avatarUrl?.ifBlank { null }
-                        ?: matchingProf?.avatarUrl?.ifBlank { null }
-                        ?: if (s.userName == currentProfile?.displayName) currentProfile?.avatarUrl?.ifBlank { null } else null
-
-                    DisplayQuizScore(
-                        userName = s.userName.ifBlank { "ผู้เล่นนิรนาม" },
-                        avatarUrl = avatar,
-                        topicTitle = s.topicTitle.ifBlank { "แบบทดสอบทั่วไป" },
-                        score = s.score,
-                        totalQuestions = if (s.totalQuestions > 0) s.totalQuestions else 10,
-                        durationSeconds = s.durationSeconds.toInt(),
-                        dateString = dateStr,
-                        rawTimestamp = s.timestamp?.time?.toString() ?: "",
-                        dateKey = key
-                    )
-                }
+            val list = parseSnapshot(result)
+            if (list.isNotEmpty()) {
                 onResult(list)
-            } catch (e: Exception) {
-                onResult(emptyList())
+            } else {
+                firestore.collection("quiz_scores")
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .limit(50)
+                    .get()
+                    .addOnSuccessListener { res2 -> onResult(parseSnapshot(res2)) }
+                    .addOnFailureListener { onResult(emptyList()) }
             }
         }
         .addOnFailureListener {
-            onResult(emptyList())
+            firestore.collection("quiz_scores")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(50)
+                .get()
+                .addOnSuccessListener { res2 -> onResult(parseSnapshot(res2)) }
+                .addOnFailureListener { onResult(emptyList()) }
         }
 }
 

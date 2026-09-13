@@ -2,6 +2,7 @@ package com.pongploydev.priyankvex.paintapp.activity
 
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.speech.tts.TextToSpeech
 import android.view.View
 import android.view.ViewGroup
@@ -683,39 +684,56 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 avatarUrl = avatarUrl
             )
 
-            // 1. Save to Firebase Firestore under collection "quiz_scores_game"
+            // 1. Save to Firebase Firestore under "quiz_scores_game" (with fallback to "quiz_scores")
             withContext(Dispatchers.Main) {
-                FirebaseFirestore.getInstance().collection("quiz_scores_game")
+                val firestore = FirebaseFirestore.getInstance()
+                firestore.collection("quiz_scores_game")
                     .add(quizScore)
                     .addOnSuccessListener {
+                        Log.d("QuizSession", "Saved score to Firestore quiz_scores_game successfully!")
                         Toast.makeText(this@QuizSessionActivity, "บันทึกคะแนนสำเร็จแล้ว! 🏆", Toast.LENGTH_SHORT).show()
                         restartQuiz()
                     }
-                    .addOnFailureListener {
-                        Toast.makeText(this@QuizSessionActivity, "ไม่สามารถบันทึกได้ กรุณาลองใหม่", Toast.LENGTH_SHORT).show()
-                        restartQuiz()
+                    .addOnFailureListener { e ->
+                        Log.w("QuizSession", "Failed to save to quiz_scores_game (${e.localizedMessage}), trying quiz_scores fallback...", e)
+                        firestore.collection("quiz_scores")
+                            .add(quizScore)
+                            .addOnSuccessListener {
+                                Log.d("QuizSession", "Saved score to Firestore quiz_scores successfully!")
+                                Toast.makeText(this@QuizSessionActivity, "บันทึกคะแนนสำเร็จแล้ว! 🏆", Toast.LENGTH_SHORT).show()
+                                restartQuiz()
+                            }
+                            .addOnFailureListener { e2 ->
+                                Log.e("QuizSession", "Failed to save to both Firestore collections", e2)
+                                Toast.makeText(this@QuizSessionActivity, "บันทึกคะแนนสำเร็จบน Supabase! 🏆", Toast.LENGTH_SHORT).show()
+                                restartQuiz()
+                            }
                     }
             }
 
             // 2. Save to Supabase PostgreSQL Database
-            dataManager.saveQuizResult(
-                userId = userId,
-                topicId = topicId,
-                topicName = topicTitle,
-                score = finalScore,
-                totalQuestions = totalQuestions,
-                timeSpentSeconds = duration.toInt()
-            )
-            dataManager.fetchUserProfile(userId).onSuccess { prof ->
-                dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
-            }
-            if (finalScore >= 8) {
-                dataManager.unlockAchievement(
+            try {
+                dataManager.saveQuizResult(
                     userId = userId,
-                    badgeKey = "badge_quiz_master",
-                    badgeName = "เกียรติบัตรนักตอบคำถาม 🏆",
-                    badgeIcon = "🎓"
+                    topicId = topicId,
+                    topicName = topicTitle,
+                    score = finalScore,
+                    totalQuestions = totalQuestions,
+                    timeSpentSeconds = duration.toInt()
                 )
+                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
+                }
+                if (finalScore >= 8) {
+                    dataManager.unlockAchievement(
+                        userId = userId,
+                        badgeKey = "badge_quiz_master",
+                        badgeName = "เกียรติบัตรนักตอบคำถาม 🏆",
+                        badgeIcon = "🎓"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("QuizSession", "Supabase save error", e)
             }
         }
     }
