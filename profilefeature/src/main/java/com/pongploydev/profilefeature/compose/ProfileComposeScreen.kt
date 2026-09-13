@@ -688,6 +688,7 @@ fun ProfileDetailsViewDual(
                         val uploadResult = dataManager.uploadAvatarImage(userId, imageBytes)
                         uploadResult.onSuccess { newUrl ->
                             Log.d("ProfileComposeScreen", "uploadAvatarImage succeeded! New URL: $newUrl")
+                            profileData = (profileData ?: UserProfile(id = userId)).copy(avatarUrl = newUrl)
                             loadSupabaseLiveData()
                             Toast.makeText(context, "อัปโหลดรูปโปรไฟล์เข้า Supabase สำเร็จแล้ว! 📸", Toast.LENGTH_SHORT).show()
                         }.onFailure { e ->

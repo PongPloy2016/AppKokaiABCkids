@@ -227,7 +227,7 @@ class SupabaseDataManager private constructor(context: Context) {
             for (bucket in candidateBuckets) {
                 Log.d(tag, "Attempting upload to Supabase Storage bucket: '$bucket' with fileName: '$fileName'...")
                 try {
-                    val storageResp = dataApiService.uploadStorageObject(
+                    var storageResp = dataApiService.uploadStorageObject(
                         apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                         auth = getAuthHeader(),
                         contentType = mimeType,
@@ -236,6 +236,19 @@ class SupabaseDataManager private constructor(context: Context) {
                         path = fileName,
                         body = requestBody
                     )
+
+                    if (storageResp.code() == 401 || storageResp.code() == 403) {
+                        Log.w(tag, "Storage upload returned HTTP ${storageResp.code()}. Retrying bucket '$bucket' with Anon Auth header...")
+                        storageResp = dataApiService.uploadStorageObject(
+                            apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                            auth = getAnonAuthHeader(),
+                            contentType = mimeType,
+                            upsert = "true",
+                            bucket = bucket,
+                            path = fileName,
+                            body = requestBody
+                        )
+                    }
 
                     val code = storageResp.code()
                     val msg = storageResp.message()
