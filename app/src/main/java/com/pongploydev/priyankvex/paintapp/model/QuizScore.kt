@@ -9,6 +9,8 @@ data class QuizScore(
     val totalQuestions: Int = 0,
     val topicTitle: String = "",
     val durationSeconds: Long = 0,
+    val avatarUrl: String? = null,
     @ServerTimestamp
     val timestamp: Date? = null
 )
+

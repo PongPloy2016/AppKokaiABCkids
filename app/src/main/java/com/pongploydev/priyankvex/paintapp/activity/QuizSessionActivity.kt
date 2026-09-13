@@ -21,6 +21,7 @@ import com.pongploydev.profilefeature.auth.SupabaseAuthManager
 import com.pongploydev.profilefeature.data.SupabaseDataManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.confixdata.DataManager
 import com.pongploydev.priyankvex.paintapp.confixdata.File_Confix_Data
@@ -664,52 +665,57 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun saveScoreToFirestore(name: String, finalScore: Int, duration: Long) {
-        val quizScore = QuizScore(
-            userName = name,
-            score = finalScore,
-            totalQuestions = totalQuestions,
-            topicTitle = topicTitle,
-            durationSeconds = duration
-        )
-
-        // 1. Save to Firebase Firestore
-        FirebaseFirestore.getInstance().collection("quiz_scores")
-            .add(quizScore)
-            .addOnSuccessListener {
-                Toast.makeText(this, "บันทึกคะแนนสำเร็จแล้ว! 🏆", Toast.LENGTH_SHORT).show()
-                restartQuiz()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "ไม่สามารถบันทึกได้ กรุณาลองใหม่", Toast.LENGTH_SHORT).show()
-                restartQuiz()
-            }
-
-        // 2. Save to Supabase PostgreSQL Database via SupabaseDataManager
         val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
         val firebaseUser = FirebaseAuth.getInstance().currentUser
         val userId = supabaseUser?.id ?: firebaseUser?.uid ?: "guest_user"
-        if (!userId.isNullOrEmpty()) {
-            lifecycleScope.launch(Dispatchers.IO) {
-                val dataManager = SupabaseDataManager.getInstance(this@QuizSessionActivity)
-                dataManager.saveQuizResult(
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val dataManager = SupabaseDataManager.getInstance(this@QuizSessionActivity)
+            val userProf = dataManager.fetchUserProfile(userId).getOrNull()
+            val avatarUrl = userProf?.avatarUrl?.ifBlank { null }
+
+            val quizScore = QuizScore(
+                userName = name,
+                score = finalScore,
+                totalQuestions = totalQuestions,
+                topicTitle = topicTitle,
+                durationSeconds = duration,
+                avatarUrl = avatarUrl
+            )
+
+            // 1. Save to Firebase Firestore under collection "quiz_scores_game"
+            withContext(Dispatchers.Main) {
+                FirebaseFirestore.getInstance().collection("quiz_scores_game")
+                    .add(quizScore)
+                    .addOnSuccessListener {
+                        Toast.makeText(this@QuizSessionActivity, "บันทึกคะแนนสำเร็จแล้ว! 🏆", Toast.LENGTH_SHORT).show()
+                        restartQuiz()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(this@QuizSessionActivity, "ไม่สามารถบันทึกได้ กรุณาลองใหม่", Toast.LENGTH_SHORT).show()
+                        restartQuiz()
+                    }
+            }
+
+            // 2. Save to Supabase PostgreSQL Database
+            dataManager.saveQuizResult(
+                userId = userId,
+                topicId = topicId,
+                topicName = topicTitle,
+                score = finalScore,
+                totalQuestions = totalQuestions,
+                timeSpentSeconds = duration.toInt()
+            )
+            dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
+            }
+            if (finalScore >= 8) {
+                dataManager.unlockAchievement(
                     userId = userId,
-                    topicId = topicId,
-                    topicName = topicTitle,
-                    score = finalScore,
-                    totalQuestions = totalQuestions,
-                    timeSpentSeconds = duration.toInt()
+                    badgeKey = "badge_quiz_master",
+                    badgeName = "เกียรติบัตรนักตอบคำถาม 🏆",
+                    badgeIcon = "🎓"
                 )
-                dataManager.fetchUserProfile(userId).onSuccess { prof ->
-                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
-                }
-                if (finalScore >= 8) {
-                    dataManager.unlockAchievement(
-                        userId = userId,
-                        badgeKey = "badge_quiz_master",
-                        badgeName = "เกียรติบัตรนักตอบคำถาม 🏆",
-                        badgeIcon = "🎓"
-                    )
-                }
             }
         }
     }

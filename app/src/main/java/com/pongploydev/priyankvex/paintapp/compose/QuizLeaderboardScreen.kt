@@ -727,7 +727,7 @@ private fun fetchFirestoreScores(
     val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val nameToProfileMap = profilesList.filter { !it.displayName.isNullOrBlank() }.associateBy { it.displayName }
 
-    FirebaseFirestore.getInstance().collection("quiz_scores")
+    FirebaseFirestore.getInstance().collection("quiz_scores_game")
         .orderBy("timestamp", Query.Direction.DESCENDING)
         .limit(50)
         .get()
@@ -737,7 +737,8 @@ private fun fetchFirestoreScores(
                     val dateStr = s.timestamp?.let { dateFormat.format(it) } ?: "เพิ่งเมื่อสักครู่"
                     val key = s.timestamp?.let { dateKeyFormat.format(it) } ?: ""
                     val matchingProf = nameToProfileMap[s.userName]
-                    val avatar = matchingProf?.avatarUrl?.ifBlank { null }
+                    val avatar = s.avatarUrl?.ifBlank { null }
+                        ?: matchingProf?.avatarUrl?.ifBlank { null }
                         ?: if (s.userName == currentProfile?.displayName) currentProfile?.avatarUrl?.ifBlank { null } else null
 
                     DisplayQuizScore(
