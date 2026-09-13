@@ -635,34 +635,126 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     else -> "พยายามต่อไปนะ! 📚"
                 }
 
-        val input = EditText(this).apply {
-            hint = "ใส่ชื่อเล่นของคุณที่นี่"
-            setPadding(50, 40, 50, 40)
-        }
-
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(60, 20, 60, 0)
-            addView(input)
-        }
-
         // Record quiz progress and unlock next lesson if passed
         com.pongploydev.priyankvex.paintapp.utils.QuizProgressManager.recordQuizResult(this, topicId, score, totalQuestions)
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("สรุปผลคะแนน")
-                .setMessage(
-                        "$message\n\nคะแนน: ${score.toThai()}/${totalQuestions.toThai()}\nความถูกต้อง: ${accuracy.toThai()}%\nใช้เวลา: ${duration.toInt().toThai()} วินาที"
-                )
-                .setView(container)
-                .setPositiveButton("บันทึกคะแนน") { _, _ ->
-                    val name = input.text.toString().trim().ifEmpty { "ผู้เล่นนิรนาม" }
-                    saveScoreToFirestore(name, score, duration)
+        val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val userId = supabaseUser?.id ?: firebaseUser?.uid
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val userProf = if (userId != null) {
+                SupabaseDataManager.getInstance(this@QuizSessionActivity).fetchUserProfile(userId).getOrNull()
+            } else null
+
+            withContext(Dispatchers.Main) {
+                if (isFinishing) return@withContext
+
+                val memberName = userProf?.displayName?.ifBlank { null } ?: supabaseUser?.email?.substringBefore("@")
+                val avatarUrl = userProf?.avatarUrl?.ifBlank { null }
+                val isMember = !memberName.isNullOrBlank()
+
+                val container = LinearLayout(this@QuizSessionActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = android.view.Gravity.CENTER_HORIZONTAL
+                    setPadding(60, 30, 60, 10)
                 }
-                .setNegativeButton("เล่นใหม่") { _, _ -> restartQuiz() }
-                .setNeutralButton("ออก") { _, _ -> finish() }
-                .setCancelable(false)
-                .show()
+
+                var guestInput: EditText? = null
+
+                if (isMember && memberName != null) {
+                    // Profile picture container card
+                    val avatarCard = com.google.android.material.card.MaterialCardView(this@QuizSessionActivity).apply {
+                        radius = 36 * resources.displayMetrics.density
+                        cardElevation = 4 * resources.displayMetrics.density
+                        strokeWidth = (2 * resources.displayMetrics.density).toInt()
+                        strokeColor = Color.parseColor("#4CAF50")
+                        layoutParams = LinearLayout.LayoutParams(
+                            (72 * resources.displayMetrics.density).toInt(),
+                            (72 * resources.displayMetrics.density).toInt()
+                        ).apply {
+                            bottomMargin = (12 * resources.displayMetrics.density).toInt()
+                        }
+                    }
+
+                    val ivAvatar = android.widget.ImageView(this@QuizSessionActivity).apply {
+                        scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                    }
+
+                    if (!avatarUrl.isNullOrEmpty()) {
+                        com.bumptech.glide.Glide.with(this@QuizSessionActivity)
+                            .load(avatarUrl)
+                            .placeholder(R.drawable.ic_nav_profile)
+                            .error(R.drawable.ic_nav_profile)
+                            .into(ivAvatar)
+                    } else {
+                        ivAvatar.setImageResource(R.drawable.ic_nav_profile)
+                        ivAvatar.setColorFilter(Color.parseColor("#4CAF50"))
+                    }
+
+                    avatarCard.addView(ivAvatar)
+                    container.addView(avatarCard)
+
+                    val tvName = android.widget.TextView(this@QuizSessionActivity).apply {
+                        text = "👤 $memberName"
+                        textSize = 18f
+                        setTypeface(null, android.graphics.Typeface.BOLD)
+                        setTextColor(Color.parseColor("#1B5E20"))
+                        gravity = android.view.Gravity.CENTER
+                        setPadding(0, 0, 0, 8)
+                    }
+                    container.addView(tvName)
+
+                    val tvSub = android.widget.TextView(this@QuizSessionActivity).apply {
+                        text = "✅ สมาชิก (บันทึกคะแนนอัตโนมัติ)"
+                        textSize = 13f
+                        setTextColor(Color.parseColor("#666666"))
+                        gravity = android.view.Gravity.CENTER
+                    }
+                    container.addView(tvSub)
+
+                } else {
+                    // Guest user input field
+                    val tvGuestHint = android.widget.TextView(this@QuizSessionActivity).apply {
+                        text = "กรอกชื่อเล่นเพื่อบันทึกคะแนน:"
+                        textSize = 14f
+                        setTextColor(Color.parseColor("#333333"))
+                        setPadding(0, 0, 0, 12)
+                    }
+                    container.addView(tvGuestHint)
+
+                    guestInput = EditText(this@QuizSessionActivity).apply {
+                        hint = "ใส่ชื่อเล่นของคุณที่นี่"
+                        setPadding(40, 30, 40, 30)
+                        setBackgroundResource(android.R.drawable.editbox_background)
+                    }
+                    container.addView(guestInput)
+                }
+
+                androidx.appcompat.app.AlertDialog.Builder(this@QuizSessionActivity)
+                    .setTitle("สรุปผลคะแนน 🏆")
+                    .setMessage(
+                        "$message\n\nคะแนน: ${score.toThai()}/${totalQuestions.toThai()}\nความถูกต้อง: ${accuracy.toThai()}%\nใช้เวลา: ${duration.toInt().toThai()} วินาที"
+                    )
+                    .setView(container)
+                    .setPositiveButton("บันทึกคะแนน") { _, _ ->
+                        val finalName = if (isMember && memberName != null) {
+                            memberName
+                        } else {
+                            guestInput?.text?.toString()?.trim()?.ifEmpty { "ผู้เล่นนิรนาม" } ?: "ผู้เล่นนิรนาม"
+                        }
+                        saveScoreToFirestore(finalName, score, duration)
+                    }
+                    .setNegativeButton("เล่นใหม่") { _, _ -> restartQuiz() }
+                    .setNeutralButton("ออก") { _, _ -> finish() }
+                    .setCancelable(false)
+                    .show()
+            }
+        }
     }
 
     private fun saveScoreToFirestore(name: String, finalScore: Int, duration: Long) {
