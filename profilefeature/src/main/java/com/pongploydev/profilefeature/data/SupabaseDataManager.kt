@@ -53,8 +53,16 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     private fun getAuthHeader(): String {
-        val token = authManager.getAccessToken() ?: SupabaseAuthManager.SUPABASE_ANON_KEY
-        return "Bearer $token"
+        val token = authManager.getAccessToken()
+        return if (!token.isNullOrBlank() && token.split(".").size == 3) {
+            "Bearer $token"
+        } else {
+            "Bearer ${SupabaseAuthManager.SUPABASE_ANON_KEY}"
+        }
+    }
+
+    private fun getAnonAuthHeader(): String {
+        return "Bearer ${SupabaseAuthManager.SUPABASE_ANON_KEY}"
     }
 
     // Helper to ensure userId matches PostgreSQL UUID format if custom or guest id string is provided
@@ -72,11 +80,20 @@ class SupabaseDataManager private constructor(context: Context) {
     suspend fun fetchUserProfile(userId: String): Result<UserProfile> = withContext(Dispatchers.IO) {
         val validId = ensureValidUuid(userId)
         try {
-            val response = dataApiService.getProfile(
+            var response = dataApiService.getProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
                 idFilter = "eq.$validId"
             )
+            if (response.code() == 401) {
+                Log.w("SupabaseAvatarUpload", "fetchUserProfile 401 JWT expired. Clearing session & retrying with Anon Key...")
+                authManager.signOut()
+                response = dataApiService.getProfile(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader(),
+                    idFilter = "eq.$validId"
+                )
+            }
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
                 Result.success(response.body()!!.first())
             } else {
@@ -99,12 +116,22 @@ class SupabaseDataManager private constructor(context: Context) {
         val tag = "SupabaseAvatarUpload"
         val validId = ensureValidUuid(userId)
         try {
-            val response = dataApiService.updateProfile(
+            var response = dataApiService.updateProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
                 idFilter = "eq.$validId",
                 updates = updates
             )
+            if (response.code() == 401) {
+                Log.w(tag, "updateUserProfile 401 JWT expired. Clearing session & retrying with Anon Key...")
+                authManager.signOut()
+                response = dataApiService.updateProfile(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader(),
+                    idFilter = "eq.$validId",
+                    updates = updates
+                )
+            }
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
                 Log.d(tag, "updateUserProfile SUCCESS: ${response.body()?.firstOrNull()?.avatarUrl}")
                 Result.success(response.body()!!.first())
@@ -139,16 +166,26 @@ class SupabaseDataManager private constructor(context: Context) {
         val tag = "SupabaseAvatarUpload"
         val validProfile = profile.copy(id = ensureValidUuid(profile.id))
         try {
-            val response = dataApiService.upsertProfile(
+            var response = dataApiService.upsertProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
                 profile = validProfile
             )
+            val errBodyInitial = if (!response.isSuccessful) response.errorBody()?.string() else null
+            if (response.code() == 401 || errBodyInitial?.contains("JWT expired", ignoreCase = true) == true) {
+                Log.w(tag, "upsertUserProfile 401 JWT expired! Clearing session & retrying with Anon Key...")
+                authManager.signOut()
+                response = dataApiService.upsertProfile(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader(),
+                    profile = validProfile
+                )
+            }
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
                 Log.d(tag, "upsertUserProfile SUCCESS: ${response.body()?.firstOrNull()?.id}")
                 Result.success(response.body()!!.first())
             } else {
-                val errBody = response.errorBody()?.string() ?: "Empty response body"
+                val errBody = errBodyInitial ?: response.errorBody()?.string() ?: "Empty response body"
                 Log.e(tag, "upsertUserProfile API FAILED (HTTP ${response.code()} ${response.message()}): $errBody")
                 Result.failure(Exception("HTTP ${response.code()} ${response.message()}: $errBody"))
             }
