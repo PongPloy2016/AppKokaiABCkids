@@ -25,7 +25,7 @@
         <!-- สำหรับแอปครอบครัว -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-9784556672708249~1174345789"/>
+            android:value="ca-app-pub-7617756372558825~2820421176"/>
 
         <!-- สำหรับแอปที่กำหนดเป้าหมายเด็ก -->
         <meta-data

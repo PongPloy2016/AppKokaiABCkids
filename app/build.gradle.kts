@@ -22,12 +22,12 @@ android {
         minSdk = 24
         //noinspection EditedTargetSdkVersion,OldTargetApi
         targetSdk = 35
-        versionCode = 46
-        versionName = "3.0.2"
+        versionCode = 47
+        versionName = "3.0.3"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
-        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-9784556672708249/1773111585\"")
+        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-7617756372558825/3832276630\"")
         buildConfigField("String", "TEST_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
     }
 

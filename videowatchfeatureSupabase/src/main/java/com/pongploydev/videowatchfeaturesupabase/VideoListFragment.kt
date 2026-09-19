@@ -152,8 +152,8 @@ class VideoListFragment : Fragment() {
         updateSwitchViewButtonIcon()
 
         adsPref.isTestMode = false
-        adsPref.interstitialAdId = "ca-app-pub-9784556672708249/1773111585"
-        adsPref.interstitialPostDetailId = "ca-app-pub-9784556672708249/1773111585"
+        adsPref.interstitialAdId = "ca-app-pub-7617756372558825/3832276630"
+        adsPref.interstitialPostDetailId = "ca-app-pub-7617756372558825/3832276630"
         adsPref.isFamiliesApp = true
         adsPref.isAdEnabled = true
         adsPref.isInterstitialAdEnabled = true

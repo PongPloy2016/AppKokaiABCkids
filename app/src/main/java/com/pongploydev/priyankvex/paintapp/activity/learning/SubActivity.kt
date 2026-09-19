@@ -53,7 +53,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     companion object {
         private const val TEST_INTERSTITIAL = "ca-app-pub-3940256099942544/1033173712"
-        private const val REAL_INTERSTITIAL = "ca-app-pub-9784556672708249/1773111585"
+        private const val REAL_INTERSTITIAL = "ca-app-pub-7617756372558825/3832276630"
 
         // TTS Constants
         private const val TTS_UTTERANCE_ID = "AutoReadTTS"

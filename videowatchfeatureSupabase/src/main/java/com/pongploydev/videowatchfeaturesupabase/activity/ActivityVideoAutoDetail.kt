@@ -158,7 +158,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         adsPref = AdsPref(this)
 
         adsPref.isTestMode = false
-        adsPref.interstitialAdId = "ca-app-pub-9784556672708249/1773111585"
+        adsPref.interstitialAdId = "ca-app-pub-7617756372558825/3832276630"
         adsPref.isFamiliesApp = true
 
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout)
