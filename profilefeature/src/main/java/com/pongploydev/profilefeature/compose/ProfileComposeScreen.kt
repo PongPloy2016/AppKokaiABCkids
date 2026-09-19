@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -73,6 +74,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -151,6 +153,7 @@ fun ProfileComposeScreen() {
 
     var firebaseUser by remember { mutableStateOf(firebaseAuth.currentUser) }
     var supabaseUser by remember { mutableStateOf(supabaseAuthManager.getStoredUser()) }
+    var showAuthScreen by rememberSaveable { mutableStateOf(false) }
 
     DisposableEffect(firebaseAuth) {
         val listener = FirebaseAuth.AuthStateListener { auth ->
@@ -162,8 +165,8 @@ fun ProfileComposeScreen() {
         }
     }
 
-    LaunchedEffect(firebaseUser) {
-        if (firebaseUser == null) {
+    LaunchedEffect(firebaseUser, showAuthScreen) {
+        if (firebaseUser == null && !showAuthScreen) {
             try {
                 firebaseAuth.signInAnonymously()
                     .addOnSuccessListener { result ->
@@ -183,24 +186,32 @@ fun ProfileComposeScreen() {
             .fillMaxSize()
             .background(Color(0xFFF7F9FC))
     ) {
-        if (firebaseUser != null || supabaseUser != null) {
+        if (!showAuthScreen && (firebaseUser != null || supabaseUser != null)) {
             ProfileDetailsViewDual(
                 firebaseUser = firebaseUser,
                 supabaseUser = supabaseUser,
                 firebaseAuth = firebaseAuth,
                 supabaseAuthManager = supabaseAuthManager,
+                onOpenAuth = {
+                    showAuthScreen = true
+                },
                 onSignOut = {
                     firebaseAuth.signOut()
                     supabaseAuthManager.signOut()
                     supabaseUser = null
+                    showAuthScreen = true
                 }
             )
         } else {
             AuthLoginViewDual(
                 firebaseAuth = firebaseAuth,
                 supabaseAuthManager = supabaseAuthManager,
+                onDismiss = if (firebaseUser != null || supabaseUser != null) {
+                    { showAuthScreen = false }
+                } else null,
                 onSupabaseSuccess = { user ->
                     supabaseUser = user
+                    showAuthScreen = false
                 }
             )
         }
@@ -213,6 +224,7 @@ fun ProfileComposeScreen() {
 fun AuthLoginViewDual(
     firebaseAuth: FirebaseAuth,
     supabaseAuthManager: SupabaseAuthManager,
+    onDismiss: (() -> Unit)? = null,
     onSupabaseSuccess: (SupabaseUser) -> Unit
 ) {
     val context = LocalContext.current
@@ -233,6 +245,32 @@ fun AuthLoginViewDual(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        if (onDismiss != null) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "ย้อนกลับ",
+                            tint = KidTheme.Primary
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "กลับไปหน้าโปรไฟล์",
+                            color = KidTheme.Primary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        }
+
         item {
             // Header Badge showing Dual Sync
             Surface(
@@ -449,17 +487,42 @@ fun AuthLoginViewDual(
 
                                     // 1. Supabase Sign Up
                                     val supabaseResult = supabaseAuthManager.signUp(email, password, finalName)
-                                    if (supabaseResult.isSuccess) {
-                                        val spUser = supabaseResult.getOrThrow()
-                                        val dataMgr = SupabaseDataManager.getInstance(context)
-                                        dataMgr.upsertUserProfile(
-                                            UserProfile(
-                                                id = spUser.id,
-                                                email = spUser.email ?: email,
-                                                displayName = finalName
-                                            )
-                                        )
+                                    if (supabaseResult.isFailure) {
+                                        val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "ลงทะเบียน Supabase ไม่สำเร็จ"
+                                        errorMessage = err
+                                        isLoading = false
+                                        return@launch
                                     }
+
+                                    val spUser = supabaseResult.getOrThrow()
+                                    val dataMgr = SupabaseDataManager.getInstance(context)
+
+                                    // Save profile to Supabase
+                                    dataMgr.upsertUserProfile(
+                                        UserProfile(
+                                            id = spUser.id,
+                                            email = spUser.email ?: email,
+                                            displayName = finalName
+                                        )
+                                    )
+
+                                    // Register user device in Supabase user_devices
+                                    val androidId = try {
+                                        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                                    } catch (e: Exception) {
+                                        null
+                                    } ?: java.util.UUID.randomUUID().toString()
+
+                                    val appVersion = try {
+                                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                                    } catch (e: Exception) {
+                                        "1.0.0"
+                                    }
+                                    dataMgr.registerUserDevice(
+                                        userId = spUser.id,
+                                        deviceId = androidId,
+                                        appVersion = appVersion
+                                    )
 
                                     // 2. Firebase Sign Up (with fallback)
                                     if (firebaseAuth.currentUser?.isAnonymous == true) {
@@ -474,9 +537,7 @@ fun AuthLoginViewDual(
                                                     .build()
                                                 user.updateProfile(profileUpdates)
                                             }
-                                            if (supabaseResult.isSuccess) {
-                                                onSupabaseSuccess(supabaseResult.getOrThrow())
-                                            }
+                                            onSupabaseSuccess(spUser)
                                             isLoading = false
                                             Toast.makeText(context, "สมัครสมาชิกและเชื่อมต่อทั้ง Firebase และ Supabase เรียบร้อย! 🚀", Toast.LENGTH_SHORT).show()
                                         }
@@ -484,23 +545,16 @@ fun AuthLoginViewDual(
                                             // Fallback 1: try Firebase sign-in if account already exists
                                             firebaseAuth.signInWithEmailAndPassword(email, password)
                                                 .addOnSuccessListener {
-                                                    if (supabaseResult.isSuccess) {
-                                                        onSupabaseSuccess(supabaseResult.getOrThrow())
-                                                    }
+                                                    onSupabaseSuccess(spUser)
                                                     isLoading = false
                                                     Toast.makeText(context, "เข้าสู่ระบบและเชื่อมต่อทั้ง Firebase และ Supabase เรียบร้อย! 🚀", Toast.LENGTH_SHORT).show()
                                                 }
                                                 .addOnFailureListener {
                                                     // Fallback 2: Keep Firebase Active via anonymous sign in
                                                     firebaseAuth.signInAnonymously().addOnCompleteListener {
-                                                        if (supabaseResult.isSuccess) {
-                                                            onSupabaseSuccess(supabaseResult.getOrThrow())
-                                                            isLoading = false
-                                                            Toast.makeText(context, "สมัครสมาชิกสำเร็จ! (Supabase & Firebase Active) 🚀", Toast.LENGTH_SHORT).show()
-                                                        } else {
-                                                            isLoading = false
-                                                            errorMessage = e.localizedMessage ?: "สมัครสมาชิกล้มเหลว"
-                                                        }
+                                                        onSupabaseSuccess(spUser)
+                                                        isLoading = false
+                                                        Toast.makeText(context, "สมัครสมาชิกสำเร็จ! (Supabase & Firebase Active) 🚀", Toast.LENGTH_SHORT).show()
                                                     }
                                                 }
                                         }
@@ -510,6 +564,33 @@ fun AuthLoginViewDual(
 
                                     // 1. Supabase Sign In
                                     val supabaseResult = supabaseAuthManager.signIn(email, password)
+                                    if (supabaseResult.isFailure) {
+                                        val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "เข้าสู่ระบบ Supabase ไม่สำเร็จ กรุณาตรวจสอบอีเมลหรือรหัสผ่าน"
+                                        errorMessage = err
+                                        isLoading = false
+                                        return@launch
+                                    }
+
+                                    val spUser = supabaseResult.getOrThrow()
+                                    val dataMgr = SupabaseDataManager.getInstance(context)
+
+                                    // Register device upon login
+                                    val androidId = try {
+                                        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                                    } catch (e: Exception) {
+                                        null
+                                    } ?: java.util.UUID.randomUUID().toString()
+
+                                    val appVersion = try {
+                                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                                    } catch (e: Exception) {
+                                        "1.0.0"
+                                    }
+                                    dataMgr.registerUserDevice(
+                                        userId = spUser.id,
+                                        deviceId = androidId,
+                                        appVersion = appVersion
+                                    )
 
                                     // 2. Firebase Sign In
                                     if (firebaseAuth.currentUser?.isAnonymous == true) {
@@ -517,22 +598,15 @@ fun AuthLoginViewDual(
                                     }
                                     firebaseAuth.signInWithEmailAndPassword(email, password)
                                         .addOnSuccessListener {
-                                            if (supabaseResult.isSuccess) {
-                                                onSupabaseSuccess(supabaseResult.getOrThrow())
-                                            }
+                                            onSupabaseSuccess(spUser)
                                             isLoading = false
                                             Toast.makeText(context, "เข้าสู่ระบบสำเร็จทั้ง Firebase และ Supabase! 🚀", Toast.LENGTH_SHORT).show()
                                         }
                                         .addOnFailureListener { e ->
                                             firebaseAuth.signInAnonymously().addOnCompleteListener {
-                                                if (supabaseResult.isSuccess) {
-                                                    onSupabaseSuccess(supabaseResult.getOrThrow())
-                                                    isLoading = false
-                                                    Toast.makeText(context, "เข้าสู่ระบบ Supabase สำเร็จ! (Firebase Active) 🚀", Toast.LENGTH_SHORT).show()
-                                                } else {
-                                                    isLoading = false
-                                                    errorMessage = e.localizedMessage ?: "เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลหรือรหัสผ่าน"
-                                                }
+                                                onSupabaseSuccess(spUser)
+                                                isLoading = false
+                                                Toast.makeText(context, "เข้าสู่ระบบ Supabase สำเร็จ! (Firebase Active) 🚀", Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                 }
@@ -571,6 +645,23 @@ fun AuthLoginViewDual(
                                     // Supabase Guest Sign In
                                     val supabaseResult = supabaseAuthManager.signInAnonymously()
                                     supabaseResult.onSuccess { spUser ->
+                                        val androidId = try {
+                                            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                                        } catch (e: Exception) {
+                                            null
+                                        } ?: java.util.UUID.randomUUID().toString()
+
+                                        val appVersion = try {
+                                            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                                        } catch (e: Exception) {
+                                            "1.0.0"
+                                        }
+                                        val dataMgr = SupabaseDataManager.getInstance(context)
+                                        dataMgr.registerUserDevice(
+                                            userId = spUser.id,
+                                            deviceId = androidId,
+                                            appVersion = appVersion
+                                        )
                                         onSupabaseSuccess(spUser)
                                     }
 
@@ -618,6 +709,7 @@ fun ProfileDetailsViewDual(
     supabaseUser: SupabaseUser?,
     firebaseAuth: FirebaseAuth,
     supabaseAuthManager: SupabaseAuthManager,
+    onOpenAuth: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val context = LocalContext.current
@@ -921,6 +1013,46 @@ fun ProfileDetailsViewDual(
 
             item {
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                    // Guest / Supabase Off Call-to-Action Banner
+                    if (firebaseUser?.isAnonymous == true || supabaseUser == null) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                                .clickable { onOpenAuth() },
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+                            border = BorderStroke(1.5.dp, Color(0xFFFFCA28)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("🚀", fontSize = 28.sp)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "เข้าสู่ระบบ / ลงทะเบียน Supabase",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF5D4037)
+                                    )
+                                    Text(
+                                        text = "บันทึกผลการเรียนรู้, ดาว และเหรียญตราไว้บนคลาวด์ถาวร",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF795548)
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "ไปหน้าลงทะเบียน",
+                                    tint = Color(0xFF5D4037)
+                                )
+                            }
+                        }
+                    }
+
                     // Header with refresh button
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -28,7 +28,7 @@ interface SupabaseDataApiService {
         @Body updates: UserProfileUpdate
     ): Response<List<UserProfile>>
 
-    @POST("rest/v1/profiles")
+    @POST("rest/v1/profiles?on_conflict=id")
     suspend fun upsertProfile(
         @Header("apikey") apiKey: String,
         @Header("Authorization") auth: String,
@@ -125,7 +125,7 @@ interface SupabaseDataApiService {
         @Query("select") select: String = "*"
     ): Response<List<UserDevice>>
 
-    @POST("rest/v1/user_devices")
+    @POST("rest/v1/user_devices?on_conflict=user_id,device_id")
     suspend fun upsertDevice(
         @Header("apikey") apiKey: String,
         @Header("Authorization") auth: String,

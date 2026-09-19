@@ -2,6 +2,7 @@ package com.pongploydev.profilefeature.auth
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,6 +15,7 @@ import java.util.UUID
 class SupabaseAuthManager private constructor(context: Context) {
 
     companion object {
+        private const val TAG = "SupabaseAuth"
         const val SUPABASE_URL = "https://qriqerrkxccpnwabphdc.supabase.co"
         const val SUPABASE_ANON_KEY = "sb_publishable_4pbBttafKQoR_Bj78vtARA_eDMkRe66"
         private const val PREFS_NAME = "supabase_auth_prefs"
@@ -71,6 +73,7 @@ class SupabaseAuthManager private constructor(context: Context) {
     }
 
     suspend fun signUp(email: String, password: String, displayName: String): Result<SupabaseUser> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Attempting Supabase signUp for email: $email, displayName: $displayName")
         try {
             val req = SupabaseSignUpRequest(
                 email = email,
@@ -86,22 +89,29 @@ class SupabaseAuthManager private constructor(context: Context) {
                     email = email,
                     userMetadata = SupabaseUserMetadata(displayName)
                 )
+                Log.d(TAG, "Supabase signUp SUCCESS! User id: ${user.id}, token present: ${!body.accessToken.isNullOrBlank()}")
                 saveSession(body.accessToken ?: "sb_registered_token", user)
                 Result.success(user)
             } else {
+                val errCode = response.code()
                 val errStr = response.errorBody()?.string()
+                Log.w(TAG, "Supabase signUp failed with HTTP $errCode: $errStr")
                 val errObj = parseError(errStr)
-                // Fallback to sign in if user exists or email confirmation pending
+                // Fallback to sign in if user already exists
                 val signInRes = signIn(email, password)
                 if (signInRes.isSuccess) {
+                    Log.d(TAG, "Fallback signIn after signUp conflict succeeded!")
                     signInRes
                 } else {
-                    Result.failure(Exception(errObj ?: "Supabase Sign Up Failed ($errStr)"))
+                    Log.e(TAG, "Both signUp and fallback signIn failed: $errObj")
+                    Result.failure(Exception(errObj ?: "ลงทะเบียน Supabase ไม่สำเร็จ ($errStr)"))
                 }
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Exception during Supabase signUp: ${e.localizedMessage}", e)
             val signInRes = signIn(email, password)
             if (signInRes.isSuccess) {
+                Log.d(TAG, "Fallback signIn succeeded following signUp exception!")
                 signInRes
             } else {
                 Result.failure(e)
@@ -110,6 +120,7 @@ class SupabaseAuthManager private constructor(context: Context) {
     }
 
     suspend fun signIn(email: String, password: String): Result<SupabaseUser> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Attempting Supabase signIn for email: $email")
         try {
             val req = SupabaseSignInRequest(email = email, password = password)
             val authHeader = "Bearer $SUPABASE_ANON_KEY"
@@ -117,14 +128,18 @@ class SupabaseAuthManager private constructor(context: Context) {
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 val user = body.extractUser() ?: SupabaseUser(id = UUID.randomUUID().toString(), email = email)
+                Log.d(TAG, "Supabase signIn SUCCESS! User id: ${user.id}")
                 saveSession(body.accessToken, user)
                 Result.success(user)
             } else {
+                val errCode = response.code()
                 val errStr = response.errorBody()?.string()
+                Log.w(TAG, "Supabase signIn failed with HTTP $errCode: $errStr")
                 val errObj = parseError(errStr)
-                Result.failure(Exception(errObj ?: "Supabase Sign In Failed"))
+                Result.failure(Exception(errObj ?: "เข้าสู่ระบบ Supabase ไม่สำเร็จ"))
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Exception during Supabase signIn: ${e.localizedMessage}", e)
             Result.failure(e)
         }
     }
@@ -138,9 +153,11 @@ class SupabaseAuthManager private constructor(context: Context) {
                 userMetadata = SupabaseUserMetadata("ผู้ใช้ชั่วคราว (Supabase Guest)"),
                 isAnonymous = true
             )
+            Log.d(TAG, "Supabase signInAnonymously: generated guest id $guestId")
             saveSession("sb_anon_guest_token", guestUser)
             Result.success(guestUser)
         } catch (e: Exception) {
+            Log.e(TAG, "Exception in signInAnonymously: ${e.localizedMessage}", e)
             Result.failure(e)
         }
     }
@@ -149,7 +166,20 @@ class SupabaseAuthManager private constructor(context: Context) {
         if (errJson.isNull_or_blank()) return null
         return try {
             val parsed = gson.fromJson(errJson, SupabaseAuthResponse::class.java)
-            parsed.msg ?: parsed.errorDescription ?: errJson
+            when (parsed.errorCode) {
+                "user_already_exists" -> "อีเมลนี้มีผู้ลงทะเบียนใน Supabase แล้ว หากเคยลงทะเบียนแล้วกรุณาเลือก 'เข้าสู่ระบบ'"
+                "invalid_credentials" -> "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+                else -> {
+                    val rawMsg = parsed.msg ?: parsed.errorDescription
+                    if (rawMsg?.contains("User already registered", ignoreCase = true) == true) {
+                        "อีเมลนี้มีผู้ลงทะเบียนใน Supabase แล้ว กรุณาเลือก 'เข้าสู่ระบบ'"
+                    } else if (rawMsg?.contains("Password should be at least", ignoreCase = true) == true) {
+                        "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
+                    } else {
+                        rawMsg ?: errJson
+                    }
+                }
+            }
         } catch (e: Exception) {
             errJson
         }

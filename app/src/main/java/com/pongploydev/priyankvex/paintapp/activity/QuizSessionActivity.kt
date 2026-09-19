@@ -624,6 +624,8 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 else -> binding.ivResult1
             }
 
+    private var isQuizResultSaved = false
+
     private fun showResults() {
         val duration = (System.currentTimeMillis() - startTime) / 1000
         val accuracy = (score * 100) / totalQuestions
@@ -637,6 +639,9 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         // Record quiz progress and unlock next lesson if passed
         com.pongploydev.priyankvex.paintapp.utils.QuizProgressManager.recordQuizResult(this, topicId, score, totalQuestions)
+
+        // Automatically record score, stars, and achievements to Supabase database
+        saveQuizResultToSupabase(score, duration)
 
         val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
         val firebaseUser = FirebaseAuth.getInstance().currentUser
@@ -750,7 +755,53 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun saveQuizResultToSupabase(finalScore: Int, duration: Long) {
+        if (isQuizResultSaved) return
+        isQuizResultSaved = true
+
+        val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val userId = supabaseUser?.id ?: firebaseUser?.uid ?: "guest_user"
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val dataManager = SupabaseDataManager.getInstance(this@QuizSessionActivity)
+            try {
+                Log.d("QuizSession", "Auto-saving quiz result to Supabase for userId=$userId, topic=$topicTitle, score=$finalScore")
+                val saveRes = dataManager.saveQuizResult(
+                    userId = userId,
+                    topicId = topicId,
+                    topicName = topicTitle,
+                    score = finalScore,
+                    totalQuestions = totalQuestions,
+                    timeSpentSeconds = duration.toInt()
+                )
+                saveRes.onSuccess { saved ->
+                    Log.i("QuizSession", "Supabase saveQuizResult SUCCESS: id=${saved.id}")
+                }.onFailure { err ->
+                    Log.e("QuizSession", "Supabase saveQuizResult FAILED: ${err.message}", err)
+                }
+
+                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
+                }
+                if (finalScore >= 8) {
+                    dataManager.unlockAchievement(
+                        userId = userId,
+                        badgeKey = "badge_quiz_master",
+                        badgeName = "เกียรติบัตรนักตอบคำถาม 🏆",
+                        badgeIcon = "🎓"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("QuizSession", "Supabase save error", e)
+            }
+        }
+    }
+
     private fun saveScoreToFirestore(name: String, finalScore: Int, duration: Long) {
+        // Ensure saved to Supabase as well
+        saveQuizResultToSupabase(finalScore, duration)
+
         val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
         val firebaseUser = FirebaseAuth.getInstance().currentUser
         val userId = supabaseUser?.id ?: firebaseUser?.uid ?: "guest_user"
@@ -799,35 +850,11 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             }
                     }
             }
-
-            // 2. Save to Supabase PostgreSQL Database
-            try {
-                dataManager.saveQuizResult(
-                    userId = userId,
-                    topicId = topicId,
-                    topicName = topicTitle,
-                    score = finalScore,
-                    totalQuestions = totalQuestions,
-                    timeSpentSeconds = duration.toInt()
-                )
-                dataManager.fetchUserProfile(userId).onSuccess { prof ->
-                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
-                }
-                if (finalScore >= 8) {
-                    dataManager.unlockAchievement(
-                        userId = userId,
-                        badgeKey = "badge_quiz_master",
-                        badgeName = "เกียรติบัตรนักตอบคำถาม 🏆",
-                        badgeIcon = "🎓"
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("QuizSession", "Supabase save error", e)
-            }
         }
     }
 
     private fun restartQuiz() {
+        isQuizResultSaved = false
         currentQuestion = 0
         score = 0
         startTime = System.currentTimeMillis()

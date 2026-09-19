@@ -302,11 +302,12 @@ class SupabaseDataManager private constructor(context: Context) {
     // ==================== LEARNING PROGRESS ====================
 
     suspend fun fetchLearningProgress(userId: String): Result<List<UserLearningProgress>> = withContext(Dispatchers.IO) {
+        val validUserId = ensureValidUuid(userId)
         try {
             val response = dataApiService.getLearningProgress(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
-                userIdFilter = "eq.$userId"
+                userIdFilter = "eq.$validUserId"
             )
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
@@ -324,9 +325,10 @@ class SupabaseDataManager private constructor(context: Context) {
         itemKey: String,
         score: Int
     ): Result<UserLearningProgress> = withContext(Dispatchers.IO) {
+        val validUserId = ensureValidUuid(userId)
         try {
             val item = UserLearningProgress(
-                userId = userId,
+                userId = validUserId,
                 categoryKey = categoryKey,
                 itemKey = itemKey,
                 score = score,
@@ -351,26 +353,33 @@ class SupabaseDataManager private constructor(context: Context) {
     // ==================== QUIZ RESULTS ====================
 
     suspend fun fetchQuizResults(userId: String): Result<List<UserQuizResult>> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseDataManager"
+        val validUserId = ensureValidUuid(userId)
         try {
             var response = dataApiService.getQuizResults(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
-                userIdFilter = "eq.$userId"
+                userIdFilter = "eq.$validUserId"
             )
             if (response.code() == 401) {
                 authManager.signOut()
                 response = dataApiService.getQuizResults(
                     apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                     auth = getAnonAuthHeader(),
-                    userIdFilter = "eq.$userId"
+                    userIdFilter = "eq.$validUserId"
                 )
             }
             if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
+                val list = response.body() ?: emptyList()
+                Log.d(tag, "fetchQuizResults SUCCESS: loaded ${list.size} results for user $validUserId")
+                Result.success(list)
             } else {
-                Result.failure(Exception("Failed to fetch quiz results"))
+                val err = response.errorBody()?.string() ?: "Empty body"
+                Log.e(tag, "fetchQuizResults FAILED HTTP ${response.code()}: $err")
+                Result.failure(Exception("HTTP ${response.code()}: $err"))
             }
         } catch (e: Exception) {
+            Log.e(tag, "fetchQuizResults Exception: ${e.localizedMessage}", e)
             Result.failure(e)
         }
     }
@@ -437,26 +446,64 @@ class SupabaseDataManager private constructor(context: Context) {
         totalQuestions: Int = 10,
         timeSpentSeconds: Int = 60
     ): Result<UserQuizResult> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseDataManager"
+        val validUserId = ensureValidUuid(userId)
         try {
+            // First ensure profile exists in public.profiles to satisfy Foreign Key constraint
+            val profCheck = fetchUserProfile(validUserId)
+            if (profCheck.isFailure) {
+                Log.d(tag, "Profile for $validUserId not found, creating local profile...")
+                upsertUserProfile(
+                    UserProfile(
+                        id = validUserId,
+                        displayName = "นักอ่านตัวน้อย",
+                        totalStars = 0,
+                        currentLevel = 1
+                    )
+                )
+            }
+
             val result = UserQuizResult(
-                userId = userId,
+                userId = validUserId,
                 quizTopicId = topicId,
                 quizTopicName = topicName,
                 score = score,
                 totalQuestions = totalQuestions,
                 timeSpentSeconds = timeSpentSeconds
             )
-            val response = dataApiService.insertQuizResult(
+            Log.d(tag, "Saving quiz result for user $validUserId: topic=$topicName, score=$score")
+            var response = dataApiService.insertQuizResult(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
                 result = result
             )
+            val errInitial = if (!response.isSuccessful) response.errorBody()?.string() else null
+            if (response.code() == 401 || errInitial?.contains("JWT expired", ignoreCase = true) == true) {
+                Log.w(tag, "saveQuizResult: 401 JWT expired, clearing session and retrying with Anon Key...")
+                authManager.signOut()
+                response = dataApiService.insertQuizResult(
+                    apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                    auth = getAnonAuthHeader(),
+                    result = result
+                )
+            }
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
-                Result.success(response.body()!!.first())
+                val saved = response.body()!!.first()
+                Log.d(tag, "saveQuizResult SUCCESS: id=${saved.id}")
+                Result.success(saved)
             } else {
-                Result.failure(Exception("Failed to save quiz result"))
+                val errBody = errInitial ?: response.errorBody()?.string() ?: "Empty body"
+                if (response.code() == 403 || errBody.contains("42501") || errBody.contains("row-level security", ignoreCase = true)) {
+                    Log.w(tag, "saveQuizResult RLS BLOCKED (HTTP ${response.code()}): Run 'CREATE POLICY \"Allow insert to user_quiz_results\" ON public.user_quiz_results FOR INSERT WITH CHECK (true);' in Supabase SQL Editor.")
+                } else if (response.code() == 409 || errBody.contains("23503") || errBody.contains("violates foreign key", ignoreCase = true)) {
+                    Log.w(tag, "saveQuizResult FOREIGN KEY BLOCKED (HTTP ${response.code()}): User ID not in public.profiles.")
+                } else {
+                    Log.e(tag, "saveQuizResult FAILED: HTTP ${response.code()}: $errBody")
+                }
+                Result.failure(Exception("HTTP ${response.code()}: $errBody"))
             }
         } catch (e: Exception) {
+            Log.e(tag, "saveQuizResult Exception: ${e.localizedMessage}", e)
             Result.failure(e)
         }
     }
@@ -464,11 +511,12 @@ class SupabaseDataManager private constructor(context: Context) {
     // ==================== ACHIEVEMENTS ====================
 
     suspend fun fetchAchievements(userId: String): Result<List<UserAchievement>> = withContext(Dispatchers.IO) {
+        val validUserId = ensureValidUuid(userId)
         try {
             val response = dataApiService.getAchievements(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
-                userIdFilter = "eq.$userId"
+                userIdFilter = "eq.$validUserId"
             )
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
@@ -486,9 +534,10 @@ class SupabaseDataManager private constructor(context: Context) {
         badgeName: String,
         badgeIcon: String = "🏆"
     ): Result<UserAchievement> = withContext(Dispatchers.IO) {
+        val validUserId = ensureValidUuid(userId)
         try {
             val achievement = UserAchievement(
-                userId = userId,
+                userId = validUserId,
                 badgeKey = badgeKey,
                 badgeName = badgeName,
                 badgeIcon = badgeIcon
@@ -519,10 +568,11 @@ class SupabaseDataManager private constructor(context: Context) {
         appVersion: String = "1.0.0",
         fcmToken: String? = null
     ): Result<UserDevice> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseDevice"
         try {
-            fetchUserProfile(userId)
+            val validUserId = ensureValidUuid(userId)
             val device = UserDevice(
-                userId = userId,
+                userId = validUserId,
                 deviceId = deviceId,
                 deviceName = deviceName,
                 deviceModel = deviceModel,
@@ -531,17 +581,23 @@ class SupabaseDataManager private constructor(context: Context) {
                 fcmToken = fcmToken,
                 isActive = true
             )
+            Log.d(tag, "Registering device for user $validUserId: $deviceId ($deviceName)")
             val response = dataApiService.upsertDevice(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
                 auth = getAuthHeader(),
                 device = device
             )
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
-                Result.success(response.body()!!.first())
+                val savedDevice = response.body()!!.first()
+                Log.d(tag, "Device registered successfully! Device id: ${savedDevice.id}")
+                Result.success(savedDevice)
             } else {
-                Result.failure(Exception("Failed to register user device"))
+                val errBody = response.errorBody()?.string() ?: "Empty response"
+                Log.e(tag, "Failed to register user device: HTTP ${response.code()} $errBody")
+                Result.failure(Exception("Failed to register user device: HTTP ${response.code()} $errBody"))
             }
         } catch (e: Exception) {
+            Log.e(tag, "registerUserDevice exception: ${e.localizedMessage}", e)
             Result.failure(e)
         }
     }

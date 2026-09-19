@@ -142,36 +142,36 @@ CREATE POLICY "Users can update their own profile"
     ON public.profiles FOR UPDATE
     USING (auth.uid() = id);
 
--- 2. Learning Progress Policies
-CREATE POLICY "Users can view their own progress"
+-- 2. Learning Progress Policies (Allow read/write for members and guests)
+CREATE POLICY "Users can view learning progress"
     ON public.user_learning_progress FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (true);
 
-CREATE POLICY "Users can insert their own progress"
+CREATE POLICY "Users can insert learning progress"
     ON public.user_learning_progress FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (true);
 
-CREATE POLICY "Users can update their own progress"
+CREATE POLICY "Users can update learning progress"
     ON public.user_learning_progress FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING (true);
 
--- 3. Quiz Results Policies
-CREATE POLICY "Users can view their own quiz results"
+-- 3. Quiz Results Policies (Allow public read for Leaderboard and insert for score submission)
+CREATE POLICY "Allow public read to user_quiz_results"
     ON public.user_quiz_results FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (true);
 
-CREATE POLICY "Users can insert their own quiz results"
+CREATE POLICY "Allow insert to user_quiz_results"
     ON public.user_quiz_results FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (true);
 
--- 4. Achievements Policies
-CREATE POLICY "Users can view their own achievements"
+-- 4. Achievements Policies (Allow read/write for members and guests)
+CREATE POLICY "Users can view achievements"
     ON public.user_achievements FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (true);
 
-CREATE POLICY "Users can insert their own achievements"
+CREATE POLICY "Users can insert achievements"
     ON public.user_achievements FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (true);
 
 -- ==============================================================================
 -- TABLE 5: USER_DEVICES (บันทึกข้อมูลอุปกรณ์มือถือของผู้ใช้)
