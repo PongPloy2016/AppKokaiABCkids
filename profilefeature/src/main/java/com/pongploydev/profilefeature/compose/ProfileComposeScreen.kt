@@ -97,6 +97,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -256,6 +258,7 @@ fun AuthLoginViewDual(
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showSha1Dialog by remember { mutableStateOf(false) }
 
     val googleSignInClient = remember(context) {
         val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -278,127 +281,143 @@ fun AuthLoginViewDual(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            isLoading = true
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                if (account != null) {
-                    val googleEmail = account.email ?: ""
-                    val googleDisplayName = account.displayName ?: account.givenName ?: "เพื่อนตัวน้อย Google"
-                    val googleId = account.id ?: java.util.UUID.randomUUID().toString()
-                    val photoUrl = account.photoUrl?.toString()
-                    val idToken = account.idToken
+        Log.d("GoogleAuth", "googleSignInLauncher returned resultCode=${result.resultCode}, hasData=${result.data != null}")
 
-                    val analytics = FirebaseAnalytics.getInstance(context)
-                    val bundle = Bundle().apply {
-                        putString("button_name", "google_signin_success")
-                        putString("user_email", googleEmail)
-                    }
-                    analytics.logEvent("select_content", bundle)
+        if (result.data == null) {
+            isLoading = false
+            Log.w("GoogleAuth", "Google sign-in result.data is null (user backed out)")
+            return@rememberLauncherForActivityResult
+        }
 
-                    scope.launch {
-                        // 1. Supabase Auth Sync
-                        val supabaseRes = supabaseAuthManager.signInWithGoogle(
-                            email = googleEmail,
-                            displayName = googleDisplayName,
-                            googleId = googleId,
-                            avatarUrl = photoUrl,
-                            idToken = idToken
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            if (account != null) {
+                val googleEmail = account.email ?: ""
+                val googleDisplayName = account.displayName ?: account.givenName ?: "เพื่อนตัวน้อย Google"
+                val googleId = account.id ?: java.util.UUID.randomUUID().toString()
+                val photoUrl = account.photoUrl?.toString()
+                val idToken = account.idToken
+
+                val analytics = FirebaseAnalytics.getInstance(context)
+                val bundle = Bundle().apply {
+                    putString("button_name", "google_signin_success")
+                    putString("user_email", googleEmail)
+                }
+                analytics.logEvent("select_content", bundle)
+
+                scope.launch {
+                    // 1. Supabase Auth Sync
+                    val supabaseRes = supabaseAuthManager.signInWithGoogle(
+                        email = googleEmail,
+                        displayName = googleDisplayName,
+                        googleId = googleId,
+                        avatarUrl = photoUrl,
+                        idToken = idToken
+                    )
+                    val spUser = supabaseRes.getOrNull()
+
+                    // 2. Upsert profile & device to Supabase
+                    if (spUser != null) {
+                        val dataMgr = SupabaseDataManager.getInstance(context)
+                        dataMgr.upsertUserProfile(
+                            UserProfile(
+                                id = spUser.id,
+                                email = googleEmail,
+                                displayName = googleDisplayName,
+                                avatarUrl = photoUrl
+                            )
                         )
-                        val spUser = supabaseRes.getOrNull()
+                        val androidId = try {
+                            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                        } catch (e: Exception) {
+                            null
+                        } ?: java.util.UUID.randomUUID().toString()
 
-                        // 2. Upsert profile & device to Supabase
+                        val appVersion = try {
+                            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                        } catch (e: Exception) {
+                            "1.0.0"
+                        }
+                        dataMgr.registerUserDevice(
+                            userId = spUser.id,
+                            deviceId = androidId,
+                            appVersion = appVersion
+                        )
+                    }
+
+                    // 3. Firebase Auth Sync
+                    val finishAuth = {
+                        isLoading = false
                         if (spUser != null) {
-                            val dataMgr = SupabaseDataManager.getInstance(context)
-                            dataMgr.upsertUserProfile(
-                                UserProfile(
-                                    id = spUser.id,
-                                    email = googleEmail,
-                                    displayName = googleDisplayName,
-                                    avatarUrl = photoUrl
-                                )
-                            )
-                            val androidId = try {
-                                Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-                            } catch (e: Exception) {
-                                null
-                            } ?: java.util.UUID.randomUUID().toString()
-
-                            val appVersion = try {
-                                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-                            } catch (e: Exception) {
-                                "1.0.0"
-                            }
-                            dataMgr.registerUserDevice(
-                                userId = spUser.id,
-                                deviceId = androidId,
-                                appVersion = appVersion
-                            )
+                            onSupabaseSuccess(spUser)
                         }
+                        Toast.makeText(context, "ยินดีต้อนรับ ${googleDisplayName}! เข้าสู่ระบบด้วย Google เรียบร้อยแล้ว 🚀⭐", Toast.LENGTH_SHORT).show()
+                    }
 
-                        // 3. Firebase Auth Sync
-                        val finishAuth = {
-                            isLoading = false
-                            if (spUser != null) {
-                                onSupabaseSuccess(spUser)
+                    if (!idToken.isNullOrBlank()) {
+                        try {
+                            val credential = GoogleAuthProvider.getCredential(idToken, null)
+                            if (firebaseAuth.currentUser?.isAnonymous == true) {
+                                firebaseAuth.signOut()
                             }
-                            Toast.makeText(context, "ยินดีต้อนรับ ${googleDisplayName}! เข้าสู่ระบบด้วย Google เรียบร้อยแล้ว 🚀⭐", Toast.LENGTH_SHORT).show()
-                        }
-
-                        if (!idToken.isNullOrBlank()) {
-                            try {
-                                val credential = GoogleAuthProvider.getCredential(idToken, null)
-                                if (firebaseAuth.currentUser?.isAnonymous == true) {
-                                    firebaseAuth.signOut()
+                            firebaseAuth.signInWithCredential(credential)
+                                .addOnSuccessListener {
+                                    finishAuth()
                                 }
-                                firebaseAuth.signInWithCredential(credential)
-                                    .addOnSuccessListener {
+                                .addOnFailureListener { e ->
+                                    Log.w("GoogleAuth", "Firebase signInWithCredential failed: ${e.message}, keeping active session")
+                                    if (firebaseAuth.currentUser == null) {
+                                        firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
+                                    } else {
                                         finishAuth()
                                     }
-                                    .addOnFailureListener { e ->
-                                        Log.w("GoogleAuth", "Firebase signInWithCredential failed: ${e.message}, keeping active session")
-                                        if (firebaseAuth.currentUser == null) {
-                                            firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
-                                        } else {
-                                            finishAuth()
-                                        }
-                                    }
-                            } catch (e: Exception) {
-                                finishAuth()
-                            }
-                        } else {
-                            if (firebaseAuth.currentUser == null) {
-                                firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
-                            } else {
-                                val u = firebaseAuth.currentUser
-                                if (u != null) {
-                                    val updates = UserProfileChangeRequest.Builder()
-                                        .setDisplayName(googleDisplayName)
-                                        .build()
-                                    u.updateProfile(updates)
                                 }
-                                finishAuth()
+                        } catch (e: Exception) {
+                            finishAuth()
+                        }
+                    } else {
+                        if (firebaseAuth.currentUser == null) {
+                            firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
+                        } else {
+                            val u = firebaseAuth.currentUser
+                            if (u != null) {
+                                val updates = UserProfileChangeRequest.Builder()
+                                    .setDisplayName(googleDisplayName)
+                                    .build()
+                                u.updateProfile(updates)
                             }
+                            finishAuth()
                         }
                     }
-                } else {
-                    isLoading = false
-                    errorMessage = "ไม่พบข้อมูลบัญชี Google กรุณาลองใหม่อีกครั้ง"
                 }
-            } catch (e: ApiException) {
+            } else {
                 isLoading = false
-                Log.e("GoogleAuth", "Google sign-in ApiException code: ${e.statusCode}, message: ${e.message}")
-                if (e.statusCode != 12501 && e.statusCode != 16) { // 12501: User cancelled, 16: Cancelled
-                    errorMessage = "เข้าสู่ระบบด้วย Google ไม่สำเร็จ (รหัส: ${e.statusCode}) กรุณาลองใหม่อีกครั้ง"
-                }
-            } catch (e: Exception) {
-                isLoading = false
-                Log.e("GoogleAuth", "Google sign-in exception: ${e.localizedMessage}", e)
-                errorMessage = "เกิดข้อผิดพลาดในการลงชื่อเข้าใช้: ${e.localizedMessage}"
+                val msg = "ไม่พบข้อมูลบัญชี Google กรุณาลองใหม่อีกครั้ง"
+                errorMessage = msg
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
-        } else {
+        } catch (e: ApiException) {
             isLoading = false
+            Log.e("GoogleAuth", "Google sign-in ApiException code: ${e.statusCode}, message: ${e.message}", e)
+            if (e.statusCode == 10) {
+                showSha1Dialog = true
+            }
+            val friendlyMsg = when (e.statusCode) {
+                10 -> "Google Sign-In ต้องการ SHA-1 ใน Firebase Console (Code 10: DEVELOPER_ERROR)"
+                12500 -> "การยืนยันตัวตน Google ไม่สำเร็จ (Code 12500: SIGN_IN_FAILED)"
+                12501, 16 -> "ยกเลิกการเลือกบัญชี Google"
+                7 -> "เครือข่ายขัดข้อง กรุณาตรวจสอบอินเทอร์เน็ต (Code 7)"
+                else -> "เข้าสู่ระบบด้วย Google ไม่สำเร็จ (รหัสสถานะ: ${e.statusCode}) ${e.localizedMessage ?: ""}"
+            }
+            errorMessage = friendlyMsg
+            Toast.makeText(context, friendlyMsg, Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            isLoading = false
+            Log.e("GoogleAuth", "Google sign-in unexpected exception: ${e.localizedMessage}", e)
+            val msg = "เกิดข้อผิดพลาด: ${e.localizedMessage}"
+            errorMessage = msg
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -938,8 +957,13 @@ fun AuthLoginViewDual(
                                 .clickable(enabled = !isLoading) {
                                     isLoading = true
                                     errorMessage = null
-                                    googleSignInClient.signOut().addOnCompleteListener {
+                                    try {
                                         googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                                    } catch (e: Exception) {
+                                        isLoading = false
+                                        Log.e("GoogleAuth", "Failed to launch Google Sign-In intent", e)
+                                        errorMessage = "ไม่สามารถเปิดหน้าต่าง Google ได้: ${e.localizedMessage}"
+                                        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                                     }
                                 },
                             shape = RoundedCornerShape(25.dp),
@@ -1033,6 +1057,68 @@ fun AuthLoginViewDual(
                     }
                 }
             }
+        }
+
+        if (showSha1Dialog) {
+            val clipboard = LocalClipboardManager.current
+            val debugSha1 = "36:50:D3:6C:9C:B3:41:EB:FC:19:2B:F5:49:AC:99:BD:CA:88:39:8B"
+            AlertDialog(
+                onDismissRequest = { showSha1Dialog = false },
+                title = {
+                    Text(
+                        text = "⚙️ ต้องการเพิ่ม SHA-1 ใน Firebase",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = KidTheme.TextDark
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Google Play Services แจ้งเตือน Developer Error (Code 10) เนื่องจากยังไม่ได้บันทึกค่า Fingerprint SHA-1 ของแอปใน Firebase Console:",
+                            fontSize = 13.sp,
+                            color = KidTheme.TextMuted
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFF1F5F9),
+                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                        ) {
+                            Text(
+                                text = debugSha1,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = KidTheme.Primary,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "วิธีแก้:\n1. ไปที่ Firebase Console > Project Settings > General > Your apps (com.pongploydev.priyankvex.paintapp)\n2. กดปุ่ม 'Add fingerprint' แล้ววาง SHA-1 นี้\n3. เปิดใช้งาน Google ในเมนู Authentication > Sign-in method",
+                            fontSize = 12.sp,
+                            color = KidTheme.TextMuted,
+                            lineHeight = 17.sp
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(debugSha1))
+                            Toast.makeText(context, "คัดลอก SHA-1 เรียบร้อยแล้ว! 📋", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = KidTheme.Primary)
+                    ) {
+                        Text("คัดลอก SHA-1 📋", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSha1Dialog = false }) {
+                        Text("ปิด", color = KidTheme.TextMuted)
+                    }
+                }
+            )
         }
     }
 }
