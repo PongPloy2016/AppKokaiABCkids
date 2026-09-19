@@ -1,5 +1,6 @@
 package com.pongploydev.profilefeature.compose
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -16,8 +17,15 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +33,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,6 +62,8 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -92,6 +103,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -198,6 +210,12 @@ fun ProfileComposeScreen() {
                 onSignOut = {
                     firebaseAuth.signOut()
                     supabaseAuthManager.signOut()
+                    try {
+                        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+                        GoogleSignIn.getClient(context, gso).signOut()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                     supabaseUser = null
                     showAuthScreen = true
                 }
@@ -234,417 +252,521 @@ fun AuthLoginViewDual(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        if (onDismiss != null) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "ย้อนกลับ",
-                            tint = KidTheme.Primary
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "กลับไปหน้าโปรไฟล์",
-                            color = KidTheme.Primary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
+    val googleSignInClient = remember(context) {
+        val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestProfile()
+
+        val defaultWebClientIdRes = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+        val webClientId = if (defaultWebClientIdRes != 0) {
+            try { context.getString(defaultWebClientIdRes) } catch (e: Exception) { null }
+        } else {
+            null
         }
 
-        item {
-            // Header Badge showing Dual Sync
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = KidTheme.Primary.copy(alpha = 0.12f),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "🔥 Firebase + ⚡ Supabase Auth Dual Sync",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KidTheme.Primary
-                    )
+        if (!webClientId.isNullOrBlank()) {
+            gsoBuilder.requestIdToken(webClientId)
+        }
+        GoogleSignIn.getClient(context, gsoBuilder.build())
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            isLoading = true
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                if (account != null) {
+                    val googleEmail = account.email ?: ""
+                    val googleDisplayName = account.displayName ?: account.givenName ?: "เพื่อนตัวน้อย Google"
+                    val googleId = account.id ?: java.util.UUID.randomUUID().toString()
+                    val photoUrl = account.photoUrl?.toString()
+                    val idToken = account.idToken
+
+                    val analytics = FirebaseAnalytics.getInstance(context)
+                    val bundle = Bundle().apply {
+                        putString("button_name", "google_signin_success")
+                        putString("user_email", googleEmail)
+                    }
+                    analytics.logEvent("select_content", bundle)
+
+                    scope.launch {
+                        // 1. Supabase Auth Sync
+                        val supabaseRes = supabaseAuthManager.signInWithGoogle(
+                            email = googleEmail,
+                            displayName = googleDisplayName,
+                            googleId = googleId,
+                            avatarUrl = photoUrl,
+                            idToken = idToken
+                        )
+                        val spUser = supabaseRes.getOrNull()
+
+                        // 2. Upsert profile & device to Supabase
+                        if (spUser != null) {
+                            val dataMgr = SupabaseDataManager.getInstance(context)
+                            dataMgr.upsertUserProfile(
+                                UserProfile(
+                                    id = spUser.id,
+                                    email = googleEmail,
+                                    displayName = googleDisplayName,
+                                    avatarUrl = photoUrl
+                                )
+                            )
+                            val androidId = try {
+                                Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                            } catch (e: Exception) {
+                                null
+                            } ?: java.util.UUID.randomUUID().toString()
+
+                            val appVersion = try {
+                                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                            } catch (e: Exception) {
+                                "1.0.0"
+                            }
+                            dataMgr.registerUserDevice(
+                                userId = spUser.id,
+                                deviceId = androidId,
+                                appVersion = appVersion
+                            )
+                        }
+
+                        // 3. Firebase Auth Sync
+                        val finishAuth = {
+                            isLoading = false
+                            if (spUser != null) {
+                                onSupabaseSuccess(spUser)
+                            }
+                            Toast.makeText(context, "ยินดีต้อนรับ ${googleDisplayName}! เข้าสู่ระบบด้วย Google เรียบร้อยแล้ว 🚀⭐", Toast.LENGTH_SHORT).show()
+                        }
+
+                        if (!idToken.isNullOrBlank()) {
+                            try {
+                                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                                if (firebaseAuth.currentUser?.isAnonymous == true) {
+                                    firebaseAuth.signOut()
+                                }
+                                firebaseAuth.signInWithCredential(credential)
+                                    .addOnSuccessListener {
+                                        finishAuth()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.w("GoogleAuth", "Firebase signInWithCredential failed: ${e.message}, keeping active session")
+                                        if (firebaseAuth.currentUser == null) {
+                                            firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
+                                        } else {
+                                            finishAuth()
+                                        }
+                                    }
+                            } catch (e: Exception) {
+                                finishAuth()
+                            }
+                        } else {
+                            if (firebaseAuth.currentUser == null) {
+                                firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
+                            } else {
+                                val u = firebaseAuth.currentUser
+                                if (u != null) {
+                                    val updates = UserProfileChangeRequest.Builder()
+                                        .setDisplayName(googleDisplayName)
+                                        .build()
+                                    u.updateProfile(updates)
+                                }
+                                finishAuth()
+                            }
+                        }
+                    }
+                } else {
+                    isLoading = false
+                    errorMessage = "ไม่พบข้อมูลบัญชี Google กรุณาลองใหม่อีกครั้ง"
                 }
-            }
-
-            // Logo Header
-            Surface(
-                shape = CircleShape,
-                color = KidTheme.Primary.copy(alpha = 0.15f),
-                modifier = Modifier.size(80.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Profile Icon",
-                        tint = KidTheme.Primary,
-                        modifier = Modifier.size(60.dp)
-                    )
+            } catch (e: ApiException) {
+                isLoading = false
+                Log.e("GoogleAuth", "Google sign-in ApiException code: ${e.statusCode}, message: ${e.message}")
+                if (e.statusCode != 12501 && e.statusCode != 16) { // 12501: User cancelled, 16: Cancelled
+                    errorMessage = "เข้าสู่ระบบด้วย Google ไม่สำเร็จ (รหัส: ${e.statusCode}) กรุณาลองใหม่อีกครั้ง"
                 }
+            } catch (e: Exception) {
+                isLoading = false
+                Log.e("GoogleAuth", "Google sign-in exception: ${e.localizedMessage}", e)
+                errorMessage = "เกิดข้อผิดพลาดในการลงชื่อเข้าใช้: ${e.localizedMessage}"
             }
+        } else {
+            isLoading = false
+        }
+    }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = if (isSignUpMode) "สร้างบัญชีผู้ใช้ใหม่ ✨" else "ยินดีต้อนรับเข้าสู่ระบบ! 🎈",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = KidTheme.TextDark,
-                textAlign = TextAlign.Center
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFF7F4FF),
+                        Color(0xFFFFFBF2),
+                        Color(0xFFF2FBF6)
+                    )
+                )
             )
-
-            Text(
-                text = if (isSignUpMode) "สมัครสมาชิกครั้งเดียว ลงทะเบียนทั้ง Firebase & Supabase ให้อัตโนมัติ"
-                       else "กรอกอีเมลและรหัสผ่านเพื่อเข้าสู่ระบบ ทั้ง Firebase & Supabase",
-                fontSize = 13.sp,
-                color = KidTheme.TextMuted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Mode Switcher (Login vs Register)
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (onDismiss != null) {
+                item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(RoundedCornerShape(22.dp))
-                            .background(Color(0xFFF0F3F8)),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(40.dp)
-                                .padding(2.dp)
-                                .clickable {
-                                    isSignUpMode = false
-                                    errorMessage = null
-                                },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (!isSignUpMode) KidTheme.Primary else Color.Transparent
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "เข้าสู่ระบบ",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = if (!isSignUpMode) Color.White else KidTheme.TextMuted
-                                )
-                            }
-                        }
-
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(40.dp)
-                                .padding(2.dp)
-                                .clickable {
-                                    isSignUpMode = true
-                                    errorMessage = null
-                                },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSignUpMode) KidTheme.Primary else Color.Transparent
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "ลงทะเบียน",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = if (isSignUpMode) Color.White else KidTheme.TextMuted
-                                )
-                            }
+                        TextButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "ย้อนกลับ",
+                                tint = KidTheme.Primary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "กลับไปหน้าหลัก",
+                                color = KidTheme.Primary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
                         }
                     }
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+            item {
+                // Cute Kid Character Header Badge
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    Color(0xFFFF9F43).copy(alpha = 0.25f),
+                                    KidTheme.Primary.copy(alpha = 0.25f),
+                                    Color(0xFF00B894).copy(alpha = 0.25f)
+                                )
+                            )
+                        )
+                        .padding(6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = if (isSignUpMode) {
+                                        listOf(Color(0xFFFF9F43), Color(0xFFFF7675))
+                                    } else {
+                                        listOf(KidTheme.Primary, Color(0xFF818CF8))
+                                    }
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isSignUpMode) "🎒" else "🎨",
+                            fontSize = 44.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
 
-                    if (isSignUpMode) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Friendly Kid-Oriented Headlines
+                Text(
+                    text = if (isSignUpMode) "สมัครเป็นนักเรียนตัวน้อย 🎒✨" else "ยินดีต้อนรับเพื่อนตัวน้อย! 🎈",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = if (isSignUpMode) "สมัครสมาชิกเพื่อสะสมดาวความดี ⭐ และเก็บรูปวาดสวยๆ ไว้อวดทุกคน"
+                           else "เข้าสู่ระบบเพื่อสะสมดาว ⭐ เก็บรูปวาดระบายสี 🎨 และเล่นเกม ก-ฮ แสนสนุก!",
+                    fontSize = 13.sp,
+                    color = KidTheme.TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                )
+
+                // Kid-Friendly Mini Feature Pills
+                Row(
+                    modifier = Modifier.padding(bottom = 18.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFFF8E1),
+                        border = BorderStroke(1.dp, Color(0xFFFFE082))
+                    ) {
+                        Text(
+                            text = "⭐ สะสมดาว",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFB78103),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFE8F5E9),
+                        border = BorderStroke(1.dp, Color(0xFFA5D6A7))
+                    ) {
+                        Text(
+                            text = "🎨 บันทึกรูปวาด",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFEDE7F6),
+                        border = BorderStroke(1.dp, Color(0xFFD1C4E9))
+                    ) {
+                        Text(
+                            text = "🏆 ชิงเหรียญรางวัล",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF5E35B1),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFECEFF5)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(22.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Mode Switcher (Login vs Register)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(23.dp))
+                                .background(Color(0xFFF1F4F9))
+                                .padding(3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable {
+                                        isSignUpMode = false
+                                        errorMessage = null
+                                    },
+                                shape = RoundedCornerShape(20.dp),
+                                color = if (!isSignUpMode) KidTheme.Primary else Color.Transparent,
+                                shadowElevation = if (!isSignUpMode) 3.dp else 0.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "เข้าสู่ระบบ 🎒",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = if (!isSignUpMode) Color.White else KidTheme.TextMuted
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable {
+                                        isSignUpMode = true
+                                        errorMessage = null
+                                    },
+                                shape = RoundedCornerShape(20.dp),
+                                color = if (isSignUpMode) Color(0xFFFF7675) else Color.Transparent,
+                                shadowElevation = if (isSignUpMode) 3.dp else 0.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "สมัครสมาชิก 🌟",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = if (isSignUpMode) Color.White else KidTheme.TextMuted
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        if (isSignUpMode) {
+                            OutlinedTextField(
+                                value = displayName,
+                                onValueChange = { displayName = it },
+                                label = { Text("ชื่อเล่นของน้อง 👧👦") },
+                                placeholder = { Text("เช่น น้องพอใจ, น้องต้นกล้า", color = Color(0xFFAAAAAA)) },
+                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFFFF7675)) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFFFF7675),
+                                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                                    focusedLabelColor = Color(0xFFFF7675)
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                        }
+
                         OutlinedTextField(
-                            value = displayName,
-                            onValueChange = { displayName = it },
-                            label = { Text("ชื่อแสดงผล (Display Name)") },
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = KidTheme.Primary) },
+                            value = email,
+                            onValueChange = { email = it.trim() },
+                            label = { Text("อีเมล (ของผู้ปกครองหรือน้อง) 📧") },
+                            placeholder = { Text("เช่น parent@gmail.com", color = Color(0xFFAAAAAA)) },
+                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = KidTheme.Primary) },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = KidTheme.Primary,
-                                unfocusedBorderColor = Color(0xFFE0E0E0)
+                                unfocusedBorderColor = Color(0xFFE2E8F0),
+                                focusedLabelColor = KidTheme.Primary
                             )
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
 
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it.trim() },
-                        label = { Text("อีเมล (Email)") },
-                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = KidTheme.Primary) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = KidTheme.Primary,
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        )
-                    )
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("รหัสผ่าน (Password)") },
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = KidTheme.Primary) },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = KidTheme.Primary,
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        )
-                    )
-
-                    if (errorMessage != null) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFFFEBEE),
-                            border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = errorMessage!!,
-                                color = Color(0xFFD32F2F),
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(12.dp),
-                                textAlign = TextAlign.Center
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("รหัสผ่านลับ 🔒") },
+                            placeholder = { Text("อย่างน้อย 6 ตัวอักษร", color = Color(0xFFAAAAAA)) },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = KidTheme.Primary) },
+                            trailingIcon = {
+                                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = if (isPasswordVisible) "ซ่อนรหัสผ่าน" else "แสดงรหัสผ่าน",
+                                        tint = if (isPasswordVisible) KidTheme.Primary else Color(0xFF9E9E9E)
+                                    )
+                                }
+                            },
+                            singleLine = true,
+                            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = KidTheme.Primary,
+                                unfocusedBorderColor = Color(0xFFE2E8F0),
+                                focusedLabelColor = KidTheme.Primary
                             )
-                        }
-                    }
+                        )
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Button(
-                        onClick = {
-                            if (email.isBlank() || password.isBlank()) {
-                                errorMessage = "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน"
-                                return@Button
-                            }
-                            if (password.length < 6) {
-                                errorMessage = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
-                                return@Button
-                            }
-
-                            isLoading = true
-                            errorMessage = null
-
-                            val analytics = FirebaseAnalytics.getInstance(context)
-
-                            scope.launch {
-                                if (isSignUpMode) {
-                                    val bundle = Bundle().apply { putString("button_name", "dual_register_submit") }
-                                    analytics.logEvent("select_content", bundle)
-
-                                    val finalName = displayName.ifBlank { "นักอ่านตัวน้อย" }
-
-                                    // 1. Supabase Sign Up
-                                    val supabaseResult = supabaseAuthManager.signUp(email, password, finalName)
-                                    if (supabaseResult.isFailure) {
-                                        val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "ลงทะเบียน Supabase ไม่สำเร็จ"
-                                        errorMessage = err
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    val spUser = supabaseResult.getOrThrow()
-                                    val dataMgr = SupabaseDataManager.getInstance(context)
-
-                                    // Save profile to Supabase
-                                    dataMgr.upsertUserProfile(
-                                        UserProfile(
-                                            id = spUser.id,
-                                            email = spUser.email ?: email,
-                                            displayName = finalName
-                                        )
+                        if (errorMessage != null) {
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFFFF0F1),
+                                border = BorderStroke(1.dp, Color(0xFFFFCCD1)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "💡",
+                                        fontSize = 16.sp,
+                                        modifier = Modifier.padding(end = 8.dp)
                                     )
-
-                                    // Register user device in Supabase user_devices
-                                    val androidId = try {
-                                        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-                                    } catch (e: Exception) {
-                                        null
-                                    } ?: java.util.UUID.randomUUID().toString()
-
-                                    val appVersion = try {
-                                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-                                    } catch (e: Exception) {
-                                        "1.0.0"
-                                    }
-                                    dataMgr.registerUserDevice(
-                                        userId = spUser.id,
-                                        deviceId = androidId,
-                                        appVersion = appVersion
+                                    Text(
+                                        text = errorMessage!!,
+                                        color = Color(0xFFD32F2F),
+                                        fontSize = 13.sp,
+                                        lineHeight = 18.sp
                                     )
-
-                                    // 2. Firebase Sign Up (with fallback)
-                                    if (firebaseAuth.currentUser?.isAnonymous == true) {
-                                        firebaseAuth.signOut()
-                                    }
-                                    firebaseAuth.createUserWithEmailAndPassword(email, password)
-                                        .addOnSuccessListener { result ->
-                                            val user = result.user
-                                            if (user != null && finalName.isNotBlank()) {
-                                                val profileUpdates = UserProfileChangeRequest.Builder()
-                                                    .setDisplayName(finalName)
-                                                    .build()
-                                                user.updateProfile(profileUpdates)
-                                            }
-                                            onSupabaseSuccess(spUser)
-                                            isLoading = false
-                                            Toast.makeText(context, "สมัครสมาชิกและเชื่อมต่อทั้ง Firebase และ Supabase เรียบร้อย! 🚀", Toast.LENGTH_SHORT).show()
-                                        }
-                                        .addOnFailureListener { e ->
-                                            // Fallback 1: try Firebase sign-in if account already exists
-                                            firebaseAuth.signInWithEmailAndPassword(email, password)
-                                                .addOnSuccessListener {
-                                                    onSupabaseSuccess(spUser)
-                                                    isLoading = false
-                                                    Toast.makeText(context, "เข้าสู่ระบบและเชื่อมต่อทั้ง Firebase และ Supabase เรียบร้อย! 🚀", Toast.LENGTH_SHORT).show()
-                                                }
-                                                .addOnFailureListener {
-                                                    // Fallback 2: Keep Firebase Active via anonymous sign in
-                                                    firebaseAuth.signInAnonymously().addOnCompleteListener {
-                                                        onSupabaseSuccess(spUser)
-                                                        isLoading = false
-                                                        Toast.makeText(context, "สมัครสมาชิกสำเร็จ! (Supabase & Firebase Active) 🚀", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                        }
-                                } else {
-                                    val bundle = Bundle().apply { putString("button_name", "dual_login_submit") }
-                                    analytics.logEvent("select_content", bundle)
-
-                                    // 1. Supabase Sign In
-                                    val supabaseResult = supabaseAuthManager.signIn(email, password)
-                                    if (supabaseResult.isFailure) {
-                                        val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "เข้าสู่ระบบ Supabase ไม่สำเร็จ กรุณาตรวจสอบอีเมลหรือรหัสผ่าน"
-                                        errorMessage = err
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    val spUser = supabaseResult.getOrThrow()
-                                    val dataMgr = SupabaseDataManager.getInstance(context)
-
-                                    // Register device upon login
-                                    val androidId = try {
-                                        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-                                    } catch (e: Exception) {
-                                        null
-                                    } ?: java.util.UUID.randomUUID().toString()
-
-                                    val appVersion = try {
-                                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-                                    } catch (e: Exception) {
-                                        "1.0.0"
-                                    }
-                                    dataMgr.registerUserDevice(
-                                        userId = spUser.id,
-                                        deviceId = androidId,
-                                        appVersion = appVersion
-                                    )
-
-                                    // 2. Firebase Sign In
-                                    if (firebaseAuth.currentUser?.isAnonymous == true) {
-                                        firebaseAuth.signOut()
-                                    }
-                                    firebaseAuth.signInWithEmailAndPassword(email, password)
-                                        .addOnSuccessListener {
-                                            onSupabaseSuccess(spUser)
-                                            isLoading = false
-                                            Toast.makeText(context, "เข้าสู่ระบบสำเร็จทั้ง Firebase และ Supabase! 🚀", Toast.LENGTH_SHORT).show()
-                                        }
-                                        .addOnFailureListener { e ->
-                                            firebaseAuth.signInAnonymously().addOnCompleteListener {
-                                                onSupabaseSuccess(spUser)
-                                                isLoading = false
-                                                Toast.makeText(context, "เข้าสู่ระบบ Supabase สำเร็จ! (Firebase Active) 🚀", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
                                 }
                             }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(26.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = KidTheme.Primary),
-                        enabled = !isLoading
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        } else {
-                            Text(
-                                text = if (isSignUpMode) "สมัครสมาชิก 🚀" else "เข้าสู่ระบบ 🔑",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clickable {
+                        Button(
+                            onClick = {
+                                if (email.isBlank() || password.isBlank()) {
+                                    errorMessage = "อย่าลืมกรอกอีเมลและรหัสผ่านให้ครบถ้วนนะจ๊ะ 😊"
+                                    return@Button
+                                }
+                                if (password.length < 6) {
+                                    errorMessage = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรจ้ะ 🔑"
+                                    return@Button
+                                }
+
                                 isLoading = true
                                 errorMessage = null
 
+                                val analytics = FirebaseAnalytics.getInstance(context)
+
                                 scope.launch {
-                                    // Supabase Guest Sign In
-                                    val supabaseResult = supabaseAuthManager.signInAnonymously()
-                                    supabaseResult.onSuccess { spUser ->
+                                    if (isSignUpMode) {
+                                        val bundle = Bundle().apply { putString("button_name", "dual_register_submit") }
+                                        analytics.logEvent("select_content", bundle)
+
+                                        val finalName = displayName.ifBlank { "นักอ่านตัวน้อย" }
+
+                                        // 1. Supabase Sign Up
+                                        val supabaseResult = supabaseAuthManager.signUp(email, password, finalName)
+                                        if (supabaseResult.isFailure) {
+                                            val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "ลงทะเบียนไม่สำเร็จ"
+                                            errorMessage = if (err.contains("already registered", ignoreCase = true) || err.contains("user_already_exists", ignoreCase = true)) {
+                                                "อีเมลนี้เคยลงทะเบียนไว้แล้วจ้ะ ลองกดเข้าสู่ระบบดูนะ 💡"
+                                            } else {
+                                                err
+                                            }
+                                            isLoading = false
+                                            return@launch
+                                        }
+
+                                        val spUser = supabaseResult.getOrThrow()
+                                        val dataMgr = SupabaseDataManager.getInstance(context)
+
+                                        // Save profile to Supabase
+                                        dataMgr.upsertUserProfile(
+                                            UserProfile(
+                                                id = spUser.id,
+                                                email = spUser.email ?: email,
+                                                displayName = finalName
+                                            )
+                                        )
+
+                                        // Register user device in Supabase user_devices
                                         val androidId = try {
                                             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
                                         } catch (e: Exception) {
@@ -656,42 +778,257 @@ fun AuthLoginViewDual(
                                         } catch (e: Exception) {
                                             "1.0.0"
                                         }
-                                        val dataMgr = SupabaseDataManager.getInstance(context)
                                         dataMgr.registerUserDevice(
                                             userId = spUser.id,
                                             deviceId = androidId,
                                             appVersion = appVersion
                                         )
-                                        onSupabaseSuccess(spUser)
-                                    }
 
-                                    // Firebase Guest Sign In
-                                    firebaseAuth.signInAnonymously()
-                                        .addOnSuccessListener {
-                                            isLoading = false
-                                            Toast.makeText(context, "เข้าสู่ระบบ Guest ทั้ง Firebase และ Supabase เรียบร้อย", Toast.LENGTH_SHORT).show()
+                                        // 2. Firebase Sign Up (with fallback)
+                                        if (firebaseAuth.currentUser?.isAnonymous == true) {
+                                            firebaseAuth.signOut()
                                         }
-                                        .addOnFailureListener { e ->
-                                            isLoading = false
-                                            if (supabaseResult.isSuccess) {
-                                                Toast.makeText(context, "เข้าสู่ระบบ Supabase Guest เรียบร้อย", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                errorMessage = e.localizedMessage ?: "เข้าใช้งานแบบ Guest ไม่สำเร็จ"
+                                        firebaseAuth.createUserWithEmailAndPassword(email, password)
+                                            .addOnSuccessListener { result ->
+                                                val user = result.user
+                                                if (user != null && finalName.isNotBlank()) {
+                                                    val profileUpdates = UserProfileChangeRequest.Builder()
+                                                        .setDisplayName(finalName)
+                                                        .build()
+                                                    user.updateProfile(profileUpdates)
+                                                }
+                                                onSupabaseSuccess(spUser)
+                                                isLoading = false
+                                                Toast.makeText(context, "ยินดีต้อนรับเพื่อนตัวน้อย สมัครสมาชิกสำเร็จแล้วจ้า! 🎒🎉", Toast.LENGTH_SHORT).show()
                                             }
+                                            .addOnFailureListener { e ->
+                                                // Fallback 1: try Firebase sign-in if account already exists
+                                                firebaseAuth.signInWithEmailAndPassword(email, password)
+                                                    .addOnSuccessListener {
+                                                        onSupabaseSuccess(spUser)
+                                                        isLoading = false
+                                                        Toast.makeText(context, "ยินดีต้อนรับเพื่อนตัวน้อย สมัครสมาชิกสำเร็จแล้วจ้า! 🎒🎉", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                    .addOnFailureListener {
+                                                        // Fallback 2: Keep Firebase Active via anonymous sign in
+                                                        firebaseAuth.signInAnonymously().addOnCompleteListener {
+                                                            onSupabaseSuccess(spUser)
+                                                            isLoading = false
+                                                            Toast.makeText(context, "ยินดีต้อนรับเพื่อนตัวน้อย สมัครสมาชิกสำเร็จแล้วจ้า! 🎒🎉", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                            }
+                                    } else {
+                                        val bundle = Bundle().apply { putString("button_name", "dual_login_submit") }
+                                        analytics.logEvent("select_content", bundle)
+
+                                        // 1. Supabase Sign In
+                                        val supabaseResult = supabaseAuthManager.signIn(email, password)
+                                        if (supabaseResult.isFailure) {
+                                            val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลหรือรหัสผ่าน"
+                                            errorMessage = if (err.contains("invalid", ignoreCase = true) || err.contains("credentials", ignoreCase = true)) {
+                                                "อีเมลหรือรหัสผ่านไม่ถูกต้องจ้ะ ลองตรวจสอบดูอีกครั้งนะ 🎈"
+                                            } else {
+                                                err
+                                            }
+                                            isLoading = false
+                                            return@launch
                                         }
+
+                                        val spUser = supabaseResult.getOrThrow()
+                                        val dataMgr = SupabaseDataManager.getInstance(context)
+
+                                        // Register device upon login
+                                        val androidId = try {
+                                            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                                        } catch (e: Exception) {
+                                            null
+                                        } ?: java.util.UUID.randomUUID().toString()
+
+                                        val appVersion = try {
+                                            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                                        } catch (e: Exception) {
+                                            "1.0.0"
+                                        }
+                                        dataMgr.registerUserDevice(
+                                            userId = spUser.id,
+                                            deviceId = androidId,
+                                            appVersion = appVersion
+                                        )
+
+                                        // 2. Firebase Sign In
+                                        if (firebaseAuth.currentUser?.isAnonymous == true) {
+                                            firebaseAuth.signOut()
+                                        }
+                                        firebaseAuth.signInWithEmailAndPassword(email, password)
+                                            .addOnSuccessListener {
+                                                onSupabaseSuccess(spUser)
+                                                isLoading = false
+                                                Toast.makeText(context, "ยินดีต้อนรับกลับมาจ้า เข้าสู่ระบบสำเร็จแล้ว! 🚀⭐", Toast.LENGTH_SHORT).show()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                firebaseAuth.signInAnonymously().addOnCompleteListener {
+                                                    onSupabaseSuccess(spUser)
+                                                    isLoading = false
+                                                    Toast.makeText(context, "ยินดีต้อนรับกลับมาจ้า เข้าสู่ระบบสำเร็จแล้ว! 🚀⭐", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                    }
                                 }
                             },
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFFE8F5E9),
-                        border = BorderStroke(1.5.dp, Color(0xFF81C784))
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "👤 เข้าใช้งานแบบ Guest (ชั่วคราว)",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF2E7D32)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(26.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSignUpMode) Color(0xFFFF7675) else KidTheme.Primary
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp),
+                            enabled = !isLoading
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                Text(
+                                    text = if (isSignUpMode) "เริ่มการผจญภัยกันเลย! 🎒🎉" else "เข้าสู่ห้องเรียนแสนสนุก 🚀⭐",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Divider: หรือ 🌟
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(1.dp)
+                                    .background(Color(0xFFE2E8F0))
                             )
+                            Text(
+                                text = "หรือ 🌟",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = KidTheme.TextMuted,
+                                modifier = Modifier.padding(horizontal = 10.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(1.dp)
+                                    .background(Color(0xFFE2E8F0))
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Google (Gmail) Sign-In Button
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .clickable(enabled = !isLoading) {
+                                    isLoading = true
+                                    errorMessage = null
+                                    googleSignInClient.signOut().addOnCompleteListener {
+                                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                                    }
+                                },
+                            shape = RoundedCornerShape(25.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.5.dp, Color(0xFFD8E2EC)),
+                            shadowElevation = 2.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = com.pongploydev.profilefeature.R.drawable.ic_google_logo),
+                                    contentDescription = "Google Logo",
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = if (isSignUpMode) "สมัครด้วยบัญชี Google (Gmail) 🌐" else "เข้าสู่ระบบด้วย Google (Gmail) 🌐",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF374151)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .clickable {
+                                    isLoading = true
+                                    errorMessage = null
+
+                                    scope.launch {
+                                        // Supabase Guest Sign In
+                                        val supabaseResult = supabaseAuthManager.signInAnonymously()
+                                        supabaseResult.onSuccess { spUser ->
+                                            val androidId = try {
+                                                Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                                            } catch (e: Exception) {
+                                                null
+                                            } ?: java.util.UUID.randomUUID().toString()
+
+                                            val appVersion = try {
+                                                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                                            } catch (e: Exception) {
+                                                "1.0.0"
+                                            }
+                                            val dataMgr = SupabaseDataManager.getInstance(context)
+                                            dataMgr.registerUserDevice(
+                                                userId = spUser.id,
+                                                deviceId = androidId,
+                                                appVersion = appVersion
+                                            )
+                                            onSupabaseSuccess(spUser)
+                                        }
+
+                                        // Firebase Guest Sign In
+                                        firebaseAuth.signInAnonymously()
+                                            .addOnSuccessListener {
+                                                isLoading = false
+                                                Toast.makeText(context, "เข้าเล่นเป็นแขกตัวน้อยเรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                isLoading = false
+                                                if (supabaseResult.isSuccess) {
+                                                    Toast.makeText(context, "เข้าเล่นเป็นแขกตัวน้อยเรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
+                                                } else {
+                                                    errorMessage = e.localizedMessage ?: "เข้าใช้งานแบบ Guest ไม่สำเร็จ"
+                                                }
+                                            }
+                                    }
+                                },
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color(0xFFF1FDF5),
+                            border = BorderStroke(1.5.dp, Color(0xFFA5D6A7))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "🎈 เล่นแบบไม่ลงทะเบียน (ทดลองเล่นฟรี)",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2E7D32)
+                                )
+                            }
                         }
                     }
                 }

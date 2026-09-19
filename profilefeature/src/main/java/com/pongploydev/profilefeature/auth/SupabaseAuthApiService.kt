@@ -22,4 +22,12 @@ interface SupabaseAuthApiService {
         @Header("Content-Type") contentType: String = "application/json",
         @Body request: SupabaseSignInRequest
     ): Response<SupabaseAuthResponse>
+
+    @POST("auth/v1/token?grant_type=id_token")
+    suspend fun signInWithIdToken(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") auth: String,
+        @Header("Content-Type") contentType: String = "application/json",
+        @Body request: SupabaseIdTokenRequest
+    ): Response<SupabaseAuthResponse>
 }

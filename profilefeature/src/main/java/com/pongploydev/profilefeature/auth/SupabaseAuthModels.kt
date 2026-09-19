@@ -13,8 +13,15 @@ data class SupabaseSignInRequest(
     @SerializedName("password") val password: String
 )
 
+data class SupabaseIdTokenRequest(
+    @SerializedName("provider") val provider: String = "google",
+    @SerializedName("id_token") val idToken: String,
+    @SerializedName("nonce") val nonce: String? = null
+)
+
 data class SupabaseUserMetadata(
-    @SerializedName("display_name") val displayName: String? = null
+    @SerializedName("display_name") val displayName: String? = null,
+    @SerializedName("avatar_url") val avatarUrl: String? = null
 )
 
 data class SupabaseUser(
