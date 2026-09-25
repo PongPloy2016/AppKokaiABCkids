@@ -28,12 +28,12 @@ object AppConfig {
     // Real Ad Unit IDs (สำหรับ Production - ต้องเปลี่ยนเป็นของตัวเอง)
     // วิธีหา: https://developers.google.com/admob/android/quick-start#get_your_ad_unit_id
     const val ADMOB_BANNER_ID = "ca-app-pub-3940256099942544/6300978111" // เปลี่ยนเป็น ID จริง
-    const val ADMOB_INTERSTITIAL_ID = "ca-app-pub-7617756372558825/3832276630" // เปลี่ยนเป็น ID จริง
+    const val ADMOB_INTERSTITIAL_ID = "ca-app-pub-3279793802315716/8581063137" // เปลี่ยนเป็น ID จริง
     const val ADMOB_NATIVE_ID = "ca-app-pub-3940256099942544/2247696110" // เปลี่ยนเป็น ID จริง
 
     // AdMob App ID (สำคัญ!)
     // หาได้ที่: AdMob Console → Apps → App settings
-    const val ADMOB_APP_ID = "ca-app-pub-7617756372558825~2820421176" // เปลี่ยนเป็น App ID จริง
+    const val ADMOB_APP_ID = "ca-app-pub-3279793802315716~2607584711" // เปลี่ยนเป็น App ID จริง
 
     // Ad Frequency Settings
     const val INTERSTITIAL_AD_FREQUENCY = 3 // แสดงโฆษณาทุก 3 ครั้ง

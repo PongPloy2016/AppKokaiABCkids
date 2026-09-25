@@ -3,26 +3,39 @@
 # in /home/priyank/sdk/tools/proguard/proguard-android.txt
 # You can edit the include path and order by changing the proguardFiles
 # directive in build.gradle.kts.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
-
-# Add any project specific keep options here:
-
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
 
 -keep class androidx.compose.foundation.lazy.** { *; }
 -keep interface androidx.compose.foundation.lazy.** { *; }
 
-# Keep Data Models (Firebase & Supabase)
+# Keep Attributes for Reflection, Retrofit, and Gson (CRITICAL for suspend functions)
+-keepattributes Signature, InnerClasses, EnclosingMethod, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, AnnotationDefault
+
+# Retrofit Keep Rules
+-keep class retrofit2.** { *; }
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
+}
+-keep interface * {
+    @retrofit2.http.* <methods>;
+}
+-dontwarn retrofit2.**
+
+# Gson Keep Rules
+-keepattributes *Annotation*
+-keep class com.google.gson.** { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Kotlin Coroutines Continuations
+-keep class kotlin.coroutines.Continuation { *; }
+-keep class kotlin.coroutines.jvm.internal.ContinuationImpl { *; }
+
+# Keep Data Models & API Services (Firebase, Supabase, Profile, Video)
 -keep class com.pongploydev.priyankvex.paintapp.model.** { *; }
+-keep class com.pongploydev.profilefeature.auth.** { *; }
 -keep class com.pongploydev.profilefeature.data.** { *; }
--keep class com.pongploydev.videowatchfeaturesupabase.databases.models.** { *; }
+-keep class com.pongploydev.videowatchfeaturesupabase.** { *; }
 -keepclassmembers class * {
     @com.google.firebase.firestore.ServerTimestamp <fields>;
 }
@@ -40,4 +53,3 @@
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
-

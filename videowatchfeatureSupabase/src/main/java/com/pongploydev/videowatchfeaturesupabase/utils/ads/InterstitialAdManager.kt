@@ -22,7 +22,7 @@ class InterstitialAdManager(private val context: Context) {
 
     companion object {
         // ID โฆษณาสำหรับแอปเด็กโดยเฉพาะ
-        private const val CHILD_FRIENDLY_AD_UNIT_ID = "ca-app-pub-7617756372558825/3832276630" // ใช้ ID จริงของคุณ
+        private const val CHILD_FRIENDLY_AD_UNIT_ID = "ca-app-pub-3279793802315716/8581063137" // ใช้ ID จริงของคุณ
         private const val TEST_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712" // Test ID จาก Google
 
         private const val TAG = "InterstitialAdManager"

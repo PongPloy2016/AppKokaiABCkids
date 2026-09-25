@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ad-services-config>
     <gma-sdk-config
-        app-id="ca-app-pub-7617756372558825~2820421176"
+        app-id="ca-app-pub-3279793802315716~2607584711"
         is-test-mode="false"
         log-level="0"
         is-lat-enabled="true"

@@ -27,7 +27,7 @@ android {
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
-        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-7617756372558825/3832276630\"")
+        buildConfigField("String", "REAL_AD_UNIT_ID", "\"ca-app-pub-3279793802315716/8581063137\"")
         buildConfigField("String", "TEST_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
     }
 
@@ -46,6 +46,7 @@ android {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"

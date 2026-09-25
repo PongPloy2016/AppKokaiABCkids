@@ -86,9 +86,9 @@ git clone https://github.com/PongPloy2016/Practice_Writing_Reading-_Coloring_Tha
 
 ### 📋 ข้อมูลรหัสโฆษณา AdMob (AdMob Credentials)
 - **ชื่อแอปในระบบ AdMob**: ฝึกเขียน อ่าน ก ไก่ABC-ระบายสี
-- **รหัสแอป AdMob (AdMob App ID)**: `ca-app-pub-7617756372558825~2820421176`
-- **รหัสหน่วยโฆษณา AdMob (Ad Unit ID)**: `ca-app-pub-7617756372558825/3832276630` (kis ads adunits)
-- **การยืนยันสิทธิ์แอป (app-ads.txt)**: `google.com, pub-7617756372558825, DIRECT, f08c47fec0942fa0`
+- **รหัสแอป AdMob (AdMob App ID)**: `ca-app-pub-3279793802315716~2607584711`
+- **รหัสหน่วยโฆษณา AdMob (Ad Unit ID)**: `ca-app-pub-3279793802315716/8581063137`
+- **การยืนยันสิทธิ์แอป (app-ads.txt)**: `google.com, pub-3279793802315716, DIRECT, f08c47fec0942fa0`
 
 ### 🛠️ วิธีป้อนรายละเอียดหน่วยโฆษณา AdMob ในแพลตฟอร์มสื่อกลางของบุคคลที่สาม (Third-Party Mediation Platform Setup)
 
@@ -96,7 +96,7 @@ git clone https://github.com/PongPloy2016/Practice_Writing_Reading-_Coloring_Tha
 1. **ลงชื่อเข้าใช้บัญชีในแพลตฟอร์มสื่อกลางของบุคคลที่สาม**: (เช่น AppLovin MAX, Unity LevelPlay, ironSource, Meta ฯลฯ)
 2. **ใช้รายละเอียดต่อไปนี้เพื่อจับคู่หน่วยโฆษณา AdMob ในแพลตฟอร์มสื่อกลาง**:
    - **รหัสแอป AdMob**:
-     ฝึกเขียน อ่าน ก ไก่ABC-ระบายสี `ca-app-pub-7617756372558825~2820421176`
+     `ca-app-pub-3279793802315716~2607584711`
    - **รหัสหน่วยโฆษณา AdMob**:
-     kis ads adunits `ca-app-pub-7617756372558825/3832276630`
+     `ca-app-pub-3279793802315716/8581063137`
 3. **บันทึกการตั้งค่า**: กดบันทึกข้อมูลเพื่อเปิดใช้งานการรับส่งโฆษณาผ่านแพลตฟอร์มสื่อกลาง
