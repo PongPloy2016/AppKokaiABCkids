@@ -132,4 +132,13 @@ interface SupabaseDataApiService {
         @Header("Prefer") prefer: String = "resolution=merge-duplicates,return=representation",
         @Body device: UserDevice
     ): Response<List<UserDevice>>
+
+    // APP SETTINGS
+    @GET("rest/v1/app_settings")
+    suspend fun getAppSettings(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") auth: String,
+        @Query("id") idFilter: String = "eq.1",
+        @Query("select") select: String = "*"
+    ): Response<List<AppSettings>>
 }

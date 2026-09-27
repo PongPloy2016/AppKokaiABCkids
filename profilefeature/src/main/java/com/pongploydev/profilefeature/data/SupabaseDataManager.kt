@@ -777,4 +777,31 @@ class SupabaseDataManager private constructor(context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Fetch remote app settings from Supabase app_settings table
+     */
+    suspend fun fetchAppSettings(): Result<AppSettings> = withContext(Dispatchers.IO) {
+        val tag = "SupabaseAppSettings"
+        try {
+            val response = dataApiService.getAppSettings(
+                apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
+                auth = getAuthHeader(),
+                idFilter = "eq.1"
+            )
+            if (response.isSuccessful && !response.body().isNullOrEmpty()) {
+                val settings = response.body()!!.first()
+                Log.d(tag, "App settings fetched successfully from Supabase: $settings")
+                Result.success(settings)
+            } else {
+                val defaultSettings = AppSettings()
+                Log.w(tag, "Failed to fetch app settings (HTTP ${response.code()}), using default config.")
+                Result.success(defaultSettings)
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "fetchAppSettings exception: ${e.localizedMessage}, using default config.", e)
+            Result.success(AppSettings())
+        }
+    }
 }
+

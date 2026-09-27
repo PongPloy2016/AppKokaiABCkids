@@ -70,3 +70,49 @@ data class UserDevice(
     @SerializedName("created_at") val createdAt: String? = null,
     @SerializedName("updated_at") val updatedAt: String? = null
 )
+
+data class AppSettings(
+    @SerializedName("id") val id: Int = 1,
+    @SerializedName("app_version_name") val appVersionName: String = "3.0.3",
+    @SerializedName("app_version_code") val appVersionCode: Int = 47,
+    @SerializedName("min_supported_version_code") val minSupportedVersionCode: Int = 45,
+    @SerializedName("force_update") val forceUpdate: Boolean = false,
+    @SerializedName("update_title") val updateTitle: String = "มีเวอร์ชันใหม่พร้อมใช้งาน 🎉",
+    @SerializedName("update_message") val updateMessage: String = "กรุณาอัปเดตแอปเพื่อรับบทเรียนและเกมใหม่ๆ",
+    @SerializedName("play_store_url") val playStoreUrl: String = "",
+
+    @SerializedName("is_subscription_enabled") val isSubscriptionEnabled: Boolean = true,
+    @SerializedName("sub_monthly_id") val subMonthlyId: String = "sub_monthly",
+    @SerializedName("sub_monthly_price") val subMonthlyPrice: Double = 29.0,
+    @SerializedName("sub_monthly_bonus_stars") val subMonthlyBonusStars: Int = 20,
+
+    @SerializedName("sub_yearly_id") val subYearlyId: String = "sub_yearly",
+    @SerializedName("sub_yearly_price") val subYearlyPrice: Double = 199.0,
+    @SerializedName("sub_yearly_bonus_stars") val subYearlyBonusStars: Int = 100,
+
+    @SerializedName("sub_lifetime_id") val subLifetimeId: String = "sub_lifetime",
+    @SerializedName("sub_lifetime_price") val subLifetimePrice: Double = 399.0,
+    @SerializedName("sub_lifetime_bonus_stars") val subLifetimeBonusStars: Int = 300,
+
+    @SerializedName("vip_stars_multiplier") val vipStarsMultiplier: Double = 2.0,
+
+    @SerializedName("is_ads_enabled") val isAdsEnabled: Boolean = true,
+    @SerializedName("is_banner_ad_enabled") val isBannerAdEnabled: Boolean = true,
+    @SerializedName("is_interstitial_ad_enabled") val isInterstitialAdEnabled: Boolean = true,
+    @SerializedName("ad_interstitial_interval") val adInterstitialInterval: Int = 3,
+
+    @SerializedName("is_game_hub_enabled") val isGameHubEnabled: Boolean = true,
+    @SerializedName("is_video_hub_enabled") val isVideoHubEnabled: Boolean = true,
+    @SerializedName("is_sound_effects_enabled") val isSoundEffectsEnabled: Boolean = true,
+    @SerializedName("is_ai_feature_enabled") val isAiFeatureEnabled: Boolean = false,
+
+    @SerializedName("is_maintenance_mode") val isMaintenanceMode: Boolean = false,
+    @SerializedName("maintenance_message") val maintenanceMessage: String = "",
+    @SerializedName("is_announcement_active") val isAnnouncementActive: Boolean = false,
+    @SerializedName("announcement_text") val announcementText: String = "",
+
+    @SerializedName("contact_email") val contactEmail: String = "",
+    @SerializedName("privacy_policy_url") val privacyPolicyUrl: String = "",
+    @SerializedName("terms_of_service_url") val termsOfServiceUrl: String = ""
+)
+
