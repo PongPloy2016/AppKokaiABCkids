@@ -79,16 +79,17 @@
 
     <!--bottom navigation title-->
     <string name="title_nav_home">หน้าแรก</string>
-    <string name="title_nav_web">ท่องเว็บสนุก</string>
+    <string name="title_nav_web">ท่องเว็บ</string>
     <string name="title_nav_video">วิดีโอ</string>
     <string name="title_nav_live">ถ่ายทอดสด</string>
+    <string name="title_nav_game">เกมส์</string>
     <string name="title_nav_news">ข่าวสาร</string>
 
     <string name="title_nav_category">หมวดหมู่</string>
     <string name="title_nav_favorite">รายการโปรด</string>
     <string name="title_nav_settings">ตั้งค่า</string>
     <string name="title_nav_kids">เรียนรู้</string>
-    <string name="title_nav_quiz">แบบทดสอบ</string>
+    <string name="title_nav_quiz">ทดสอบ</string>
     <string name="title_nav_profile">โปรไฟล์</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
@@ -133,6 +134,12 @@
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
     <string name="pick_a_color">เลือกสี</string>
-
+    <string name="open_nav">เปิดแถบเมนู</string>
+    <string name="close_nav">ปิดแถบเมนู</string>
+    <string name="nav_learn_write">ฝึกเขียน ก-ฮ (ABC)</string>
+    <string name="nav_learn_read">ฝึกอ่านออกเสียง</string>
+    <string name="nav_coloring">เกมระบายสีแสนสนุก</string>
+    <string name="nav_share">แชร์แอปพลิเคชัน</string>
+    <string name="nav_about">เกี่ยวกับแอปพลิเคชัน</string>
 
 </resources>

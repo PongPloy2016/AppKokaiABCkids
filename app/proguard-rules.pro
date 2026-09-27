@@ -7,7 +7,7 @@
 -keep class androidx.compose.foundation.lazy.** { *; }
 -keep interface androidx.compose.foundation.lazy.** { *; }
 
-# Keep Attributes for Reflection, Retrofit, and Gson (CRITICAL for suspend functions)
+# Keep Attributes for Reflection, Retrofit, and Gson (CRITICAL for s uspend functions)
 -keepattributes Signature, InnerClasses, EnclosingMethod, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, AnnotationDefault
 
 # Retrofit Keep Rules
@@ -53,3 +53,8 @@
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# Google Play Billing Library
+-keep class com.android.billingclient.api.** { *; }
+-keep class com.pongploydev.profilefeature.billing.** { *; }
+

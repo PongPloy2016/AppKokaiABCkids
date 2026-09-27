@@ -27,8 +27,117 @@ class SupabaseDataManager private constructor(context: Context) {
         }
     }
 
+    private val appContext = context.applicationContext
     private val authManager = SupabaseAuthManager.getInstance(context)
     private val gson = Gson()
+    private val statsPrefs = appContext.getSharedPreferences("app_user_stats", Context.MODE_PRIVATE)
+
+    // ==================== LOCAL STATS CACHE (SINGLE SOURCE OF TRUTH) ====================
+
+    fun getUserTotalStars(): Int {
+        val cached = statsPrefs.getInt("total_stars", -1)
+        if (cached >= 0) return cached
+        // Migration from legacy game_hub_scores
+        val legacySp = appContext.getSharedPreferences("game_hub_scores", Context.MODE_PRIVATE)
+        val legacyStars = legacySp.getInt("user_stars", 0)
+        if (legacyStars > 0) {
+            saveUserProgress(legacyStars, 1 + (legacyStars / 50))
+            return legacyStars
+        }
+        return 0
+    }
+
+    fun getUserCurrentLevel(): Int {
+        val cached = statsPrefs.getInt("current_level", -1)
+        if (cached > 0) return cached
+        val stars = getUserTotalStars()
+        return 1 + (stars / 50)
+    }
+
+    fun getUserStreakDays(): Int {
+        return statsPrefs.getInt("streak_days", 5)
+    }
+
+    fun getLocalDisplayName(): String? {
+        return statsPrefs.getString("display_name", null)
+    }
+
+    fun getLocalAvatarUrl(): String? {
+        return statsPrefs.getString("avatar_url", null)
+    }
+
+    fun saveUserProgress(
+        stars: Int,
+        level: Int = 1 + (stars / 50),
+        streakDays: Int = 5,
+        displayName: String? = null,
+        avatarUrl: String? = null
+    ) {
+        val editor = statsPrefs.edit()
+            .putInt("total_stars", stars)
+            .putInt("current_level", maxOf(level, 1 + (stars / 50)))
+            .putInt("streak_days", streakDays)
+        if (!displayName.isNullOrBlank() && displayName != "คนเก่ง" && displayName != "นักอ่านตัวน้อย") {
+            editor.putString("display_name", displayName)
+        }
+        if (!avatarUrl.isNullOrBlank()) {
+            editor.putString("avatar_url", avatarUrl)
+        }
+        editor.apply()
+
+        // Sync legacy game_hub_scores
+        try {
+            appContext.getSharedPreferences("game_hub_scores", Context.MODE_PRIVATE)
+                .edit()
+                .putInt("user_stars", stars)
+                .putInt("user_level", maxOf(level, 1 + (stars / 50)))
+                .apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun isVipSubscriber(): Boolean {
+        return statsPrefs.getBoolean("is_vip_subscriber", false)
+    }
+
+    fun getSubscriptionTier(): String {
+        return statsPrefs.getString("subscription_tier", "สมาชิกฟรี (Free)") ?: "สมาชิกฟรี (Free)"
+    }
+
+    fun setSubscription(tierName: String, isLifetime: Boolean = false, bonusStars: Int = 0) {
+        val editor = statsPrefs.edit()
+            .putBoolean("is_vip_subscriber", true)
+            .putString("subscription_tier", tierName)
+            .putBoolean("is_lifetime_vip", isLifetime)
+            .putLong("subscribed_at", System.currentTimeMillis())
+        editor.apply()
+
+        if (bonusStars > 0) {
+            val stars = getUserTotalStars() + bonusStars
+            saveUserProgress(stars = stars, level = 1 + (stars / 50))
+        }
+    }
+
+    suspend fun addStars(userId: String, starsToAdd: Int): Pair<Int, Int> {
+        val currentLocalStars = getUserTotalStars()
+        val currentLocalLevel = getUserCurrentLevel()
+        val newStars = currentLocalStars + starsToAdd
+        val newLevel = 1 + (newStars / 50)
+
+        // 1. Immediately save to persistent cache
+        saveUserProgress(newStars, newLevel)
+
+        // 2. Sync to Supabase in background
+        if (userId.isNotBlank()) {
+            try {
+                addStarsAndLevel(userId, currentLocalStars, currentLocalLevel, starsToAdd)
+            } catch (e: Exception) {
+                Log.w("SupabaseDataManager", "Background addStars cloud sync: ${e.message}")
+            }
+        }
+        return Pair(newStars, newLevel)
+    }
 
     private val dataApiService: SupabaseDataApiService by lazy {
         val logging = HttpLoggingInterceptor().apply {
@@ -79,6 +188,12 @@ class SupabaseDataManager private constructor(context: Context) {
 
     suspend fun fetchUserProfile(userId: String): Result<UserProfile> = withContext(Dispatchers.IO) {
         val validId = ensureValidUuid(userId)
+        val localStars = getUserTotalStars()
+        val localLevel = getUserCurrentLevel()
+        val localName = getLocalDisplayName() ?: "นักอ่านตัวน้อย"
+        val localAvatar = getLocalAvatarUrl() ?: ""
+        val localStreak = getUserStreakDays()
+
         try {
             var response = dataApiService.getProfile(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
@@ -95,20 +210,63 @@ class SupabaseDataManager private constructor(context: Context) {
                 )
             }
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
-                Result.success(response.body()!!.first())
+                val cloudProfile = response.body()!!.first()
+                val resolvedStars = maxOf(localStars, cloudProfile.totalStars)
+                val resolvedLevel = maxOf(localLevel, cloudProfile.currentLevel, 1 + (resolvedStars / 50))
+                val resolvedName = if (!cloudProfile.displayName.isNullOrBlank() && cloudProfile.displayName != "นักอ่านตัวน้อย") {
+                    cloudProfile.displayName
+                } else {
+                    localName
+                }
+                val resolvedAvatar = if (!cloudProfile.avatarUrl.isNullOrBlank()) cloudProfile.avatarUrl else localAvatar
+
+                saveUserProgress(
+                    stars = resolvedStars,
+                    level = resolvedLevel,
+                    streakDays = maxOf(localStreak, cloudProfile.streakDays),
+                    displayName = resolvedName,
+                    avatarUrl = resolvedAvatar
+                )
+
+                val mergedProfile = cloudProfile.copy(
+                    displayName = resolvedName,
+                    avatarUrl = resolvedAvatar,
+                    totalStars = resolvedStars,
+                    currentLevel = resolvedLevel
+                )
+
+                if (resolvedStars > cloudProfile.totalStars || resolvedLevel > cloudProfile.currentLevel) {
+                    try {
+                        updateUserProfile(validId, UserProfileUpdate(totalStars = resolvedStars, currentLevel = resolvedLevel))
+                    } catch (e: Exception) {
+                        Log.w("SupabaseDataManager", "Syncing local stars to cloud failed: ${e.message}")
+                    }
+                }
+                Result.success(mergedProfile)
             } else {
-                // If profile doesn't exist yet in Supabase, auto-create (upsert) default profile!
+                // If profile doesn't exist yet in Supabase, auto-create (upsert) default profile with local stats!
                 val defaultProfile = UserProfile(
                     id = validId,
-                    displayName = "นักอ่านตัวน้อย",
-                    totalStars = 0,
-                    currentLevel = 1
+                    displayName = localName,
+                    avatarUrl = localAvatar,
+                    totalStars = localStars,
+                    currentLevel = localLevel,
+                    streakDays = localStreak
                 )
                 upsertUserProfile(defaultProfile).getOrDefault(defaultProfile)
                 Result.success(defaultProfile)
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e("SupabaseDataManager", "fetchUserProfile Exception: ${e.message}", e)
+            val fallbackProfile = UserProfile(
+                id = validId,
+                displayName = localName,
+                avatarUrl = localAvatar,
+                totalStars = localStars,
+                currentLevel = localLevel,
+                streakDays = localStreak
+            )
+            Result.success(fallbackProfile)
         }
     }
 
@@ -202,12 +360,30 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     suspend fun addStarsAndLevel(userId: String, currentStars: Int, currentLevel: Int, starsToAdd: Int): Result<UserProfile> {
-        val fetchedProf = fetchUserProfile(userId).getOrNull()
-        val baseStars = fetchedProf?.totalStars ?: currentStars
+        val validId = ensureValidUuid(userId)
+        val localStars = getUserTotalStars()
+        val localLevel = getUserCurrentLevel()
+        val baseStars = maxOf(localStars, currentStars)
         val newStars = baseStars + starsToAdd
-        val newLevel = 1 + (newStars / 50) // Every 50 stars = +1 level
+        val newLevel = maxOf(localLevel, currentLevel, 1 + (newStars / 50)) // Every 50 stars = +1 level
+
+        saveUserProgress(newStars, newLevel)
+
         val updates = UserProfileUpdate(totalStars = newStars, currentLevel = newLevel)
-        return updateUserProfile(userId, updates)
+        val res = updateUserProfile(validId, updates)
+        return if (res.isSuccess) {
+            res
+        } else {
+            val fallback = UserProfile(
+                id = validId,
+                displayName = getLocalDisplayName() ?: "นักอ่านตัวน้อย",
+                avatarUrl = getLocalAvatarUrl() ?: "",
+                totalStars = newStars,
+                currentLevel = newLevel,
+                streakDays = getUserStreakDays()
+            )
+            Result.success(fallback)
+        }
     }
 
     suspend fun uploadAvatarImage(userId: String, imageBytes: ByteArray, mimeType: String = "image/jpeg"): Result<String> = withContext(Dispatchers.IO) {

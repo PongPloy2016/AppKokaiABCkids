@@ -65,6 +65,12 @@ class InterstitialAdManager(private val context: Context) {
         onAdLoaded: () -> Unit = {},
         onAdFailed: (LoadAdError) -> Unit = {}
     ) {
+        // ตรวจสอบสิทธิ VIP (ปิดโฆษณา 100%)
+        if (com.pongploydev.profilefeature.data.SupabaseDataManager.getInstance(context).isVipSubscriber()) {
+            Log.d(TAG, "User is VIP Subscriber: Skip loading interstitial ads.")
+            return
+        }
+
         if (isAdLoading) return
 
         isAdLoading = true
@@ -119,6 +125,13 @@ class InterstitialAdManager(private val context: Context) {
         onAdDismissed: () -> Unit = {},
         onAdFailed: () -> Unit = {}
     ) {
+        // ตรวจสอบสิทธิ VIP: หากเป็นสมาชิก VIP ให้ข้ามโฆษณาและทำงานต่อทันที
+        if (com.pongploydev.profilefeature.data.SupabaseDataManager.getInstance(context).isVipSubscriber()) {
+            Log.d(TAG, "User is VIP Subscriber: Bypass interstitial ad.")
+            onAdDismissed()
+            return
+        }
+
         interstitialAd?.let { ad ->
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {

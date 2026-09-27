@@ -56,6 +56,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -112,6 +113,7 @@ import com.pongploydev.kidswebviewfeature.KidsWebViewActivity
 import com.pongploydev.livefeature.LiveListActivity
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.activity.AbcMatchGameActivity
+import com.pongploydev.priyankvex.paintapp.activity.GameHubActivity
 import com.pongploydev.priyankvex.paintapp.activity.QuizActivity
 import com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity
 import com.pongploydev.priyankvex.paintapp.activity.learning.SubActivity
@@ -675,8 +677,11 @@ fun HomeHeader(
     level: Int = 3,
     levelTitle: String = "นักอ่านตัวน้อย",
     levelProgress: Float = 0.7f,
+    starsRemaining: Int = 30,
     streakDays: Int = 5,
+    onMenuClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
+    onSubscriptionClick: () -> Unit = {},
     onMusicToggle: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onSearchChange: (String) -> Unit
@@ -767,38 +772,92 @@ fun HomeHeader(
                 .padding(top = 20.dp, bottom = 24.dp)
                 .padding(horizontal = 20.dp)
         ) {
-            // แถวบน: ดาว + ปุ่มลัด
+            // แถวบน: เมนู + ดาว + ปุ่มลัด
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White.copy(alpha = 0.25f),
-                    modifier = Modifier.clickableNoRipple {
-                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                        onStarClick()
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                        modifier = Modifier.clickableNoRipple {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onMenuClick()
+                        }
                     ) {
-                        Text(
-                            text = "⭐ $starCount",
-                            color = KidTheme.Accent,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.graphicsLayer { translationY = starOffsetY }
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "ดาว",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "เปิดเมนู",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                        modifier = Modifier.clickableNoRipple {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onStarClick()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⭐ $starCount",
+                                color = KidTheme.Accent,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.graphicsLayer { translationY = starOffsetY }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "ดาว",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFFFD166).copy(alpha = 0.30f),
+                        border = BorderStroke(1.dp, Color(0xFFFFD166).copy(alpha = 0.85f)),
+                        modifier = Modifier.clickableNoRipple {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onSubscriptionClick()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "💎",
+                                fontSize = 12.sp
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "สนับสนุน",
+                                color = Color.White,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
@@ -809,7 +868,11 @@ fun HomeHeader(
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isSearchVisible) KidTheme.Accent
-                        else Color.White.copy(alpha = 0.25f),
+                        else Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSearchVisible) KidTheme.Accent.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.35f)
+                        ),
                         modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             isSearchVisible = !isSearchVisible
@@ -843,24 +906,38 @@ fun HomeHeader(
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isMusicEnabled) KidTheme.Success.copy(alpha = 0.85f)
-                        else Color.White.copy(alpha = 0.25f),
+                        else Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isMusicEnabled) KidTheme.Success else Color.White.copy(alpha = 0.35f)
+                        ),
                         modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             onMusicToggle()
                         }
                     ) {
-                        Text(
-                            text = if (isMusicEnabled) "🎵 เพลง" else "🔇 ปิด",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isMusicEnabled) "🎵" else "🔇",
+                                fontSize = 12.sp
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = if (isMusicEnabled) "เพลง" else "ปิด",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
                     Surface(
                         shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.25f),
+                        color = Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
                         modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             onSettingsClick()
@@ -974,6 +1051,7 @@ fun HomeHeader(
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = Color.White.copy(alpha = 0.18f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.28f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -1005,23 +1083,23 @@ fun HomeHeader(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(9.dp)
-                            .clip(RoundedCornerShape(5.dp))
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(6.dp))
                             .background(Color.White.copy(alpha = 0.25f))
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(animatedLevelProgress)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(5.dp))
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(KidTheme.GoldGradient)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "อีก ${((1f - levelProgress) * 100).toInt()} ดาว จะขึ้นระดับ ${level + 1}! 🚀",
+                        text = "อีก $starsRemaining ดาว จะขึ้นระดับ ${level + 1}! 🚀",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 11.sp
                     )
@@ -1082,27 +1160,33 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
     val ctx = LocalContext.current
     val actions = remember {
         listOf(
-            QuickAction("✏️", "ฝึกเขียน", Color(0xFFFF6B6B), 1),
-            QuickAction("🔊", "ฝึกอ่าน", Color(0xFF4ECDC4), 2),
-            QuickAction("🎨", "ระบายสี", Color(0xFFFFB020), 3),
-            QuickAction("🧠", "ทดสอบ", Color(0xFF7F67FF), 4)
+            QuickAction("✏️", "ฝึกเขียน", Color(0xFFFF5252), 1),
+            QuickAction("🔊", "ฝึกอ่าน", Color(0xFF00B4D8), 2),
+            QuickAction("🎨", "ระบายสี", Color(0xFFFF9F1C), 3),
+            QuickAction("🎮", "เกมสนุก", Color(0xFFFF4081), 5),
+            QuickAction("🧠", "ทดสอบ", Color(0xFF7C4DFF), 4)
         )
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         actions.forEach { a ->
             var pressed by remember { mutableStateOf(false) }
             val scale by animateFloatAsState(
-                targetValue = if (pressed) 0.9f else 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                targetValue = if (pressed) 0.88f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
                 label = "qaScale"
             )
             LaunchedEffect(pressed) {
                 if (pressed) {
-                    delay(130)
+                    delay(120)
                     pressed = false
                 }
             }
@@ -1110,38 +1194,99 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .graphicsLayer { scaleX = scale; scaleY = scale }
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
                     .clickableNoRipple {
                         pressed = true
                         playSoundEffect(ctx, R.raw.is_sound_buttonswitch)
-                        com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(ctx, "เมนูด่วน_${a.label}", "หน้าแรก (Home)")
+                        com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger.logClickEvent(
+                            ctx, "เมนูด่วน_${a.label}", "หน้าแรก (Home)"
+                        )
                         onActionClick(a.id)
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 5.dp,
+                    border = BorderStroke(
+                        1.5.dp,
+                        Brush.verticalGradient(
+                            listOf(a.color.copy(alpha = 0.50f), a.color.copy(alpha = 0.15f))
+                        )
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(a.color.copy(alpha = 0.18f), a.color.copy(alpha = 0.08f))
-                            )
-                        )
-                        .border(1.5.dp, a.color.copy(alpha = 0.25f), RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
+                        .height(60.dp)
                 ) {
-                    Text(text = a.emoji, fontSize = 26.sp)
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Soft pastel gradient fill inside card
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(a.color.copy(alpha = 0.14f), a.color.copy(alpha = 0.03f))
+                                    )
+                                )
+                        )
+
+                        // Circular badge for emoji icon
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(
+                                            a.color.copy(alpha = 0.22f),
+                                            a.color.copy(alpha = 0.05f)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = a.emoji,
+                                fontSize = 23.sp
+                            )
+                        }
+
+                        // 3D bottom indicator bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            a.color.copy(alpha = 0.25f),
+                                            a.color.copy(alpha = 0.70f),
+                                            a.color.copy(alpha = 0.25f)
+                                        )
+                                    )
+                                )
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(7.dp))
 
                 Text(
                     text = a.label,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = KidTheme.TextDark
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF2D3142),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -1356,6 +1501,17 @@ fun ExploreCategoriesSection(
                     accentColor = Color(0xFF0085FF),
                     lessonCount = 12,
                     onClick = { onCategoryClick(6) }
+                )
+            }
+            item {
+                CategoryCard(
+                    title = "เกมแสนสนุก",
+                    subtitle = "เกมฝึกสมอง 10 รูปแบบ\nสะสมคะแนนและดาว ⭐",
+                    imageRes = R.drawable.kids_quiz_3d,
+                    backgroundColor = Color(0xFFF3E5F5),
+                    accentColor = Color(0xFFAB47BC),
+                    lessonCount = 10,
+                    onClick = { onCategoryClick(7) }
                 )
             }
         }
@@ -1714,6 +1870,7 @@ fun MainComposeScreen(navController: NavController? = null) {
     }
     var showRewardDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showSubscriptionDialog by remember { mutableStateOf(false) }
     
     val scope = rememberCoroutineScope()
     val supabaseAuthManager = remember { SupabaseAuthManager.getInstance(context) }
@@ -1721,15 +1878,25 @@ fun MainComposeScreen(navController: NavController? = null) {
     val firebaseAuth = remember { FirebaseAuth.getInstance() }
     val userId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
 
-    var starCount by remember { mutableIntStateOf(0) }
-    var currentLevel by remember { mutableIntStateOf(1) }
-    var userDisplayName by remember { mutableStateOf("คนเก่ง") }
+    var starCount by remember { mutableIntStateOf(dataManager.getUserTotalStars()) }
+    var currentLevel by remember { mutableIntStateOf(dataManager.getUserCurrentLevel()) }
+    var userDisplayName by remember { mutableStateOf(dataManager.getLocalDisplayName() ?: "คนเก่ง") }
 
-    // Sync live stars and level from Supabase
+    // Sync live stars and level from local persistent cache & Supabase
     fun loadSupabaseStars() {
-        if (userId.isNotEmpty()) {
+        val currentUserId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
+        val localStars = dataManager.getUserTotalStars()
+        val localLvl = dataManager.getUserCurrentLevel()
+        if (localStars > starCount) {
+            starCount = localStars
+            currentLevel = localLvl
+        } else if (starCount > localStars) {
+            dataManager.saveUserProgress(starCount, currentLevel)
+        }
+
+        if (currentUserId.isNotEmpty()) {
             scope.launch {
-                dataManager.fetchUserProfile(userId).onSuccess { prof ->
+                dataManager.fetchUserProfile(currentUserId).onSuccess { prof ->
                     starCount = prof.totalStars
                     currentLevel = prof.currentLevel
                     val name = prof.displayName
@@ -1814,16 +1981,12 @@ fun MainComposeScreen(navController: NavController? = null) {
     if (showRewardDialog) {
         RewardDialog(onDismiss = {
             showRewardDialog = false
-            if (userId.isNotEmpty()) {
-                scope.launch {
-                    dataManager.addStarsAndLevel(userId, starCount, currentLevel, 10).onSuccess { updated ->
-                        starCount = updated.totalStars
-                    }
-                }
-            } else {
-                starCount += 10
+            scope.launch {
+                val (newStars, newLvl) = dataManager.addStars(userId, 10)
+                starCount = newStars
+                currentLevel = newLvl
+                Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +10 🌟 (รวม $starCount ดาว)", Toast.LENGTH_SHORT).show()
             }
-            Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +10 🌟", Toast.LENGTH_SHORT).show()
         })
     }
 
@@ -1843,6 +2006,17 @@ fun MainComposeScreen(navController: NavController? = null) {
         )
     }
 
+    if (showSubscriptionDialog) {
+        com.pongploydev.profilefeature.compose.SubscriptionDialog(
+            onDismiss = { showSubscriptionDialog = false },
+            onSubscribed = {
+                showSubscriptionDialog = false
+                starCount = dataManager.getUserTotalStars()
+                currentLevel = dataManager.getUserCurrentLevel()
+            }
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         content = { paddingValues ->
@@ -1854,25 +2028,36 @@ fun MainComposeScreen(navController: NavController? = null) {
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     item {
+                        val starsInLevel = starCount % 50
+                        val starsNeeded = 50 - starsInLevel
+                        val levelProgress = (starsInLevel.toFloat() / 50f).coerceIn(0f, 1f)
+                        val computedLevel = maxOf(1, 1 + (starCount / 50))
+                        val levelTitle = when (computedLevel) {
+                            1 -> "นักอ่านตัวน้อย"
+                            2 -> "นักสะสมดาว"
+                            3 -> "ยอดนักอ่าน"
+                            4 -> "ผู้พิชิตคำศัพท์"
+                            5 -> "ยอดอัจฉริยะตัวน้อย"
+                            else -> "ปรมาจารย์ตัวน้อย"
+                        }
+
                         HomeHeader(
                             userName = userDisplayName,
                             isMusicEnabled = isMusicEnabled,
                             starCount = starCount,
-                            level = currentLevel,
-                            levelTitle = "นักอ่านตัวน้อย",
-                            levelProgress = 0.7f,
-                            streakDays = 5,
+                            level = computedLevel,
+                            levelTitle = levelTitle,
+                            levelProgress = levelProgress,
+                            starsRemaining = starsNeeded,
+                            streakDays = dataManager.getUserStreakDays(),
+                            onMenuClick = {
+                                (context as? com.pongploydev.priyankvex.paintapp.activity.MainActivity)?.openDrawer()
+                            },
                             onStarClick = {
-                                if (userId.isNotEmpty()) {
-                                    scope.launch {
-                                        dataManager.addStarsAndLevel(userId, starCount, currentLevel, 5).onSuccess { updated ->
-                                            starCount = updated.totalStars
-                                            currentLevel = updated.currentLevel
-                                            Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +5 (รวม $starCount ดาว)", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                } else {
-                                    starCount += 5
+                                scope.launch {
+                                    val (newStars, newLvl) = dataManager.addStars(userId, 5)
+                                    starCount = newStars
+                                    currentLevel = newLvl
                                     Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +5 (รวม $starCount ดาว)", Toast.LENGTH_SHORT).show()
                                 }
                             },
@@ -1882,6 +2067,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                                     .getInstance().setMusicEnabled(context, isMusicEnabled)
                             },
                             onSettingsClick = { showSettingsDialog = true },
+                            onSubscriptionClick = { showSubscriptionDialog = true },
                             onSearchChange = { }
                         )
                     }
@@ -1895,16 +2081,14 @@ fun MainComposeScreen(navController: NavController? = null) {
                                 2 -> "ฝึกอ่าน"
                                 3 -> "ระบายสี"
                                 4 -> "ทดสอบวัดความรู้"
+                                5 -> "ศูนย์รวมเกมเด็ก"
                                 else -> "กิจกรรมเรียนรู้"
                             }
-                            if (userId.isNotEmpty()) {
-                                scope.launch {
-                                    dataManager.saveLearningProgress(userId, "home_quick_action", "action_$id", 100)
-                                    dataManager.addStarsAndLevel(userId, starCount, currentLevel, 5).onSuccess { updated ->
-                                        starCount = updated.totalStars
-                                        currentLevel = updated.currentLevel
-                                    }
-                                }
+                            scope.launch {
+                                dataManager.saveLearningProgress(userId, "home_quick_action", "action_$id", 100)
+                                val (newStars, newLvl) = dataManager.addStars(userId, 5)
+                                starCount = newStars
+                                currentLevel = newLvl
                             }
                             Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +5 🌟 ($actionName)", Toast.LENGTH_SHORT).show()
                             navigateWithAd {
@@ -1923,9 +2107,88 @@ fun MainComposeScreen(navController: NavController? = null) {
                                     4 -> context.startActivity(
                                         Intent(context, QuizActivity::class.java)
                                     )
+                                    5 -> context.startActivity(
+                                        Intent(context, GameHubActivity::class.java)
+                                    )
                                 }
                             }
                         })
+                    }
+
+                    item { Spacer(modifier = Modifier.height(14.dp)) }
+
+                    // VIP MEMBER / SUBSCRIPTION BANNER CARD
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .clickableNoRipple {
+                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                    showSubscriptionDialog = true
+                                },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            listOf(Color(0xFF6C5CE7), Color(0xFF8E44AD), Color(0xFFFF9F43))
+                                        )
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .background(Color.White.copy(alpha = 0.22f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(text = "👑", fontSize = 20.sp)
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Text(
+                                                text = "สนับสนุน สมาชิก VIP (Subscriptions)",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 13.sp
+                                            )
+                                            Text(
+                                                text = "ปลดล็อกไร้โฆษณา • รับดาวโบนัส x2 • ทุกด่าน & เกม",
+                                                color = Color.White.copy(alpha = 0.9f),
+                                                fontSize = 10.5.sp
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFFFFD166)
+                                    ) {
+                                        Text(
+                                            text = "สมัครสมาชิก 💎",
+                                            color = Color(0xFF2D3436),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     item { Spacer(modifier = Modifier.height(18.dp)) }
@@ -2020,6 +2283,9 @@ fun MainComposeScreen(navController: NavController? = null) {
                                         )
                                         6 -> context.startActivity(
                                             Intent(context, LiveListActivity::class.java)
+                                        )
+                                        7 -> context.startActivity(
+                                            Intent(context, GameHubActivity::class.java)
                                         )
                                         else -> context.startActivity(
                                             Intent(context, LeaningActvity::class.java)
@@ -2821,7 +3087,8 @@ private fun getMenuItems(): List<MenuItem> = listOf(
     MenuItem(5, "บทความน่ารู้", R.drawable.leraning_kid, 4),
     MenuItem(6, "แบบทดสอบ", R.drawable.card_three_two, 5),
     MenuItem(7, "ดู DLTV Live", R.drawable.card_four, 6, isLive = true),
-    MenuItem(8, "วาดระบายสี", R.drawable.home_color, 7)
+    MenuItem(8, "วาดระบายสี", R.drawable.home_color, 7),
+    MenuItem(9, "หมวดเกมสนุก", R.drawable.kids_quiz_3d, 8)
 )
 
 private fun handleItemClickDirectly(
@@ -2851,11 +3118,13 @@ private fun handleItemClickDirectly(
         5 -> context.startActivity(Intent(context, QuizActivity::class.java))
         6 -> context.startActivity(Intent(context, LiveListActivity::class.java))
         7 -> context.startActivity(Intent(context, ColoringGameActivity::class.java))
+        8 -> context.startActivity(Intent(context, GameHubActivity::class.java))
     }
 }
 
 private fun showKidsActivitiesDialog(context: Context) {
     val activities = listOf(
+        "🎮 ศูนย์รวมเกมเด็ก (เก็บคะแนน)" to { context.startActivity(Intent(context, GameHubActivity::class.java)) },
         "🎨 ระบายสีสร้างสรรค์" to { startColoringActivity(context) },
         "🔤 เกมจับคู่ตัวอักษร" to { startAbcMatchGame(context) }
     )

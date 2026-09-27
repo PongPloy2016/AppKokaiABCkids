@@ -40,17 +40,49 @@
   - ระบบข้าม Cookie Challenge และตั้งค่า Referer Header อัตโนมัติ (เช่น TeraBox Link Handling)
 - **Child-Friendly Video Detail**: หน้าจอเล่นวิดีโอออกแบบด้วยไอคอนสีสดใส พร้อมหมวดหมู่รีแอคชัน (Reaction Chips & Storybook Cards)
 
-### 🌐 7. ระบบ Safe Browsing สำหรับเด็ก (Kids WebView Feature)
-- **Kids Web Screen**: หน้าเว็บสำหรับเด็กปลอดภัย พัฒนาด้วย **Jetpack Compose** ร่วมกับ **Fragment Architecture**
+### 🎮 8. ศูนย์รวม 10 เกมการศึกษาสำหรับเด็ก (Kids Game Hub)
+- **10 เกมเสริมพัฒนาการครบวงจร** ออกแบบให้เล่นง่าย สนุก และได้ความรู้:
+  1. **เกมจับคู่เงาตัวอักษร (Shadow Matching)**: ลากวางตัวอักษรให้ตรงกับเงา
+  2. **เกมเรียงลำดับ ก-ฮ (Alphabet Order)**: วางตัวอักษรตามลำดับพยัญชนะไทย
+  3. **เกมต่อจิ๊กซอว์ภาพ (Jigsaw Puzzle)**: ต่อภาพสัตว์และตัวอักษรฝึกมิติสัมพันธ์
+  4. **เกมฟังเสียงเลือกภาพ (Sound Quiz)**: ฟังการออกเสียงแล้วเลือกภาพที่ถูกต้อง
+  5. **เกมการ์ดจับคู่ความจำ (Memory Cards)**: พลิกการ์ดจับคู่ฝึกสมาธิและความจำ
+  6. **เกมนับเลขแสนสนุก (Number Counting)**: นับจำนวนสิ่งของและเลือกตัวเลข
+  7. **เกมผสมสระคำศัพท์ (Vowel Builder)**: ฝึกผสมพยัญชนะกับสระพื้นฐาน
+  8. **เกมผจญภัยเขาวงกต (Alphabet Maze)**: ลากเส้นผ่านเขาวงกตเพื่อเก็บตัวอักษร
+  9. **เกมทายเสียงสัตว์และยานพาหนะ (Audio Match)**: ฟังเสียงร้องหรือเครื่องยนต์แล้วทาย
+  10. **เกมระบายสีตามตัวเลข (Color by Number)**: เติมสีตามตัวเลขฝึกสมาธิและความคิดสร้างสรรค์
+- เข้าถึงได้ง่ายผ่าน **Side Navigation Drawer** และแถบทางลัดหน้าแรก
+
+### 👑 9. ระบบสนับสนุนสมาชิก VIP (Google Play Subscriptions v8.0.0)
+- **เชื่อมต่อ Google Play Billing Library 8.0.0**: อัปเดตตามมาตรฐานล่าสุดของ Google Play รองรับ `QueryProductDetailsResult` และความปลอดภัยระดับสูง
+- **3 แพ็กเกจสนับสนุนครอบคลุม**:
+  - **รายเดือน (`sub_monthly`)**: ฿29 / เดือน รับโบนัส 20 ดาว ⭐
+  - **รายปี (`sub_yearly`)**: ฿199 / ปี เฉลี่ยเพียง ฿16/เดือน รับโบนัส 100 ดาว ⭐ (ยอดนิยม)
+  - **ตลอดชีพ (`sub_lifetime`)**: ฿399 ครั้งเดียวจบ สิทธิ VIP ถาวรตลอดชีพ รับโบนัส 300 ดาว ⭐
+- **สิทธิพิเศษสำหรับสมาชิก VIP (100% Ad-Free & Bonuses)**:
+  - 🚫 **ปิดโฆษณาทุกรูปแบบ 100%**: ปิดทั้ง Banner ด้านล่าง และ Interstitial Ads คั่นระหว่างหน้าโดยอัตโนมัติ
+  - ⭐ **โบนัสดาวสะสม x2**: ทำกิจกรรม ทำควิซ และเล่นเกมได้ดาวเร็วขึ้น 2 เท่า
+  - 🎮 **ปลดล็อกเนื้อหาครบทุกหมวดหมู่และ 10 มินิเกม**
+  - 👑 **ป้ายมงกุฎเกียรติยศ VIP**: แสดงบนหน้าโปรไฟล์และผู้นำ
+  - ↺ **กู้คืนการซื้ออัตโนมัติ (Restore Purchases)**: รองรับการกู้คืนสิทธิ์สมาชิกข้ามเครื่องได้ทันที
+  - ⚙️ **Deep Link จัดการการสมัคร**: เปิดหน้าจัดการหรือยกเลิกการสมัครใน Google Play Store ได้ตามข้อกำหนดสากล
+  - 🛠️ **Sandbox / Test Mode**: มีระบบทดสอบสำหรับนักพัฒนาและ QA ใช้งานได้ทันทีแม้ยังไม่ได้ Publish ใน Play Console
+- **เอกสารคู่มืออย่างละเอียด**: ดูเพิ่มเติมได้ใน [`GOOGLE_PLAY_SUBSCRIPTIONS_GUIDE.md`](GOOGLE_PLAY_SUBSCRIPTIONS_GUIDE.md)
+
+### 📊 10. ระบบคะแนน เลเวล และโปรไฟล์เชื่อมโยงแบบ Real-time (Score & Sync Engine)
+- **การเชื่อมโยงข้อมูลแบบ 2 ทาง**: คะแนนดาว (Stars) และระดับเลเวล (Level) ในหน้าหลัก (Main Screen) และหน้าโปรไฟล์ (Profile Screen) อ้างอิงและอัปเดตสอดคล้องกันแบบ Real-time
+- **Supabase Cloud & Local Sync**: เก็บข้อมูลปลอดภัยทั้งใน Local Preferences และซิงค์ขึ้น Supabase Backend อัตโนมัติ
 
 ---
 
 ## 🛠️ สถาปัตยกรรมและเทคโนโลยี (Tech Stack)
 
 ### Modular Architecture
-- `:app` - แอปพลิเคชันหลัก และ UI รวมฟีเจอร์
-- `:videowatchfeatureSupabase` - โมดูลเล่นวิดีโอเด็ก เชื่อมต่อ Supabase API, Custom Auto-Play WebView และ ExoPlayer
-- `:videowatchfeature` - โมดูลจัดการรายการวิดีโอพื้นฐาน
+- `:app` - แอปพลิเคชันหลัก, Navigation Drawer, Game Hub, และ UI รวมฟีเจอร์
+- `:profilefeature` - หน้าโปรไฟล์เด็ก, ระบบ Google Play Billing Manager (`PlayBillingManager`), หน้าต่างเลือกแพ็กเกจสมาชิก (`SubscriptionDialog`), และ `SupabaseDataManager`
+- `:videowatchfeatureSupabase` - โมดูลเล่นวิดีโอเด็ก เชื่อมต่อ Supabase API, Custom Auto-Play WebView, ExoPlayer, และระบบกรองโฆษณา VIP (`InterstitialAdManager`)
+- `:videowatchfeature` - โมดูลจัดการรายการวิดีโอพื้นฐาน (Legacy)
 - `:kidswebviewfeature` - โมดูล WebView ปลอดภัยสำหรับเด็ก พัฒนาด้วย Jetpack Compose
 - `:livefeature` - โมดูลรองรับเนื้อหาถ่ายทอดสด
 - `:custom-ui` - รวม Custom Views เช่น `KidTracingCanvasView`
@@ -58,13 +90,15 @@
 
 ### Core Technologies
 - **Languages**: Kotlin 100%, Java
-- **UI Framework**: Jetpack Compose, XML Layouts, Custom Canvas Engine (`KidTracingCanvasView`)
-- **Backend & Database**: Supabase REST API (PostgREST integration)
+- **UI Framework**: Jetpack Compose (BOM 2024.06.00), XML Layouts, Custom Canvas Engine (`KidTracingCanvasView`), Material 3
+- **Google Play In-App Billing**: Play Billing Library v8.0.0 (API ล่าสุดสำหรับ Subscriptions & In-App Purchases)
+- **Backend & Database**: Supabase REST API (PostgREST integration) + Local SharedPreferences Cache
 - **Video & Media**: ExoPlayer (Media3), Custom Android `WebView` with JS Auto-Trigger & Referer handling
+- **Monetization & Ads**: Google AdMob SDK 23.1.0 พร้อมระบบตรวจสอบปิดโฆษณา 100% สำหรับสมาชิก VIP
 - **Graphics & Vector**: Android `Canvas`, `PathMeasure`, `Paint.getTextPath()`, Vector Drawables
 - **Audio & Speech**: `MediaPlayer`, Android `TextToSpeech` (Thai / English)
 - **Animations**: `YoYo Animations`, Jetpack Compose Transition APIs
-- **Build System**: Gradle 8.12+, Android SDK 35
+- **Build System**: Gradle 8.12+, Android SDK 35, Java 11
 
 ---
 
@@ -100,3 +134,4 @@ git clone https://github.com/PongPloy2016/Practice_Writing_Reading-_Coloring_Tha
    - **รหัสหน่วยโฆษณา AdMob**:
      `ca-app-pub-3279793802315716/8581063137`
 3. **บันทึกการตั้งค่า**: กดบันทึกข้อมูลเพื่อเปิดใช้งานการรับส่งโฆษณาผ่านแพลตฟอร์มสื่อกลาง
+

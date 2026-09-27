@@ -35,6 +35,12 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import android.view.MenuItem
+import android.widget.TextView
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import com.google.android.material.navigation.NavigationView
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.log.AnalyticsLogger
 import com.pongploydev.priyankvex.paintapp.utils.AppUpdateCustomsManager
@@ -42,7 +48,7 @@ import com.pongploydev.priyankvex.paintapp.utils.RtlViewPager
 import com.pongploydev.priyankvex.paintapp.utils.ViewPagerHelper
 import com.google.firebase.analytics.FirebaseAnalytics
 
-class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
+class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationView.OnNavigationItemSelectedListener {
 
     private companion object {
         const val TAG = "MainActivity"
@@ -56,6 +62,10 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     // เปลี่ยนเป็น nullable variables
     private var appUpdateManager: AppUpdateCustomsManager? = null
     private var playCoreAppUpdateManager: com.google.android.play.core.appupdate.AppUpdateManager? = null
+
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
+    private lateinit var drawerToggle: ActionBarDrawerToggle
 
     private lateinit var coordinator: CoordinatorLayout
     private var btnSort: ImageButton? = null
@@ -128,7 +138,14 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
             checkForAppUpdates()
         }
 
-        // 7. ตั้งค่า Back Press Handler
+        // 7. เชื่อมต่อ Google Play Billing เพื่อตรวจสอบสิทธิสมาชิก/กู้คืนการซื้ออัตโนมัติ
+        try {
+            com.pongploydev.profilefeature.billing.PlayBillingManager.getInstance(this).startConnection()
+        } catch (e: Exception) {
+            Log.e(TAG, "PlayBillingManager init error: ${e.message}")
+        }
+
+        // 8. ตั้งค่า Back Press Handler
         handleOnBackPressed()
     }
 
@@ -885,13 +902,42 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     }
 
     private fun setupToolbarAndNav() {
+        drawerLayout = findViewById(R.id.drawer_layout)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         toolbar.setBackgroundColor(ContextCompat.getColor(
             this,
             R.color.color_light_primary
         ))
-        toolbar.setNavigationOnClickListener {  }
+
+        navigationView = findViewById(R.id.nav_view)
+        navigationView.setNavigationItemSelectedListener(this)
+
+        drawerToggle = ActionBarDrawerToggle(
+            this,
+            drawerLayout,
+            toolbar,
+            R.string.open_nav,
+            R.string.close_nav
+        )
+        drawerLayout.addDrawerListener(drawerToggle)
+        drawerToggle.syncState()
+
+        // กำหนดข้อมูลผู้ใช้ใน Nav Header (ถ้ามีการล็อกอิน)
+        try {
+            val headerView = navigationView.getHeaderView(0)
+            val headerTitle = headerView.findViewById<TextView>(R.id.nav_header_title)
+            val headerSubtitle = headerView.findViewById<TextView>(R.id.nav_header_subtitle)
+            val supabaseAuthManager = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this)
+            val user = supabaseAuthManager.getStoredUser()
+            if (user != null) {
+                val displayName = user.userMetadata?.displayName
+                headerTitle.text = if (!displayName.isNullOrBlank()) displayName else "คนเก่ง"
+                headerSubtitle.text = if (!user.email.isNullOrBlank()) user.email else "เรียนรู้สนุก ทุกวัน ⭐"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error configuring nav header user info", e)
+        }
 
         val nav = findViewById<BottomNavigationView>(R.id.navigation)
         nav.apply {
@@ -903,6 +949,142 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                 R.color.color_light_bottom_navigation
             ))
         }
+    }
+
+    fun openDrawer() {
+        if (::drawerLayout.isInitialized) {
+            drawerLayout.openDrawer(GravityCompat.START)
+        }
+    }
+
+    fun closeDrawer() {
+        if (::drawerLayout.isInitialized && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        }
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        val vp = findViewById<ViewPager>(R.id.viewpager)
+        val nav = findViewById<BottomNavigationView>(R.id.navigation)
+        when (item.itemId) {
+            R.id.nav_home -> {
+                vp.currentItem = 0
+                nav.selectedItemId = R.id.navigation_home
+            }
+            R.id.nav_learn_write -> {
+                startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity::class.java).apply {
+                    putExtra(com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity.EXTRA_MODE, "THAI")
+                })
+            }
+            R.id.nav_learn_english -> {
+                startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity::class.java).apply {
+                    putExtra(com.pongploydev.priyankvex.paintapp.activity.thailetters.MenuThaiLettersActivity.EXTRA_MODE, "ENGLISH")
+                })
+            }
+            R.id.nav_learn_read -> {
+                startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.learning.LeaningActvity::class.java))
+            }
+            R.id.nav_coloring -> {
+                startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.learning.showKids.ColoringGameActivity::class.java))
+            }
+            R.id.nav_game_hub -> {
+                vp.currentItem = 4
+                nav.selectedItemId = R.id.navigation_game
+            }
+            R.id.nav_abc_match -> {
+                startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.AbcMatchGameActivity::class.java))
+            }
+            R.id.nav_live -> {
+                startActivity(Intent(this, com.pongploydev.livefeature.LiveListActivity::class.java))
+            }
+            R.id.nav_video -> {
+                vp.currentItem = 2
+                nav.selectedItemId = R.id.navigation_video
+            }
+            R.id.nav_quiz -> {
+                vp.currentItem = 3
+                nav.selectedItemId = R.id.navigation_quiz
+            }
+            R.id.nav_leaderboard -> {
+                startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity::class.java))
+            }
+            R.id.nav_web -> {
+                vp.currentItem = 1
+                nav.selectedItemId = R.id.navigation_web
+            }
+            R.id.nav_profile -> {
+                vp.currentItem = 5
+                nav.selectedItemId = R.id.navigation_profile
+            }
+            R.id.nav_subscription -> {
+                showSubscriptionDialog()
+            }
+            R.id.nav_settings -> {
+                showSettingsDialog()
+            }
+            R.id.nav_share -> {
+                shareApp()
+            }
+            R.id.nav_about -> {
+                showAboutDialog()
+            }
+        }
+        drawerLayout.closeDrawer(GravityCompat.START)
+        return true
+    }
+
+    fun showSubscriptionDialog() {
+        val dialog = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
+        val composeView = androidx.compose.ui.platform.ComposeView(this).apply {
+            setContent {
+                com.pongploydev.profilefeature.compose.SubscriptionDialog(
+                    onDismiss = { dialog.dismiss() }
+                )
+            }
+        }
+        dialog.setContentView(composeView)
+        dialog.show()
+    }
+
+    private fun shareApp() {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name))
+            putExtra(Intent.EXTRA_TEXT, "ชวนมาฝึกเขียน อ่าน ก ไก่ และระบายสีสนุกๆ ด้วยกันนะ ดาวน์โหลดได้ที่: https://play.google.com/store/apps/details?id=$packageName")
+        }
+        startActivity(Intent.createChooser(intent, "แชร์แอปพลิเคชัน"))
+    }
+
+    private fun showAboutDialog() {
+        val versionName = try {
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (e: Exception) {
+            "1.0"
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.app_name)
+            .setMessage("แอปพลิเคชันฝึกเขียน อ่าน ก ไก่ & ระบายสี สำหรับเด็ก\nเวอร์ชัน: $versionName\nพัฒนาขึ้นเพื่อเป็นสื่อการเรียนรู้สำหรับเด็กปฐมวัย")
+            .setIcon(R.drawable.app)
+            .setPositiveButton("ตกลง", null)
+            .show()
+    }
+
+    private fun showSettingsDialog() {
+        val musicManager = com.pongploydev.priyankvex.paintapp.utils.MusicManager.getInstance()
+        val isMusicOn = musicManager.isMusicEnabled(this)
+        val options = arrayOf(
+            if (isMusicOn) "เสียงเพลงพื้นหลัง (เปิดอยู่ - แตะเพื่อปิด)" else "เสียงเพลงพื้นหลัง (ปิดอยู่ - แตะเพื่อเปิด)"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("การตั้งค่า")
+            .setItems(options) { _, which ->
+                if (which == 0) {
+                    musicManager.setMusicEnabled(this, !isMusicOn)
+                    Toast.makeText(this, if (!isMusicOn) "เปิดเพลงแล้ว 🎵" else "ปิดเพลงแล้ว 🔇", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setPositiveButton("ปิด", null)
+            .show()
     }
 
     private fun setupViewPager() {
@@ -938,7 +1120,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                     1 -> Pair("หน้าท่องเว็บสนุก (Web Fun)", "KidsWebViewFragment")
                     2 -> Pair("หน้าวิดีโอ (Video)", "VideoListFragment")
                     3 -> Pair("หน้าแบบทดสอบ (Quiz)", "QuizFragment")
-                    4 -> Pair("หน้าถ่ายทอดสด (Live)", "LiveStreamFragment")
+                    4 -> Pair("หน้าเกมส์ (Game Hub)", "GameHubComposeFragment")
                     5 -> Pair("หน้าโปรไฟล์ (Profile)", "ProfileComposeFragment")
                     else -> Pair("หน้าหลัก_$position", "MainActivity")
                 }
@@ -955,7 +1137,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
                     1 -> Pair("หน้าท่องเว็บสนุก (Web Fun)", "KidsWebViewFragment")
                     2 -> Pair("หน้าวิดีโอ (Video)", "VideoListFragment")
                     3 -> Pair("หน้าแบบทดสอบ (Quiz)", "QuizFragment")
-                    4 -> Pair("หน้าถ่ายทอดสด (Live)", "LiveStreamFragment")
+                    4 -> Pair("หน้าเกมส์ (Game Hub)", "GameHubComposeFragment")
                     5 -> Pair("หน้าโปรไฟล์ (Profile)", "ProfileComposeFragment")
                     else -> Pair("หน้าหลัก_$position", "MainActivity")
                 }
@@ -969,7 +1151,9 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver {
     private fun handleOnBackPressed() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (supportFragmentManager.backStackEntryCount > 0) {
+                if (::drawerLayout.isInitialized && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                } else if (supportFragmentManager.backStackEntryCount > 0) {
                     supportFragmentManager.popBackStack()
                 } else {
                     // Original back behavior or finish

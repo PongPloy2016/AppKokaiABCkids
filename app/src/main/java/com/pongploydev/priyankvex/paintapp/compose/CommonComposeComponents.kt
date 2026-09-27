@@ -37,17 +37,17 @@ private data class StarParticle(
 fun KidBackground(modifier: Modifier = Modifier) {
     val bubbles = remember {
         val cols = listOf(
-            Color(0x55FFD740), Color(0x5540C4FF), Color(0x55FF6D6D),
-            Color(0x5569F0AE), Color(0x55FF80AB), Color(0x55B388FF),
-            Color(0x55FFB74D), Color(0x554FC3F7), Color(0x55A5D6A7)
+            Color(0x16FFD740), Color(0x1640C4FF), Color(0x16FF6D6D),
+            Color(0x1669F0AE), Color(0x16FF80AB), Color(0x16B388FF),
+            Color(0x16FFB74D), Color(0x164FC3F7), Color(0x16A5D6A7)
         )
-        List(18) { i ->
+        List(10) { i ->
             Bubble(
                 xFrac = ((i * 37 + 11) % 97) / 100f,
                 yFrac = ((i * 53 + 7) % 100) / 100f,
-                radius = 14f + (i % 5) * 8f,
+                radius = 7f + (i % 4) * 3f,
                 color = cols[i % cols.size],
-                speedFrac = 0.3f + (i % 4) * 0.18f,
+                speedFrac = 0.22f + (i % 3) * 0.12f,
                 phaseOffset = (i * 41 % 100) / 100f
             )
         }
@@ -55,14 +55,14 @@ fun KidBackground(modifier: Modifier = Modifier) {
 
     val stars = remember {
         val starCols = listOf(
-            Color(0xFFFFF176), Color(0xFFFFD54F), Color(0xFFFFCC02),
-            Color(0xFFFFAB40), Color(0xFFFFFFFF)
+            Color(0xFFFFD54F), Color(0xFFFFCA28), Color(0xFFFFB74D),
+            Color(0xFF80D8FF), Color(0xFFFF80AB)
         )
-        List(12) { i ->
+        List(8) { i ->
             StarParticle(
                 xFrac = ((i * 61 + 19) % 95) / 100f,
                 yFrac = ((i * 43 + 13) % 90) / 100f,
-                size = 5f + (i % 4) * 4f,
+                size = 3.5f + (i % 3) * 1.5f,
                 color = starCols[i % starCols.size],
                 blinkPhase = (i * 29 % 100) / 100f
             )
@@ -77,12 +77,12 @@ fun KidBackground(modifier: Modifier = Modifier) {
     )
     val blinkTick by inf.animateFloat(
         initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing)),
+        animationSpec = infiniteRepeatable(tween(2200, easing = LinearEasing)),
         label = "blinkTick"
     )
     val swayTick by inf.animateFloat(
         initialValue = 0f, targetValue = (2f * PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing)),
+        animationSpec = infiniteRepeatable(tween(4500, easing = LinearEasing)),
         label = "swayTick"
     )
 
@@ -93,28 +93,28 @@ fun KidBackground(modifier: Modifier = Modifier) {
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFFFFF8E1),
-                    Color(0xFFE1F5FE),
-                    Color(0xFFFCE4EC)
+                    Color(0xFFF8FAFD),
+                    Color(0xFFF1F5FF),
+                    Color(0xFFFFF8F2)
                 )
             )
         )
 
         val cloudPath = Path().apply {
-            moveTo(0f, h * 0.82f)
-            cubicTo(w * 0.15f, h * 0.76f, w * 0.3f, h * 0.86f, w * 0.5f, h * 0.8f)
-            cubicTo(w * 0.7f, h * 0.74f, w * 0.85f, h * 0.84f, w, h * 0.79f)
+            moveTo(0f, h * 0.86f)
+            cubicTo(w * 0.15f, h * 0.82f, w * 0.3f, h * 0.89f, w * 0.5f, h * 0.85f)
+            cubicTo(w * 0.7f, h * 0.81f, w * 0.85f, h * 0.88f, w, h * 0.84f)
             lineTo(w, h)
             lineTo(0f, h)
             close()
         }
-        drawPath(cloudPath, color = Color(0x22FFFFFF))
+        drawPath(cloudPath, color = Color.White.copy(alpha = 0.55f))
 
         for (bubble in bubbles) {
             val progress = (floatTick + bubble.phaseOffset) % 1f
             val rawY = bubble.yFrac - progress * bubble.speedFrac
             val yNorm = ((rawY % 1f) + 1f) % 1f
-            val swayX = sin(swayTick + bubble.phaseOffset * 6.28f) * 0.025f
+            val swayX = sin(swayTick + bubble.phaseOffset * 6.28f) * 0.02f
             val cx = (bubble.xFrac + swayX).coerceIn(0.04f, 0.96f) * w
             val cy = yNorm * h
             val fadeAlpha = if (yNorm < 0.08f) (yNorm / 0.08f) else 1f
@@ -125,33 +125,33 @@ fun KidBackground(modifier: Modifier = Modifier) {
                 center = Offset(cx, cy)
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.25f * fadeAlpha),
+                color = Color.White.copy(alpha = 0.18f * fadeAlpha),
                 radius = bubble.radius * density,
                 center = Offset(cx, cy),
-                style = Stroke(width = 1.5f * density)
+                style = Stroke(width = 1f * density)
             )
         }
 
         for (star in stars) {
             val blink = sin((blinkTick + star.blinkPhase) * 2f * PI.toFloat())
-            val alpha = (blink * 0.4f + 0.6f).coerceIn(0.1f, 1f)
+            val alpha = (blink * 0.35f + 0.45f).coerceIn(0.1f, 0.8f)
             val cx = star.xFrac * w
             val cy = star.yFrac * h * 0.75f
             val r = star.size * density
 
-            for (arm in 0 until 4) {
-                val angle = arm * (PI / 2).toFloat()
-                drawLine(
-                    color = star.color.copy(alpha = alpha),
-                    start = Offset(cx + cos(angle) * r * 0.25f, cy + sin(angle) * r * 0.25f),
-                    end = Offset(cx + cos(angle) * r, cy + sin(angle) * r),
-                    strokeWidth = 2f * density,
-                    cap = StrokeCap.Round
-                )
+            // Delicate sparkle star (4-point curved diamond)
+            val starPath = Path().apply {
+                moveTo(cx, cy - r)
+                quadraticBezierTo(cx, cy, cx + r, cy)
+                quadraticBezierTo(cx, cy, cx, cy + r)
+                quadraticBezierTo(cx, cy, cx - r, cy)
+                quadraticBezierTo(cx, cy, cx, cy - r)
+                close()
             }
+            drawPath(starPath, color = star.color.copy(alpha = alpha * 0.45f))
             drawCircle(
-                color = star.color.copy(alpha = alpha),
-                radius = r * 0.28f,
+                color = Color.White.copy(alpha = alpha * 0.8f),
+                radius = r * 0.22f,
                 center = Offset(cx, cy)
             )
         }

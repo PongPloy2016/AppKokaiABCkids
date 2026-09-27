@@ -781,9 +781,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     Log.e("QuizSession", "Supabase saveQuizResult FAILED: ${err.message}", err)
                 }
 
-                dataManager.fetchUserProfile(userId).onSuccess { prof ->
-                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, finalScore)
-                }
+                dataManager.addStars(userId, finalScore)
                 if (finalScore >= 8) {
                     dataManager.unlockAchievement(
                         userId = userId,

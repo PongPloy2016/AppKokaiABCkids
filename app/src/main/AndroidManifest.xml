@@ -6,8 +6,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
-
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="com.android.vending.BILLING" />
 
     <queries>
         <intent>
@@ -54,7 +54,8 @@
         <activity
             android:name=".activity.learning.showKids.ColoringGameActivity"
             android:exported="false"
-            android:screenOrientation="landscape"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@style/Theme.Material3.Light.NoActionBar"
             tools:ignore="DiscouragedApi" />
 
@@ -77,6 +78,12 @@
             android:name=".activity.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+        <activity
+            android:name=".activity.GameHubActivity"
+            android:exported="false"
+            android:label="ศูนย์รวมเกมเด็ก"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Material3.Light.NoActionBar" />
         <activity

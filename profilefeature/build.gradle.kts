@@ -76,4 +76,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("io.coil-kt:coil-compose:2.6.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // Google Play Billing Library
+    api("com.android.billingclient:billing:8.0.0")
 }

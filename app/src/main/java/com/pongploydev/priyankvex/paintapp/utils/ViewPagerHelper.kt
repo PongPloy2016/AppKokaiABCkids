@@ -16,7 +16,7 @@ import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
 import com.pongploydev.profilefeature.ProfileComposeFragment
 import com.pongploydev.videowatchfeaturesupabase.VideoListFragment
-import com.pongploydev.livefeature.LiveListFragment
+import com.pongploydev.priyankvex.paintapp.fragment.GameHubComposeFragment
 
 
 class ViewPagerHelper(var activity: AppCompatActivity) {
@@ -49,7 +49,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_game -> {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
@@ -96,7 +96,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             4 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_live)
+                                        activity.resources.getString(R.string.title_nav_game)
                             }
                             5 -> {
                                 titleToolbar.text =
@@ -136,7 +136,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_game -> {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
@@ -183,7 +183,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             4 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_live)
+                                        activity.resources.getString(R.string.title_nav_game)
                             }
                             5 -> {
                                 titleToolbar.text =
@@ -223,7 +223,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_game -> {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
@@ -270,7 +270,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             4 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_live)
+                                        activity.resources.getString(R.string.title_nav_game)
                             }
                             5 -> {
                                 titleToolbar.text =
@@ -310,7 +310,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 3
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_live -> {
+                R.id.navigation_game -> {
                     viewPager.currentItem = 4
                     return@setOnItemSelectedListener true
                 }
@@ -357,7 +357,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             4 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_live)
+                                        activity.resources.getString(R.string.title_nav_game)
                             }
                             5 -> {
                                 titleToolbar.text =
@@ -380,7 +380,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 1 -> return KidsWebComposeFragment()
                 2 -> return VideoListFragment()
                 3 -> return QuizComposeFragment()
-                4 -> return LiveListFragment()
+                4 -> return GameHubComposeFragment()
                 5 -> return ProfileComposeFragment()
             }
             return ComposeFragment()
@@ -400,7 +400,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                 1 -> return KidsWebComposeFragment()
                 2 -> return VideoListFragment()
                 3 -> return QuizComposeFragment()
-                4 -> return LiveListFragment()
+                4 -> return GameHubComposeFragment()
                 5 -> return ProfileComposeFragment()
             }
             return ComposeFragment()

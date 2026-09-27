@@ -132,6 +132,9 @@ object KidTheme {
     val DualHeaderGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF6C5CE7), Color(0xFF3ECF8E))
     )
+    val GoldGradient = Brush.horizontalGradient(
+        listOf(Color(0xFFFFD166), Color(0xFFFF9F43))
+    )
 }
 
 // Helper to navigate to tabs in MainActivity
@@ -320,12 +323,16 @@ fun AuthLoginViewDual(
                     // 2. Upsert profile & device to Supabase
                     if (spUser != null) {
                         val dataMgr = SupabaseDataManager.getInstance(context)
+                        val currentLocalStars = dataMgr.getUserTotalStars()
+                        val currentLocalLevel = dataMgr.getUserCurrentLevel()
                         dataMgr.upsertUserProfile(
                             UserProfile(
                                 id = spUser.id,
                                 email = googleEmail,
                                 displayName = googleDisplayName,
-                                avatarUrl = photoUrl
+                                avatarUrl = photoUrl,
+                                totalStars = currentLocalStars,
+                                currentLevel = currentLocalLevel
                             )
                         )
                         val androidId = try {
@@ -777,11 +784,15 @@ fun AuthLoginViewDual(
                                         val dataMgr = SupabaseDataManager.getInstance(context)
 
                                         // Save profile to Supabase
+                                        val currentLocalStars = dataMgr.getUserTotalStars()
+                                        val currentLocalLevel = dataMgr.getUserCurrentLevel()
                                         dataMgr.upsertUserProfile(
                                             UserProfile(
                                                 id = spUser.id,
                                                 email = spUser.email ?: email,
-                                                displayName = finalName
+                                                displayName = finalName,
+                                                totalStars = currentLocalStars,
+                                                currentLevel = currentLocalLevel
                                             )
                                         )
 
@@ -1150,6 +1161,7 @@ fun ProfileDetailsViewDual(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showQuizHistoryDetail by remember { mutableStateOf(false) }
+    var showSubscriptionDialog by remember { mutableStateOf(false) }
 
     // Load Live Data from Supabase
     fun loadSupabaseLiveData() {
@@ -1476,6 +1488,84 @@ fun ProfileDetailsViewDual(
                         }
                     }
 
+                    // VIP MEMBER / SUBSCRIPTION BANNER CARD
+                    val isVip = dataManager.isVipSubscriber()
+                    val vipTier = dataManager.getSubscriptionTier()
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .clickable { showSubscriptionDialog = true },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isVip) Color(0xFFFFF8E1) else Color(0xFFF3E5F5)
+                        ),
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (isVip) Color(0xFFFFB300) else Color(0xFFAB47BC)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(
+                                            if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = if (isVip) "👑" else "💎", fontSize = 22.sp)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = if (isVip) "สมาชิก VIP: $vipTier" else "สนับสนุน สมาชิก (Subscriptions)",
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 13.5.sp,
+                                            color = if (isVip) Color(0xFFE65100) else Color(0xFF4A148C)
+                                        )
+                                        if (isVip) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(text = "👑", fontSize = 12.sp)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (isVip) "สิทธิพิเศษ VIP ทำงานอยู่ • ไร้โฆษณา • ดาว x2" else "ปลดล็อก VIP ไร้โฆษณา • ดาวโบนัส x2 • ครบทุกเกม",
+                                        fontSize = 11.sp,
+                                        color = if (isVip) Color(0xFF795548) else Color(0xFF6A1B9A)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD)
+                            ) {
+                                Text(
+                                    text = if (isVip) "ดูสิทธิ VIP" else "สนับสนุน 💎",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+
                     // Header with refresh button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1504,10 +1594,27 @@ fun ProfileDetailsViewDual(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    val totalStars = profileData?.totalStars ?: 0
-                    val currentLevel = profileData?.currentLevel ?: 1
+                    val localStars = dataManager.getUserTotalStars()
+                    val localLevel = dataManager.getUserCurrentLevel()
+                    val cloudStars = profileData?.totalStars ?: 0
+                    val cloudLevel = profileData?.currentLevel ?: 1
+
+                    val totalStars = maxOf(localStars, cloudStars)
+                    val currentLevel = maxOf(localLevel, cloudLevel, 1 + (totalStars / 50))
                     val totalQuizzes = quizResults.size
                     val totalAchievements = achievements.size
+
+                    val starsInLevel = totalStars % 50
+                    val starsNeeded = 50 - starsInLevel
+                    val levelProgress = (starsInLevel.toFloat() / 50f).coerceIn(0f, 1f)
+                    val levelTitle = when (currentLevel) {
+                        1 -> "นักอ่านตัวน้อย"
+                        2 -> "นักสะสมดาว"
+                        3 -> "ยอดนักอ่าน"
+                        4 -> "ผู้พิชิตคำศัพท์"
+                        5 -> "ยอดอัจฉริยะตัวน้อย"
+                        else -> "ปรมาจารย์ตัวน้อย"
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1524,6 +1631,58 @@ fun ProfileDetailsViewDual(
                         }
                         ProfileStatCard("เหรียญตรา", "$totalAchievements 🎖️", Color(0xFFF3E5F5), Color(0xFFBA68C8), Color(0xFF7B1FA2), Modifier.weight(1f)) {
                             Toast.makeText(context, "เหรียญตราทั้งหมดที่ปลดล็อกแล้ว 🏆", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // LEVEL PROGRESS BAR (Direct reference matching Home screen)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "🎖️", fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "ระดับ $currentLevel • $levelTitle",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = KidTheme.TextDark
+                                    )
+                                }
+                                Text(
+                                    text = "อีก $starsNeeded ดาว จะขึ้นระดับ ${currentLevel + 1} 🚀",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = KidTheme.Primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color(0xFFF1F5F9))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(levelProgress)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(KidTheme.GoldGradient)
+                                    )
+                            }
                         }
                     }
 
@@ -1789,6 +1948,15 @@ fun ProfileDetailsViewDual(
             },
             dismissButton = {
                 TextButton(onClick = { showEditNameDialog = false }) { Text("ยกเลิก") }
+            }
+        )
+    }
+
+    if (showSubscriptionDialog) {
+        SubscriptionDialog(
+            onDismiss = { showSubscriptionDialog = false },
+            onSubscribed = {
+                showSubscriptionDialog = false
             }
         )
     }

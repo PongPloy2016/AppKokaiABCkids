@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_nav_home"
+            android:title="@string/title_nav_home" />
+        <item
+            android:id="@+id/nav_learn_write"
+            android:icon="@drawable/ic_pencil_write_24"
+            android:title="ฝึกเขียน ก-ฮ (ภาษาไทย)" />
+        <item
+            android:id="@+id/nav_learn_english"
+            android:icon="@drawable/ic_abc_letter_24"
+            android:title="ฝึกเขียนภาษาอังกฤษ ABC" />
+        <item
+            android:id="@+id/nav_learn_read"
+            android:icon="@drawable/ic_auto_read"
+            android:title="@string/nav_learn_read" />
+        <item
+            android:id="@+id/nav_coloring"
+            android:icon="@drawable/ic_brush"
+            android:title="@string/nav_coloring" />
+        <item
+            android:id="@+id/nav_game_hub"
+            android:icon="@drawable/ic_gamepad_24"
+            android:title="🎮 ศูนย์รวมเกมเด็ก (เก็บคะแนน)" />
+        <item
+            android:id="@+id/nav_abc_match"
+            android:icon="@drawable/ic_cards_match_24"
+            android:title="🃏 เกมจับคู่การ์ด ABC" />
+        <item
+            android:id="@+id/nav_live"
+            android:icon="@drawable/ic_live"
+            android:title="📡 ถ่ายทอดสด DLTV (Live)" />
+        <item
+            android:id="@+id/nav_video"
+            android:icon="@drawable/ic_nav_video"
+            android:title="@string/title_nav_video" />
+        <item
+            android:id="@+id/nav_quiz"
+            android:icon="@drawable/ic_quiz"
+            android:title="@string/title_nav_quiz" />
+        <item
+            android:id="@+id/nav_leaderboard"
+            android:icon="@drawable/ic_trophy_24"
+            android:title="🏆 อันดับคะแนนผู้นำ" />
+        <item
+            android:id="@+id/nav_web"
+            android:icon="@drawable/ic_nav_web"
+            android:title="@string/title_nav_web" />
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/ic_nav_profile"
+            android:title="@string/title_nav_profile" />
+        <item
+            android:id="@+id/nav_subscription"
+            android:icon="@drawable/ic_vip_crown_24"
+            android:title="💎 สนับสนุน สมาชิก (Subscriptions)" />
+    </group>
+
+    <item android:title="เมนูเพิ่มเติม">
+        <menu>
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@drawable/ic_settings_24"
+                android:title="@string/title_nav_settings" />
+            <item
+                android:id="@+id/nav_share"
+                android:icon="@drawable/ic_share"
+                android:title="@string/nav_share" />
+            <item
+                android:id="@+id/nav_about"
+                android:icon="@drawable/ic_info_24"
+                android:title="@string/nav_about" />
+        </menu>
+    </item>
+
+</menu>

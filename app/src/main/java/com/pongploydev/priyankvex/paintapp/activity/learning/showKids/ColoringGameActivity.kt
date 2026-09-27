@@ -1,1152 +1,1522 @@
 package com.pongploydev.priyankvex.paintapp.activity.learning.showKids
 
-// <--- [เปลี่ยนแปลง] 1. เพิ่ม import
-
-import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.ContentValues
-import android.content.DialogInterface
+import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.BitmapFactory
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.CountDownTimer
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
-import android.util.Log
-import android.view.View
-import com.daimajia.androidanimations.library.YoYo
-import com.daimajia.androidanimations.library.Techniques
-import android.widget.Button
-import android.widget.GridLayout
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.SeekBar
-import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.ArrayRes
-import androidx.annotation.ColorInt
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.button.MaterialButton
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.google.firebase.auth.FirebaseAuth
 import com.pongploydev.priyankvex.paintapp.R
-import com.pongploydev.priyankvex.paintapp.activity.MainActivity
-import com.pongploydev.priyankvex.paintapp.drawingView.DrawingView
-import eltos.simpledialogfragment.SimpleDialog
-import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener.BUTTON_POSITIVE
-import eltos.simpledialogfragment.color.SimpleColorDialog
-import eltos.simpledialogfragment.color.SimpleColorWheelDialog
-import java.io.OutputStream
+import com.pongploydev.profilefeature.auth.SupabaseAuthManager
+import com.pongploydev.profilefeature.data.SupabaseDataManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
+class ColoringGameActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
-// <--- [เปลี่ยนแปลง] 2. เพิ่มการ implement OnDialogResultListener
-class ColoringGameActivity : AppCompatActivity(), SimpleDialog.OnDialogResultListener, TextToSpeech.OnInitListener {
-
-    // UI Components
-    private lateinit var mDrawingView: DrawingView
-    private lateinit var textScore: TextView
-    private lateinit var textTime: TextView
-    private lateinit var textBrushSize: TextView
-    private lateinit var seekBarBrush: SeekBar
-    private lateinit var guideImage: ImageView
-    private lateinit var textTips: TextView
-    private lateinit var layoutTips: View
-    private lateinit var imageMascot: ImageView
-
-    // Control Buttons
-    private lateinit var buttonBack: ImageButton
-    private lateinit var buttonHelp: ImageButton
-    private lateinit var buttonSave: MaterialButton
-    private lateinit var buttonNew: MaterialButton
-    private lateinit var buttonBrush: MaterialButton
-    private lateinit var buttonErase: MaterialButton
-    private lateinit var buttonColorPicker: MaterialButton // ปุ่มใหม่สำหรับ Color Picker
-
-    // Color Buttons
-    private lateinit var colorRed: ImageButton
-    private lateinit var colorOrange: ImageButton
-    private lateinit var colorYellow: ImageButton
-    private lateinit var colorGreen: ImageButton
-    private lateinit var colorBlue: ImageButton
-    private lateinit var colorPurple: ImageButton
-    private lateinit var colorPink: ImageButton
-    private lateinit var colorBrown: ImageButton
-    private lateinit var colorBlack: ImageButton
-    private lateinit var colorWhite: ImageButton
-
-    private var smallBrush = 0f
-    var mediumBrush: Float = 0f
-    var largeBrush: Float = 0f
-
-
-    // Game State
-    private var score = 0
-
-    private  var counter = 0
-
-    private var timeElapsed = 0L
-    private var isEraseMode = false
-    private var currentBrushSize = 25f
-    private var isLandscape = false
-    private lateinit var timer: CountDownTimer
-    private var currentColor = "#FF6B6B" // สีปัจจุบัน
     private var tts: TextToSpeech? = null
-
-    @ColorInt
-    private  val color = -0x63d850
-
-
-    // Color Management
-    private val colorButtons = mutableListOf<ImageButton>()
-    private var currentColorButton: ImageButton? = null
-    private val colorMap = mapOf(
-        "#FF6B6B" to "🔴 สีแดง",
-        "#FF9E6D" to "🟠 สีส้ม",
-        "#FFD166" to "🟡 สีเหลือง",
-        "#06D6A0" to "🟢 สีเขียว",
-        "#4ECDC4" to "🔵 สีฟ้า",
-        "#7209B7" to "🟣 สีม่วง",
-        "#F15BB5" to "💖 สีชมพู",
-        "#964B00" to "🟤 สีน้ำตาล",
-        "#000000" to "⚫ สีดำ",
-        "#FFFFFF" to "⚪ สีขาว"
-    )
-
-
-
-    // <--- [เปลี่ยนแปลง] 3. เพิ่ม Tag สำหรับ Dialog
-    private val DIALOG_NEW_DRAWING = "newDrawingDialogTag"
-    private val DIALOG_EXIT = "exitDialogTag"
-    // (เพิ่ม Tag อื่นๆ ที่นี่ได้ถ้าต้องการแปลง Dialog อื่น)
+    private var isTtsReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_coloring)
-
-        // ตรวจสอบ orientation
-        isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-        initializeViews()
-        setupDrawingView()
-        setupColorButtons()
-        setupToolButtons()
-        setupSeekBar()
-        setupColorPicker()
         tts = TextToSpeech(this, this)
-        startTimer()
-        showWelcomeMessage()
-        setupBrushSizes()
+
+        setContent {
+            KidsColoringStudioScreen(
+                onBack = { finish() },
+                onSpeak = { text -> speakText(text) }
+            )
+        }
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale("th")
-        }
-    }
-
-    private fun speak(text: String) {
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
-    }
-
-
-
-    private fun initializeViews() {
-        // Initialize main components
-        mDrawingView = findViewById(R.id.drawing)
-        textScore = findViewById(R.id.text_score)
-        textTime = findViewById(R.id.text_time)
-        textBrushSize = findViewById(R.id.text_brush_size)
-        seekBarBrush = findViewById(R.id.seekbar_brush)
-        guideImage = findViewById(R.id.guide_image)
-        textTips = findViewById(R.id.text_tips)
-        layoutTips = findViewById(R.id.layout_tips)
-        imageMascot = findViewById(R.id.image_mascot)
-
-        // Initialize control buttons
-        buttonBack = findViewById(R.id.button_back)
-        buttonHelp = findViewById(R.id.button_help)
-        buttonSave = findViewById(R.id.button_save)
-        buttonNew = findViewById(R.id.button_new)
-        buttonBrush = findViewById(R.id.button_brush)
-        buttonErase = findViewById(R.id.button_erase)
-        buttonColorPicker = findViewById(R.id.button_color_picker) // ปุ่ม Color Picker ใหม่
-
-        // Initialize color buttons
-        initializeColorButtons()
-
-        // ตั้งค่าเริ่มต้นตาม orientation
-        if (isLandscape) {
-            setupLandscapeLayout()
-        } else {
-            setupPortraitLayout()
-        }
-    }
-
-    private fun initializeColorButtons() {
-        colorRed = findViewById(R.id.color_red)
-        colorOrange = findViewById(R.id.color_orange)
-        colorYellow = findViewById(R.id.color_yellow)
-        colorGreen = findViewById(R.id.color_green)
-        colorBlue = findViewById(R.id.color_blue)
-        colorPurple = findViewById(R.id.color_purple)
-        colorPink = findViewById(R.id.color_pink)
-        colorBrown = findViewById(R.id.color_brown)
-        colorBlack = findViewById(R.id.color_black)
-        colorWhite = findViewById(R.id.color_white)
-
-        // Add to list for management
-        colorButtons.addAll(listOf(
-            colorRed, colorOrange, colorYellow, colorGreen,
-            colorBlue, colorPurple, colorPink, colorBrown,
-            colorBlack, colorWhite
-        ))
-    }
-
-    private fun setupLandscapeLayout() {
-        currentBrushSize = 20f
-        seekBarBrush.progress = 40
-        updateBrushSizeDisplay()
-        showTemporaryTips("💡 หมุนหน้าจอเป็นแนวตั้งสำหรับพื้นที่วาดภาพที่ใหญ่ขึ้น!")
-    }
-
-    private fun setupPortraitLayout() {
-        currentBrushSize = 25f
-        seekBarBrush.progress = 50
-        updateBrushSizeDisplay()
-    }
-
-    private fun setupDrawingView() {
-        mDrawingView.setBrushSize(currentBrushSize)
-        mDrawingView.setColor(currentColor)
-        mDrawingView.setErase(false)
-
-        // ตั้งค่า listener สำหรับการตรวจสอบการวาด
-        mDrawingView.setDrawingCheckListener(object : DrawingView.DrawingCheckListener {
-            override fun onDrawingChecked(isCorrect: Boolean, accuracy: Float) {
-                handleDrawingResult(isCorrect, accuracy)
-            }
-
-            override fun onDrawingProgress(progress: Float) {
-                // สามารถแสดงความคืบหน้าได้ถ้าต้องการ
-            }
-
-            override fun onStrokeCompleted(strokeIndex: Int, isCorrect: Boolean) {
-                TODO("Not yet implemented")
-            }
-
-            override fun onLetterCompleted(isPerfect: Boolean) {
-                TODO("Not yet implemented")
-            }
-        })
-    }
-
-    private fun setupColorButtons() {
-        // Set up click listeners for all color buttons
-        colorRed.setOnClickListener { selectColor(colorRed, "#FF6B6B") }
-        colorOrange.setOnClickListener { selectColor(colorOrange, "#FF9E6D") }
-        colorYellow.setOnClickListener { selectColor(colorYellow, "#FFD166") }
-        colorGreen.setOnClickListener { selectColor(colorGreen, "#06D6A0") }
-        colorBlue.setOnClickListener { selectColor(colorBlue, "#4ECDC4") }
-        colorPurple.setOnClickListener { selectColor(colorPurple, "#7209B7") }
-        colorPink.setOnClickListener { selectColor(colorPink, "#F15BB5") }
-        colorBrown.setOnClickListener { selectColor(colorBrown, "#964B00") }
-        colorBlack.setOnClickListener { selectColor(colorBlack, "#000000") }
-        colorWhite.setOnClickListener { selectColor(colorWhite, "#FFFFFF") }
-
-        // Select initial color (red)
-        selectInitialColor()
-    }
-
-    private fun setupColorPicker() {
-        // ตั้งค่า Color Picker Dialog
-        buttonColorPicker.setOnClickListener {
-            showColorPickerDialog()
-        }
-    }
-
-    private fun showColorPickerDialog() {
-        // ใช้ AlertDialog ธรรมดาแต่มีสีสันสำหรับเด็ก
-        showCustomColorPickerDialog()
-    }
-
-    @SuppressLint("MissingInflatedId")
-    private fun showCustomColorPickerDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_color_picker, null)
-        val colorGrid = dialogView.findViewById<GridLayout>(R.id.color_grid_custom)
-        val btRandomColor = dialogView.findViewById<Button>(R.id.button_random_color)
-
-
-        btRandomColor.setOnClickListener {
-//            SimpleColorDialog.build()
-//                .title(R.string.pick_a_color)
-//                .choiceMode(CustomListDialog.SINGLE_CHOICE)
-//                .colors(this, SimpleColorDialog.COLORFUL_COLOR_PALLET)
-//                .choiceIdPreset(longArrayOf(-0x874))
-//                .choiceMin(2).choiceMax(5)
-//                .allowCustom(true)
-//                .showOutline(SimpleColorDialog.AUTO)
-//                .show(this, "DIALOG_PICK_COLOR")
-            SimpleColorDialog.build()
-                .title(R.string.pick_a_color)
-                .allowCustom(true)
-                .colorPreset(0xff009688.toInt())
-
-                .show(this, "DIALOG_PICK_COLOR")
-                ;
-
-            (it as? android.app.Dialog)?.dismiss()
-
-
-        }
-
-
-
-
-        // สีเพิ่มเติมสำหรับเด็ก
-        val extendedColors = listOf(
-            "#FF6B6B" to "🔴", "#FF9E6D" to "🟠", "#FFD166" to "🟡",
-            "#06D6A0" to "🟢", "#4ECDC4" to "🔵", "#7209B7" to "🟣",
-            "#F15BB5" to "💖", "#964B00" to "🟤", "#000000" to "⚫", "#FFFFFF" to "⚪",
-            "#FF5252" to "❤️", "#FF4081" to "💕", "#E040FB" to "💜",
-            "#7C4DFF" to "🔮", "#536DFE" to "🔵", "#448AFF" to "💙",
-            "#40C4FF" to "🌐", "#18FFFF" to "💎", "#64FFDA" to "🧊",
-            "#69F0AE" to "🌿", "#B2FF59" to "🍏", "#EEFF41" to "💛",
-            "#FFFF00" to "⭐", "#FFD740" to "🌟", "#FFAB40" to "🎃",
-            "#FF6E40" to "🔥", "#795548" to "🪵", "#9E9E9E" to "⚪"
-        )
-
-        // สร้างปุ่มสีใน Grid
-        extendedColors.forEach { (colorHex, emoji) ->
-            val colorButton = Button(this).apply {
-                text = emoji
-                textSize = 16f
-                setBackgroundColor(Color.parseColor(colorHex))
-                setTextColor(if (isColorDark(Color.parseColor(colorHex))) Color.WHITE else Color.BLACK)
-                layoutParams = GridLayout.LayoutParams().apply {
-                    width = 0
-                    height = GridLayout.LayoutParams.WRAP_CONTENT
-                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                    setMargins(4, 4, 4, 4)
-                }
-                setOnClickListener {
-                    onCustomColorSelected(Color.parseColor(colorHex), colorHex)
-                    (it as? android.app.Dialog)?.dismiss()
-                }
-            }
-            colorGrid.addView(colorButton)
-        }
-
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("🎨 เลือกสีสวยๆ")
-            .setView(dialogView)
-            .setNegativeButton("ปิด") { dialog, _ -> dialog.dismiss() }
-            .show()
-    }
-
-    private fun onCustomColorSelected(color: Int, colorHex: String) {
-        // อัพเดทสีปัจจุบัน
-        currentColor = colorHex
-        mDrawingView.setColor(colorHex)
-        mDrawingView.setErase(false)
-        isEraseMode = false
-        //updateToolButtons()
-
-        // แสดงข้อความเลือกสี
-        showCustomColorSelection(colorHex, color)
-
-        // อัพเดทปุ่ม Color Picker เพื่อแสดงสีที่เลือก
-        updateColorPickerButton(color)
-
-        // รีเซ็ตการเลือกปุ่มสีพื้นฐาน
-        resetBasicColorSelection()
-    }
-
-    private fun updateColorPickerButton(color: Int) {
-        // เปลี่ยนพื้นหลังปุ่ม Color Picker เป็นสีที่เลือก
-        buttonColorPicker.setBackgroundColor(color)
-
-        // เปลี่ยนสีไอคอนตามความเข้มของสีพื้นหลัง
-//        if (isColorDark(color)) {
-//            buttonColorPicker.setColorFilter(Color.WHITE)
-//        } else {
-//            buttonColorPicker.setColorFilter(Color.BLACK)
-//        }
-    }
-
-    private fun isColorDark(color: Int): Boolean {
-        val darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
-        return darkness > 0.5
-    }
-
-    private fun resetBasicColorSelection() {
-        // รีเซ็ตปุ่มสีพื้นฐานทั้งหมด
-        colorButtons.forEach { button ->
-            // แก้ไข: ต้องแน่ใจว่า tag ไม่ใช่ null
-            button.tag?.toString()?.let { colorHex ->
-                try {
-                    val color = Color.parseColor(colorHex)
-                    button.setBackgroundColor(color)
-                } catch (e: Exception) {
-                    // จัดการกรณีที่ tag ไม่ใช่สี
-                }
-            }
-        }
-        currentColorButton = null
-    }
-
-    private fun showCustomColorSelection(colorHex: String, color: Int) {
-        val colorName = getColorName(color)
-        showSuccessMessage("เลือกสี: $colorName")
-
-        // แสดงค่าสี RGB
-        val rgbText = "RGB: ${Color.red(color)}, ${Color.green(color)}, ${Color.blue(color)}"
-        showTemporaryTips("$colorName\n$rgbText")
-    }
-
-    private fun getColorName(color: Int): String {
-        return when (color) {
-            Color.RED -> "🔴 สีแดง"
-            Color.BLUE -> "🔵 สีน้ำเงิน"
-            Color.GREEN -> "🟢 สีเขียว"
-            Color.YELLOW -> "🟡 สีเหลือง"
-            Color.MAGENTA -> "🟣 สีม่วง"
-            Color.CYAN -> "🔷 สีฟ้า"
-            Color.BLACK -> "⚫ สีดำ"
-            Color.WHITE -> "⚪ สีขาว"
-            else -> {
-                // ตรวจสอบสีที่ใกล้เคียง
-                val red = Color.red(color)
-                val green = Color.green(color)
-                val blue = Color.blue(color)
-
-                when {
-                    red > 200 && green < 100 && blue < 100 -> "🔴 สีแดง"
-                    red > 200 && green > 150 && blue < 100 -> "🟠 สีส้ม"
-                    red > 200 && green > 200 && blue < 100 -> "🟡 สีเหลือง"
-                    red < 100 && green > 150 && blue < 100 -> "🟢 สีเขียว"
-                    red < 100 && green > 200 && blue > 200 -> "🔵 สีฟ้า"
-                    red < 100 && green < 100 && blue > 150 -> "🔵 สีน้ำเงิน"
-                    red > 150 && green < 100 && blue > 150 -> "🟣 สีม่วง"
-                    red > 200 && green < 150 && blue > 150 -> "💖 สีชมพู"
-                    red > 100 && green > 50 && blue < 50 -> "🟤 สีน้ำตาล"
-                    else -> "🎨 สีพิเศษ"
-                }
+            val result = tts?.setLanguage(Locale("th"))
+            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                isTtsReady = true
             }
         }
     }
 
-    private fun selectInitialColor() {
-        currentColor = "#FF6B6B"
-        mDrawingView.setColor(currentColor)
-        updateColorSelection(colorRed)
-        updateColorPickerButton(Color.parseColor(currentColor))
-    }
-
-    private fun selectColor(selectedButton: ImageButton, colorHex: String) {
-        // Update drawing view
-        currentColor = colorHex
-        mDrawingView.setColor(colorHex)
-        mDrawingView.setErase(false)
-        isEraseMode = false
-        //updateToolButtons()
-
-        // Animate button click for kids
-        YoYo.with(Techniques.Bounce)
-            .duration(400)
-            .playOn(selectedButton)
-
-        // Update UI selection
-        updateColorSelection(selectedButton)
-
-        // อัพเดทปุ่ม Color Picker
-        updateColorPickerButton(Color.parseColor(colorHex))
-
-        // Show feedback
-        showColorSelection(colorHex)
-    }
-
-    private fun updateColorSelection(selectedButton: ImageButton) {
-        // Reset all buttons to normal state
-        colorButtons.forEach { button ->
-            // แก้ไข: ต้องแน่ใจว่า tag ไม่ใช่ null
-            button.tag?.toString()?.let { colorHex ->
-                try {
-                    val color = Color.parseColor(colorHex)
-                    button.setBackgroundColor(color)
-                } catch (e: Exception) {
-                    // จัดการกรณีที่ tag ไม่ใช่สี
-                }
-            }
+    private fun speakText(text: String) {
+        if (isTtsReady) {
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "ColoringTTS")
         }
-
-        // Add selection indicator to selected button
-        selectedButton.setBackgroundResource(R.drawable.color_selected_border)
-        currentColorButton = selectedButton
-    }
-
-    private fun setupToolButtons() {
-        // Back button
-        buttonBack.setOnClickListener {
-            animateButtonClick(buttonBack)
-            showExitConfirmation()
-        }
-
-        // Help button
-        buttonHelp.setOnClickListener {
-            animateButtonClick(buttonHelp)
-            showInteractiveHelp()
-        }
-
-        // Save button
-        buttonSave.setOnClickListener {
-            animateButtonClick(buttonSave)
-            showSaveOptions()
-        }
-
-        // New drawing button
-        buttonNew.setOnClickListener {
-            animateButtonClick(buttonNew)
-            startNewDrawing()
-        }
-
-        // Brush button
-        buttonBrush.setOnClickListener {
-            animateButtonClick(buttonBrush)
-            showSizeChooserDialog("เลือกขนาดแปรง", false)
-
-            switchToBrushMode()
-        }
-
-        // Erase button
-        buttonErase.setOnClickListener {
-            animateButtonClick(buttonErase)
-            switchToEraserMode()
-        }
-
-        // Update initial button states
-        //updateToolButtons()
-    }
-
-    private fun animateButtonClick(view: View) {
-        YoYo.with(Techniques.Pulse)
-            .duration(300)
-            .playOn(view)
-    }
-
-    private fun switchToBrushMode() {
-        isEraseMode = false
-        //mDrawingView.setErase(false)
-        //updateToolButtons()
-
-        showQuickMessage("เปลี่ยนเป็นโหมดแปรง 🖌️")
-    }
-
-    private fun switchToEraserMode() {
-        isEraseMode = true
-        mDrawingView.setErase(true)
-       // updateToolButtons()
-        showQuickMessage("เปลี่ยนเป็นโหมดยางลบ 🧽")
-    }
-
-//    private fun updateToolButtons() {
-//        if (isEraseMode) {
-//            // Erase mode active
-//            buttonErase.setBackgroundResource(R.drawable.tool_button_selected)
-//            buttonBrush.setBackgroundResource(R.drawable.tool_button)
-//        } else {
-//            // Brush mode active
-//            buttonBrush.setBackgroundResource(R.drawable.tool_button_selected)
-//            buttonErase.setBackgroundResource(R.drawable.tool_button)
-//        }
-//    }
-
-    private fun showSizeChooserDialog(title: String?, isEraser: Boolean) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(title)
-
-        val dialogView = getLayoutInflater().inflate(R.layout.dialog_brush_size, null)
-        builder.setView(dialogView)
-
-        val dialog = builder.create()
-        setupBrushSizeButtons(dialogView, dialog, isEraser)
-        dialog.show()
-    }
-
-
-    private fun setupBrushSizeButtons(dialogView: View, dialog: AlertDialog, isEraser: Boolean) {
-        val buttonIds = intArrayOf(R.id.small_brush, R.id.medium_brush, R.id.large_brush)
-        val sizes = floatArrayOf(smallBrush, mediumBrush, largeBrush)
-
-        for (i in buttonIds.indices) {
-            val button = dialogView.findViewById<ImageButton?>(buttonIds[i])
-            if (button != null) {
-                val size = sizes[i]
-                button.setOnClickListener(View.OnClickListener { v: View? ->
-                    if (isEraser) {
-                        mDrawingView.setErase(true)
-                        mDrawingView.setBrushSize(size)
-                    } else {
-                        mDrawingView.setBrushSize(size)
-                        mDrawingView.setLastBrushSize(size)
-                        mDrawingView.setErase(false)
-                    }
-                    dialog.dismiss()
-                })
-            }
-        }
-    }
-
-    private fun setupBrushSizes() {
-        smallBrush = getResources().getInteger(R.integer.small_size).toFloat()
-        mediumBrush = getResources().getInteger(R.integer.medium_size).toFloat()
-        largeBrush = getResources().getInteger(R.integer.large_size).toFloat()
-
-        mDrawingView.setBrushSize(mediumBrush)
-    }
-
-    private fun setupSeekBar() {
-        seekBarBrush.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                currentBrushSize = calculateBrushSize(progress)
-                mDrawingView.setBrushSize(currentBrushSize)
-                updateBrushSizeDisplay()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // Do nothing
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                // Do nothing
-            }
-        })
-    }
-
-    private fun calculateBrushSize(progress: Int): Float {
-        return when {
-            progress < 25 -> 10f + (progress / 25f) * 5f
-            progress < 50 -> 15f + ((progress - 25) / 25f) * 10f
-            progress < 75 -> 25f + ((progress - 50) / 25f) * 10f
-            else -> 35f + ((progress - 75) / 25f) * 15f
-        }
-    }
-
-    private fun updateBrushSizeDisplay() {
-        val sizeText = when {
-            currentBrushSize < 15 -> "เล็กมาก"
-            currentBrushSize < 25 -> "เล็ก"
-            currentBrushSize < 35 -> "กลาง"
-            else -> "ใหญ่"
-        }
-        textBrushSize.text = "✏️ ขนาด: $sizeText"
-    }
-
-    private fun startTimer() {
-        timer = object : CountDownTimer(Long.MAX_VALUE, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                timeElapsed++
-                updateTimeDisplay()
-            }
-
-            override fun onFinish() {
-                // Should not happen with Long.MAX_VALUE
-            }
-        }
-        timer.start()
-    }
-
-    private fun handleDrawingResult(isCorrect: Boolean, accuracy: Float) {
-        runOnUiThread {
-            if (isCorrect) {
-                val pointsEarned = calculatePoints(accuracy)
-                score += pointsEarned
-                updateScoreDisplay()
-
-                showDrawingFeedback(isCorrect, accuracy, pointsEarned)
-                
-                // Voice feedback
-                if (accuracy > 0.8f) {
-                    speak("เก่งมากเลยค่ะ ศิลปินตัวน้อย")
-                } else {
-                    speak("ระบายสีสวยจังเลย")
-                }
-
-                // Show special reward occasionally
-                if (accuracy > 0.8f && (0..3).random() == 0) {
-                    showSpecialReward()
-                }
-            } else {
-                showDrawingFeedback(isCorrect, accuracy, 0)
-                speak("พยายามเข้านะคะ")
-            }
-        }
-    }
-
-    private fun calculatePoints(accuracy: Float): Int {
-        return when {
-            accuracy > 0.9f -> 30
-            accuracy > 0.7f -> 20
-            accuracy > 0.5f -> 10
-            else -> 5
-        }
-    }
-
-    private fun showDrawingFeedback(isCorrect: Boolean, accuracy: Float, pointsEarned: Int) {
-        val message = if (isCorrect) {
-            when {
-                accuracy > 0.9f -> "สุดยอด! 🏆\nได้ $pointsEarned คะแนน!"
-                accuracy > 0.7f -> "เก่งมาก! 🌟\nได้ $pointsEarned คะแนน"
-                accuracy > 0.5f -> "ดีแล้ว! 👍\nได้ $pointsEarned คะแนน"
-                else -> "พยายามอีกนิด! 💪\nได้ $pointsEarned คะแนน"
-            }
-        } else {
-            "ไม่เป็นไร! 😊\nลองใหม่อีกครั้ง"
-        }
-
-        // Animate score text
-        YoYo.with(Techniques.Tada)
-            .duration(700)
-            .playOn(textScore)
-
-        showSuccessMessage(message)
-    }
-
-    private fun showColorSelection(colorHex: String) {
-        val colorName = colorMap[colorHex] ?: "🎨 สีสวย"
-        showQuickMessage(colorName)
-        
-        // Speak color name
-        val voiceName = colorName.replace("🔴 ", "").replace("🟠 ", "")
-            .replace("🟡 ", "").replace("🟢 ", "").replace("🔵 ", "")
-            .replace("🟣 ", "").replace("💖 ", "").replace("🟤 ", "")
-            .replace("⚫ ", "").replace("⚪ ", "")
-        speak("เลือก $voiceName")
-    }
-
-    private fun showWelcomeMessage() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            showTemporaryTips("ยินดีต้อนรับ! 🎨 มาลองระบายสีกันเถอะ!")
-            
-            // Animate mascot to say hello
-            YoYo.with(Techniques.BounceInUp)
-                .duration(1000)
-                .playOn(imageMascot)
-        }, 500)
-    }
-
-    private fun showTemporaryTips(message: String) {
-        textTips.text = message
-        layoutTips.visibility = View.VISIBLE
-        
-        YoYo.with(Techniques.Pulse)
-            .duration(1000)
-            .repeat(2)
-            .playOn(imageMascot)
-
-        Handler(Looper.getMainLooper()).postDelayed({
-            YoYo.with(Techniques.FadeOut)
-                .duration(500)
-                .playOn(layoutTips)
-            Handler(Looper.getMainLooper()).postDelayed({
-                layoutTips.visibility = View.GONE
-            }, 500)
-        }, 4000)
-    }
-
-    private fun showQuickMessage(message: String) {
-
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun showSuccessMessage(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
-
-    private fun showSpecialReward() {
-        val rewards = listOf(
-            "🎊 คุณคือศิลปินตัวจริง!",
-            "🌈 สีสันสวยงามมาก!",
-            "👑 ราชาแห่งการระบายสี!",
-            "🚀 สุดยอดฝีมือ!",
-            "⭐ ดาวเด่นแห่งศิลปะ!"
-        )
-        
-        showTemporaryTips(rewards.random())
-        
-        // Extra celebration with mascot
-        YoYo.with(Techniques.Swing)
-            .duration(1000)
-            .playOn(imageMascot)
-    }
-
-    private fun updateScoreDisplay() {
-        textScore.text = "⭐ $score"
-    }
-
-    private fun updateTimeDisplay() {
-        val minutes = timeElapsed / 60
-        val seconds = timeElapsed % 60
-        textTime.text = "⏱️ ${minutes}:${"%02d".format(seconds)}"
-    }
-
-    // Dialog Methods
-    private fun showExitConfirmation() {
-        // (ยังคงใช้ AlertDialog เดิม, แต่สามารถแปลงเป็น SimpleDialog ได้)
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("ออกจากเกม")
-            .setMessage("ต้องการออกจากเกมระบายสีไหม?\n\nคะแนนปัจจุบัน: $score\nเวลาเล่น: ${timeElapsed} วินาที")
-            .setPositiveButton("ออก") { dialog, which ->
-                finishWithAnimation()
-            }
-            .setNegativeButton("เล่นต่อ") { dialog, which ->
-                dialog.dismiss()
-            }
-            .setNeutralButton("เริ่มใหม่") { dialog, which ->
-                resetGame()
-                dialog.dismiss()
-            }
-            .show()
-    }
-
-    private fun showInteractiveHelp() {
-        val helpMessage = """
-            🎨 วิธีเล่นเกมระบายสี 🎨
-
-            🖌️ แปรงวาดภาพ:
-            - เลือกสีจากพาเลทด้านล่าง
-            - หรือกดปุ่ม 🎨 เพื่อเลือกสีพิเศษ
-            - วาดภาพตามจินตนาการ
-            - ใช้ขนาดแปรงที่เหมาะสม
-
-            🧽 ยางลบ:
-            - กดปุ่มยางลบเพื่อลบ
-            - ลบส่วนที่ผิดหรือต้องการเปลี่ยน
-
-            🎨 Color Picker:
-            - กดปุ่มพาเลทสีเพื่อเลือกสีใดก็ได้
-            - มีสีให้เลือกมากมาย
-            - เหมาะสำหรับศิลปินตัวจริง!
-
-            ⭐ ได้คะแนนจาก:
-            - การวาดภาพที่สวยงาม
-            - การใช้สีที่หลากหลาย
-            - ความคิดสร้างสรรค์
-
-            💾 บันทึกภาพเมื่อวาดเสร็จ!
-
-            สนุกกับการระบายสีนะ! 😊
-        """.trimIndent()
-
-        // (ยังคงใช้ AlertDialog เดิม)
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("คำแนะนำการเล่น")
-            .setMessage(helpMessage)
-            .setPositiveButton("เข้าใจแล้ว") { dialog, which ->
-                showQuickMessage("สุขกับการระบายสี! 🎨")
-            }
-            .show()
-    }
-
-    private fun showSaveOptions() {
-        val options = arrayOf("บันทึกลง Gallery", "แชร์ภาพ", "บันทึกในแอป")
-
-        // (ยังคงใช้ AlertDialog เดิม, แต่สามารถแปลงเป็น SimpleListDialog ได้)
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("บันทึกภาพ")
-            .setItems(options) { dialog, which ->
-                when (which) {
-                    0 -> saveToGallery()
-                    1 -> shareDrawing()
-                    2 -> saveInApp()
-                }
-            }
-            .setNegativeButton("ยกเลิก", null)
-            .show()
-    }
-
-    // <--- [เปลี่ยนแปลง] 4. แก้ไขฟังก์ชันให้ใช้ SimpleDialog
-    private fun showNewDrawingConfirmation() {
-        SimpleColorWheelDialog.build()
-            .color(color)
-            .alpha(true)
-            .show(this);
-    }
-
-    private fun showNewPaintingAlertDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("ภาพใหม่")
-            .setMessage("เริ่มภาพใหม่? (ภาพปัจจุบันจะหายไป)")
-            .setPositiveButton(
-                "ตกลง",
-                DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                    mDrawingView.startNew()
-                    // รีเซ็ตสถิติสำหรับภาพใหม่
-
-                    // รีเซ็ตพื้นที่วาด
-                })
-            .setNegativeButton("ยกเลิก", null)
-            .setCancelable(true)
-            .show()
-    }
-
-    fun showColorPicker(view: View?) {
-        @ArrayRes val pallet = intArrayOf(
-            SimpleColorDialog.MATERIAL_COLOR_PALLET,  // default if no pallet explicitly set
-            SimpleColorDialog.MATERIAL_COLOR_PALLET_DARK,
-            SimpleColorDialog.MATERIAL_COLOR_PALLET_LIGHT,
-            SimpleColorDialog.BEIGE_COLOR_PALLET,
-            SimpleColorDialog.COLORFUL_COLOR_PALLET
-        )[counter++ % 5]
-
-        val outline =
-            if (pallet == SimpleColorDialog.MATERIAL_COLOR_PALLET_LIGHT) Color.BLACK else if (pallet == SimpleColorDialog.BEIGE_COLOR_PALLET) SimpleColorDialog.AUTO else SimpleColorDialog.NONE
-
-        val dialog: SimpleColorDialog = SimpleColorDialog.build()
-            .title(R.string.pick_a_color)
-            .colors(this, pallet)
-            .colorPreset(color)
-            .allowCustom(true)
-            .showOutline(outline)
-        if (pallet == SimpleColorDialog.MATERIAL_COLOR_PALLET) {
-            dialog.colorNames(this, R.array.material_color_names)
-        }
-        dialog.show(this, "COLOR_DIALOG")
-
-        /** Results: [MainActivity.onResult]  */
-    }
-
-
-    fun showHsvWheel(view: View?) {
-        SimpleColorWheelDialog.build()
-            .color(color)
-            .alpha(true)
-            .show(this)
-
-        /** Results: [MainActivity.onResult]  */
-    }
-
-
-
-
-    // Game Actions
-    private fun startNewDrawing() {
-        mDrawingView.startNew()
-        // Add small penalty for starting new drawing
-        score = maxOf(0, score - 5)
-        showQuickMessage("เริ่มภาพใหม่! 🎨")
-        showNewPaintingAlertDialog()
-
-    }
-
-    private fun resetGame() {
-        score = 0
-        timeElapsed = 0L
-        mDrawingView.startNew()
-        updateScoreDisplay()
-        updateTimeDisplay()
-        showQuickMessage("เริ่มเกมใหม่! 🚀")
-    }
-
-    private fun saveToGallery() {
-        // TODO: Implement actual save to gallery functionality
-        saveDrawingToGallery()
-        addScore(10)
-    }
-
-    private fun shareDrawing() {
-        // TODO: Implement share functionality
-        showQuickMessage("เตรียมแชร์ภาพ... 📤")
-        addScore(5)
-    }
-
-    private fun saveInApp() {
-        // TODO: Implement in-app save
-        showSuccessMessage("บันทึกในแอปเรียบร้อย! 💾")
-        addScore(8)
-    }
-
-    private fun addScore(points: Int) {
-        score += points
-        updateScoreDisplay()
-    }
-
-    private fun finishWithAnimation() {
-        // Add any finishing animation here
-        finish()
-    }
-
-    // Configuration Changes
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-
-        // Recreate activity when orientation changes
-        Handler(Looper.getMainLooper()).postDelayed({
-            recreate()
-        }, 100)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Pause timer when app goes to background
-        timer.cancel()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Restart timer when app comes to foreground
-        startTimer()
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        timer.cancel()
         tts?.stop()
         tts?.shutdown()
-        // Clean up resources
-        mDrawingView.cleanup()
+        super.onDestroy()
+    }
+}
+
+// ==================== DATA MODELS ====================
+
+data class ColoredStroke(
+    val points: List<Offset>,
+    val color: Color,
+    val strokeWidth: Float,
+    val isEraser: Boolean = false,
+    val isRainbow: Boolean = false
+)
+
+data class ColoringTemplate(
+    val id: String,
+    val title: String,
+    val category: String,
+    val emoji: String,
+    val resId: Int?
+)
+
+enum class ActiveTool {
+    BRUSH,
+    RAINBOW,
+    ERASER
+}
+
+// ==================== TEMPLATE CATALOG ====================
+
+val COLORING_TEMPLATES = listOf(
+    // สัตว์น่ารัก
+    ColoringTemplate("cat", "น้องแมวเหมียว", "สัตว์น่ารัก", "🐱", R.drawable.c_cat),
+    ColoringTemplate("dog", "น้องหมาเพื่อนรัก", "สัตว์น่ารัก", "🐶", R.drawable.d_dog),
+    ColoringTemplate("fish", "ปลาน้อยว่ายน้ำ", "สัตว์น่ารัก", "🐟", R.drawable.f_fish),
+    ColoringTemplate("lion", "สิงโตเจ้าป่า", "สัตว์น่ารัก", "🦁", R.drawable.lion),
+    ColoringTemplate("giraffe", "พี่ยีราฟคอยาว", "สัตว์น่ารัก", "🦒", R.drawable.giraffe),
+    ColoringTemplate("bear", "พี่หมีใจดี", "สัตว์น่ารัก", "🐻", R.drawable.bear),
+    ColoringTemplate("fox", "จิ้งจอกแสนซน", "สัตว์น่ารัก", "🦊", R.drawable.fox),
+    ColoringTemplate("hedgehog", "คุณเม่นตัวกลม", "สัตว์น่ารัก", "🦔", R.drawable.hedgehog),
+
+    // พยัญชนะไทย
+    ColoringTemplate("thai_k1", "ก ไก่", "พยัญชนะไทย", "🐔", R.drawable.thai_card_1),
+    ColoringTemplate("thai_k2", "ข ไข่", "พยัญชนะไทย", "🥚", R.drawable.thai_card_2),
+    ColoringTemplate("thai_k4", "ค ควาย", "พยัญชนะไทย", "🐃", R.drawable.thai_card_4),
+    ColoringTemplate("thai_k7", "ง งู", "พยัญชนะไทย", "🐍", R.drawable.thai_card_7),
+    ColoringTemplate("thai_k10", "ช ช้าง", "พยัญชนะไทย", "🐘", R.drawable.thai_card_10),
+    ColoringTemplate("thai_k27", "ป ปลา", "พยัญชนะไทย", "🐠", R.drawable.thai_card_27),
+
+    // ยานพาหนะ
+    ColoringTemplate("police", "รถตำรวจวี้หว่อ", "ยานพาหนะ", "🚓", R.drawable.police_car),
+    ColoringTemplate("truck", "รถบรรทุกพลังแกร่ง", "ยานพาหนะ", "🚚", R.drawable.truck),
+    ColoringTemplate("bus", "รถบัสพาเที่ยว", "ยานพาหนะ", "🚌", R.drawable.bus),
+
+    // ผลไม้ & ขนม
+    ColoringTemplate("strawberry", "สตรอว์เบอร์รี่หวานฉ่ำ", "ของอร่อย", "🍓", R.drawable.strawberry),
+    ColoringTemplate("pizza", "พิซซ่าชีสยืด", "ของอร่อย", "🍕", R.drawable.pizza),
+    ColoringTemplate("lemon", "เลมอนสดชื่น", "ของอร่อย", "🍋", R.drawable.lemon),
+
+    // วาดอิสระ
+    ColoringTemplate("blank", "กระดาษวาดภาพอิสระ", "วาดอิสระ", "🎨", null)
+)
+
+val KIDS_PALETTE = listOf(
+    Color(0xFFFF3B30), // แดง
+    Color(0xFFFF9500), // ส้ม
+    Color(0xFFFFCC00), // เหลือง
+    Color(0xFF34C759), // เขียวมะนาว
+    Color(0xFF007E33), // เขียวเข้ม
+    Color(0xFF32ADE6), // ฟ้า
+    Color(0xFF007AFF), // น้ำเงิน
+    Color(0xFFAF52DE), // ม่วง
+    Color(0xFFFF2D55), // ชมพูบานเย็น
+    Color(0xFFFFB3C6), // พาสเทลชมพู
+    Color(0xFFA2845E), // น้ำตาล
+    Color(0xFF8E8E93), // เทา
+    Color(0xFF1C1C1E), // ดำ
+    Color(0xFFFFFFFF)  // ขาว
+)
+
+// ==================== MAIN COMPOSABLE ====================
+
+@Composable
+fun KidsColoringStudioScreen(
+    onBack: () -> Unit,
+    onSpeak: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // State
+    var templateIndex by remember { mutableIntStateOf(0) }
+    val currentTemplate = COLORING_TEMPLATES[templateIndex]
+
+    var currentTool by remember { mutableStateOf(ActiveTool.BRUSH) }
+    var currentColor by remember { mutableStateOf(KIDS_PALETTE[0]) }
+    var currentBrushWidth by remember { mutableFloatStateOf(24f) }
+
+    // Canvas Strokes & History
+    var strokes by remember { mutableStateOf<List<ColoredStroke>>(emptyList()) }
+    var currentPoints by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    val undoStack = remember { mutableStateListOf<ColoredStroke>() }
+    val redoStack = remember { mutableStateListOf<ColoredStroke>() }
+
+    // Guide opacity: 0.15f (light), 0.40f (medium), 0.75f (vivid), 0.0f (hidden)
+    var guideOpacity by remember { mutableFloatStateOf(0.40f) }
+
+    // Dialog States
+    var showTemplateSelector by remember { mutableStateOf(false) }
+    var showClearConfirm by remember { mutableStateOf(false) }
+    var showCelebration by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Timer & Scoring
+    var playTimeSeconds by remember { mutableIntStateOf(0) }
+    var userStars by remember { mutableIntStateOf(0) }
+    var userLevel by remember { mutableIntStateOf(1) }
+
+    val dataManager = remember { SupabaseDataManager.getInstance(context) }
+    val authManager = remember { SupabaseAuthManager.getInstance(context) }
+    val storedUser = remember { authManager.getStoredUser() }
+    val userId = storedUser?.id ?: FirebaseAuth.getInstance().currentUser?.uid ?: "guest_user"
+
+    // Initial load
+    LaunchedEffect(Unit) {
+        userStars = dataManager.getUserTotalStars()
+        userLevel = dataManager.getUserCurrentLevel()
+
+        if (userId.isNotEmpty()) {
+            val prof = dataManager.fetchUserProfile(userId)
+            prof.getOrNull()?.let {
+                userStars = it.totalStars
+                userLevel = it.currentLevel
+            }
+        }
     }
 
-    // <--- [เปลี่ยนแปลง] 5. เพิ่มฟังก์ชัน onResult เพื่อรับผลลัพธ์จาก Dialog
-    // <--- [เปลี่ยนแปลง] 1. ต้อง import BUTTON_POSITIVE ด้วย
-    // ... ภายใน Class ColoringGameActivity ...
-
-    override fun onResult(dialogTag: String, which: Int, extras: Bundle): Boolean {
-
-        // --- เคสที่ 1: Dialog ยืนยัน "เริ่มใหม่" (ที่ถูกต้อง) ---
-        if (dialogTag == DIALOG_NEW_DRAWING) {
-
-            // ตรวจสอบว่ากดปุ่ม "เริ่มใหม่" (Positive) หรือไม่
-            if (which == BUTTON_POSITIVE) { // <-- ใช้ BUTTON_POSITIVE ที่ import มา
-                startNewDrawing() // <--- นี่คือคำสั่งที่ถูกต้องสำหรับ Tag นี้
-            }
-            // ถ้ากด "ยกเลิก" (Negative) หรือ (Cancel) ก็ไม่ต้องทำอะไร
-            return true // บอกว่าเรารับผลลัพธ์นี้แล้ว
+    // Play timer
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            playTimeSeconds++
         }
+    }
 
-         // --- เคสที่ 2: ถ้าคุณมี Dialog เลือกสี (ตัวอย่าง) ---
-        // สมมติว่าคุณสร้าง Tag ใหม่ชื่อ DIALOG_PICK_COLOR
-        // และเรียกใช้ SimpleColorDialog.build()...show(this, DIALOG_PICK_COLOR)
+    BackHandler {
+        if (strokes.isNotEmpty()) {
+            showClearConfirm = true
+        } else {
+            onBack()
+        }
+    }
 
-        else if (dialogTag == "DIALOG_PICK_COLOR") {
-            if (which == BUTTON_POSITIVE) {
-
-                // นี่คือโค้ด Java ที่คุณส่งมา แปลงเป็น Kotlin:
-                val colors: IntArray? = extras.getIntArray(SimpleColorDialog.COLORS)
-
-                if (colors != null) {
-                    // กรณีเลือกหลายสี
-                    for (i in colors.indices) { // <-- วิธี loop ใน Kotlin
-                        @ColorInt val color: Int = colors[i]
-
-                        // handler.postDelayed({ ... }, 1000L * i) // <-- วิธีใช้ Lambda ใน Kotlin
-                        // คุณไม่มีฟังก์ชัน newColor(color)
-                        // แต่คุณสามารถแปลงค่าสีและสั่ง mDrawingView ให้เปลี่ยนสีได้
-
-                        val colorHex = String.format("#%06X", 0xFFFFFF and color)
-                        // อาจจะต้องเลื่อน delay หรืออัปเดตสีทันที
-                        mDrawingView.setColor(colorHex)
-
+    // Main Studio Layout
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFFF4F6FB)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+        ) {
+            // 1. Top Header Bar
+            KidsColoringTopBar(
+                template = currentTemplate,
+                canUndo = undoStack.isNotEmpty(),
+                canRedo = redoStack.isNotEmpty(),
+                guideOpacity = guideOpacity,
+                onBack = onBack,
+                onUndo = {
+                    if (undoStack.isNotEmpty()) {
+                        val last = undoStack.removeLast()
+                        redoStack.add(last)
+                        strokes = undoStack.toList()
+                        playLocalSound(context, R.raw.button)
                     }
-                } else {
-                     // กรณีเลือกสีเดียว (ไม่ใช่หลายสี)
-                     val singleColor = extras.getInt(SimpleColorDialog.COLOR)
-                     val colorHex = String.format("#%06X", 0xFFFFFF and singleColor)
-                     mDrawingView.setColor(colorHex)
-                     updateColorPickerButton(singleColor)
-                     resetBasicColorSelection()
+                },
+                onRedo = {
+                    if (redoStack.isNotEmpty()) {
+                        val item = redoStack.removeLast()
+                        undoStack.add(item)
+                        strokes = undoStack.toList()
+                        playLocalSound(context, R.raw.button)
+                    }
+                },
+                onToggleGuide = {
+                    guideOpacity = when (guideOpacity) {
+                        0.40f -> 0.75f
+                        0.75f -> 0.0f
+                        0.0f -> 0.20f
+                        else -> 0.40f
+                    }
+                    val msg = when (guideOpacity) {
+                        0.75f -> "ลายเส้นชัดเจน 🌟"
+                        0.0f -> "ซ่อนลายเส้นแล้ว 👁️"
+                        0.20f -> "ลายเส้นจาง 🌿"
+                        else -> "ลายเส้นปกติ ✨"
+                    }
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                },
+                onOpenTemplateDialog = { showTemplateSelector = true },
+                onFinish = {
+                    if (strokes.isEmpty()) {
+                        Toast.makeText(context, "ลองระบายสีก่อนน้า สู้ๆ จ้า! 🎨", Toast.LENGTH_SHORT).show()
+                    } else {
+                        playLocalSound(context, R.raw.is_sound_success_sound)
+                        onSpeak("ว้าว ภาพระบายสี ${currentTemplate.title} สวยงามมากเลยจ้า ได้รับ 3 ดาวไปเลย!")
+                        showCelebration = true
+
+                        // Save scores
+                        scope.launch {
+                            val earnedStars = 3
+                            val (newStars, nextLvl) = dataManager.addStars(userId, earnedStars)
+                            userStars = newStars
+                            userLevel = nextLvl
+
+                            if (userId.isNotEmpty()) {
+                                dataManager.saveQuizResult(
+                                    userId = userId,
+                                    topicId = 200,
+                                    topicName = "ระบายสี: ${currentTemplate.title}",
+                                    score = 100,
+                                    totalQuestions = 1,
+                                    timeSpentSeconds = playTimeSeconds
+                                )
+                                dataManager.saveLearningProgress(userId, "coloring", currentTemplate.id, 100)
+                            }
+                        }
+                    }
+                }
+            )
+
+            // 2. Middle Body: Canvas + Side Tools (if Landscape) or Centered Canvas
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // Left Rail Tools (if landscape)
+                    if (isLandscape) {
+                        LandscapeToolsPanel(
+                            currentTool = currentTool,
+                            currentBrushWidth = currentBrushWidth,
+                            onSelectTool = {
+                                currentTool = it
+                                playLocalSound(context, R.raw.button)
+                            },
+                            onChangeBrushWidth = {
+                                currentBrushWidth = it
+                                playLocalSound(context, R.raw.button)
+                            },
+                            onClearCanvas = { showClearConfirm = true }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    // Main Drawing Canvas Box
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .border(3.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
+                            .shadow(4.dp, RoundedCornerShape(20.dp))
+                            .onSizeChanged { canvasSize = it }
+                    ) {
+                        // Layer 1: Guide Background Image
+                        if (currentTemplate.resId != null && guideOpacity > 0f) {
+                            Image(
+                                painter = painterResource(id = currentTemplate.resId),
+                                contentDescription = currentTemplate.title,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(24.dp),
+                                contentScale = ContentScale.Fit,
+                                alpha = guideOpacity
+                            )
+                        }
+
+                        // Layer 2: Interactive Compose Canvas
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(currentTool, currentColor, currentBrushWidth) {
+                                    awaitEachGesture {
+                                        val down = awaitFirstDown()
+                                        down.consume()
+                                        var strokePoints = listOf(down.position)
+                                        currentPoints = strokePoints
+
+                                        while (true) {
+                                            val event = awaitPointerEvent()
+                                            val drag = event.changes.firstOrNull { it.id == down.id } ?: break
+                                            if (drag.pressed) {
+                                                drag.consume()
+                                                strokePoints = strokePoints + drag.position
+                                                currentPoints = strokePoints
+                                            } else {
+                                                break
+                                            }
+                                        }
+
+                                        if (strokePoints.isNotEmpty()) {
+                                            val stroke = ColoredStroke(
+                                                points = strokePoints,
+                                                color = currentColor,
+                                                strokeWidth = currentBrushWidth,
+                                                isEraser = currentTool == ActiveTool.ERASER,
+                                                isRainbow = currentTool == ActiveTool.RAINBOW
+                                            )
+                                            strokes = strokes + stroke
+                                            undoStack.add(stroke)
+                                            redoStack.clear()
+                                            currentPoints = emptyList()
+                                        }
+                                    }
+                                }
+                        ) {
+                            val activeStrokeList = if (currentPoints.isNotEmpty()) {
+                                strokes + ColoredStroke(
+                                    points = currentPoints,
+                                    color = currentColor,
+                                    strokeWidth = currentBrushWidth,
+                                    isEraser = currentTool == ActiveTool.ERASER,
+                                    isRainbow = currentTool == ActiveTool.RAINBOW
+                                )
+                            } else {
+                                strokes
+                            }
+
+                            for (stroke in activeStrokeList) {
+                                if (stroke.points.size > 1) {
+                                    val path = Path().apply {
+                                        moveTo(stroke.points[0].x, stroke.points[0].y)
+                                        for (i in 1 until stroke.points.size) {
+                                            lineTo(stroke.points[i].x, stroke.points[i].y)
+                                        }
+                                    }
+                                    if (stroke.isEraser) {
+                                        drawPath(
+                                            path = path,
+                                            color = Color.White,
+                                            style = Stroke(
+                                                width = stroke.strokeWidth,
+                                                cap = StrokeCap.Round,
+                                                join = StrokeJoin.Round
+                                            )
+                                        )
+                                    } else if (stroke.isRainbow) {
+                                        drawPath(
+                                            path = path,
+                                            brush = Brush.sweepGradient(
+                                                listOf(
+                                                    Color(0xFFFF3B30),
+                                                    Color(0xFFFF9500),
+                                                    Color(0xFFFFCC00),
+                                                    Color(0xFF34C759),
+                                                    Color(0xFF007AFF),
+                                                    Color(0xFFAF52DE),
+                                                    Color(0xFFFF2D55),
+                                                    Color(0xFFFF3B30)
+                                                )
+                                            ),
+                                            style = Stroke(
+                                                width = stroke.strokeWidth,
+                                                cap = StrokeCap.Round,
+                                                join = StrokeJoin.Round
+                                            )
+                                        )
+                                    } else {
+                                        drawPath(
+                                            path = path,
+                                            color = stroke.color,
+                                            style = Stroke(
+                                                width = stroke.strokeWidth,
+                                                cap = StrokeCap.Round,
+                                                join = StrokeJoin.Round
+                                            )
+                                        )
+                                    }
+                                } else if (stroke.points.isNotEmpty()) {
+                                    drawCircle(
+                                        color = if (stroke.isEraser) Color.White else if (stroke.isRainbow) Color(0xFFFF9500) else stroke.color,
+                                        radius = stroke.strokeWidth / 2f,
+                                        center = stroke.points[0]
+                                    )
+                                }
+                            }
+                        }
+
+                        // Floating Previous & Next Template Arrows on Canvas
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Center)
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (templateIndex > 0) {
+                                        templateIndex--
+                                        strokes = emptyList()
+                                        undoStack.clear()
+                                        redoStack.clear()
+                                        playLocalSound(context, R.raw.button)
+                                    }
+                                },
+                                enabled = templateIndex > 0,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(Color.White.copy(alpha = 0.85f), CircleShape)
+                                    .shadow(2.dp, CircleShape)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "ก่อนหน้า", tint = if (templateIndex > 0) Color(0xFF6366F1) else Color.LightGray)
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    if (templateIndex < COLORING_TEMPLATES.size - 1) {
+                                        templateIndex++
+                                        strokes = emptyList()
+                                        undoStack.clear()
+                                        redoStack.clear()
+                                        playLocalSound(context, R.raw.button)
+                                    }
+                                },
+                                enabled = templateIndex < COLORING_TEMPLATES.size - 1,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(Color.White.copy(alpha = 0.85f), CircleShape)
+                                    .shadow(2.dp, CircleShape)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "ถัดไป", tint = if (templateIndex < COLORING_TEMPLATES.size - 1) Color(0xFF6366F1) else Color.LightGray)
+                            }
+                        }
+
+                        // Bottom-Right mini template thumbnail badge
+                        if (currentTemplate.resId != null) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(10.dp)
+                                    .size(54.dp)
+                                    .background(Color.White.copy(alpha = 0.92f), RoundedCornerShape(12.dp))
+                                    .border(1.5.dp, Color(0xFFCBD5E1), RoundedCornerShape(12.dp))
+                                    .shadow(2.dp, RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = currentTemplate.resId),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(42.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                        }
+                    }
                 }
             }
-            return true
+
+            // 3. Bottom Controls Panel: Palette & Tools (if Portrait)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .shadow(8.dp)
+                    .padding(vertical = 6.dp)
+            ) {
+                // Color Palette Row
+                ColorPaletteRow(
+                    selectedColor = currentColor,
+                    isRainbowActive = currentTool == ActiveTool.RAINBOW,
+                    isEraserActive = currentTool == ActiveTool.ERASER,
+                    onSelectColor = { color ->
+                        currentColor = color
+                        if (currentTool != ActiveTool.BRUSH) {
+                            currentTool = ActiveTool.BRUSH
+                        }
+                        playLocalSound(context, R.raw.button)
+                    },
+                    onOpenColorPicker = { showColorPicker = true }
+                )
+
+                // Bottom Tools Row (Portrait Mode)
+                if (!isLandscape) {
+                    PortraitToolsRow(
+                        currentTool = currentTool,
+                        currentBrushWidth = currentBrushWidth,
+                        onSelectTool = {
+                            currentTool = it
+                            playLocalSound(context, R.raw.button)
+                        },
+                        onChangeBrushWidth = {
+                            currentBrushWidth = it
+                            playLocalSound(context, R.raw.button)
+                        },
+                        onClearCanvas = { showClearConfirm = true }
+                    )
+                }
+            }
         }
-
-        // (สามารถเพิ่มเงื่อนไข 'else if' สำหรับ Dialog อื่นๆ ที่นี่)
-        // เช่น else if (dialogTag == DIALOG_EXIT) { ... }
-
-        // คืนค่า false ถ้าไม่ใช่ Dialog ที่เรารู้จัก
-        return false
     }
 
-    // นี่คือฟังก์ชันใหม่ทั้งหมด ให้เอาไปวางทับของเดิม
-    private fun saveDrawingToGallery() {
-        if (mDrawingView == null) {
-            showToast("Drawing view not available")
-            return
+    // ==================== DIALOGS ====================
+
+    // 1. Template Selector Dialog
+    if (showTemplateSelector) {
+        TemplateSelectorDialog(
+            currentIndex = templateIndex,
+            onSelect = { idx ->
+                templateIndex = idx
+                strokes = emptyList()
+                undoStack.clear()
+                redoStack.clear()
+                showTemplateSelector = false
+                playLocalSound(context, R.raw.chiotrue)
+                onSpeak("ระบายสี ${COLORING_TEMPLATES[idx].title} กันเถอะ!")
+            },
+            onDismiss = { showTemplateSelector = false }
+        )
+    }
+
+    // 2. Clear Confirmation Dialog
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = {
+                Text("ล้างภาพวาด?", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            },
+            text = {
+                Text("ต้องการลบภาพที่ระบายทั้งหมด เพื่อเริ่มวาดใหม่ใช่ไหมครับ?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        strokes = emptyList()
+                        undoStack.clear()
+                        redoStack.clear()
+                        showClearConfirm = false
+                        playLocalSound(context, R.raw.button)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text("ล้างภาพวาด", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text("ยกเลิก")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // 3. Color Picker Dialog
+    if (showColorPicker) {
+        CustomColorPickerDialog(
+            onSelectColor = { c ->
+                currentColor = c
+                currentTool = ActiveTool.BRUSH
+                showColorPicker = false
+                playLocalSound(context, R.raw.button)
+            },
+            onDismiss = { showColorPicker = false }
+        )
+    }
+
+    // 4. Celebration Win Dialog
+    if (showCelebration) {
+        ColoringCelebrationDialog(
+            templateTitle = currentTemplate.title,
+            timeSpentSeconds = playTimeSeconds,
+            userStars = userStars,
+            onSaveImage = {
+                saveDrawingBitmap(
+                    context = context,
+                    strokes = strokes,
+                    templateResId = currentTemplate.resId,
+                    width = if (canvasSize.width > 0) canvasSize.width else 1080,
+                    height = if (canvasSize.height > 0) canvasSize.height else 1080,
+                    onSuccess = {
+                        Toast.makeText(context, "บันทึกภาพลงแกลเลอรีสำเร็จ! 📸", Toast.LENGTH_LONG).show()
+                    },
+                    onError = { err ->
+                        Toast.makeText(context, "บันทึกไม่สำเร็จ: $err", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            },
+            onNextPicture = {
+                showCelebration = false
+                if (templateIndex < COLORING_TEMPLATES.size - 1) {
+                    templateIndex++
+                } else {
+                    templateIndex = 0
+                }
+                strokes = emptyList()
+                undoStack.clear()
+                redoStack.clear()
+                playTimeSeconds = 0
+            },
+            onDismiss = { showCelebration = false }
+        )
+    }
+}
+
+// ==================== SUB COMPOSABLES ====================
+
+@Composable
+fun KidsColoringTopBar(
+    template: ColoringTemplate,
+    canUndo: Boolean,
+    canRedo: Boolean,
+    guideOpacity: Float,
+    onBack: () -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onToggleGuide: () -> Unit,
+    onOpenTemplateDialog: () -> Unit,
+    onFinish: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Back Button
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .size(42.dp)
+                .background(Color.White, CircleShape)
+                .shadow(2.dp, CircleShape)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "กลับ", tint = Color(0xFF1E293B))
         }
 
-        // 1. สร้าง Bitmap จาก DrawingView (วิธีใหม่ที่ไม่ใช้ getDrawingCache)
-        val bitmap = Bitmap.createBitmap(
-            mDrawingView.width,
-            mDrawingView.height,
-            Bitmap.Config.ARGB_8888
-        )
-        val canvas = Canvas(bitmap)
-        mDrawingView.draw(canvas)
+        Spacer(modifier = Modifier.width(8.dp))
 
-        // 2. เตรียมข้อมูลไฟล์ที่จะบันทึก
-        val filename = "drawing_" + System.currentTimeMillis() + ".png"
+        // Template Selector Badge Button
+        Card(
+            onClick = onOpenTemplateDialog,
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            modifier = Modifier.height(42.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(template.emoji, fontSize = 20.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = template.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = Color(0xFF1E293B)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF64748B))
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Guide Visibility Toggle
+        IconButton(
+            onClick = onToggleGuide,
+            modifier = Modifier
+                .size(42.dp)
+                .background(if (guideOpacity > 0f) Color(0xFFE0E7FF) else Color.White, CircleShape)
+                .shadow(2.dp, CircleShape)
+        ) {
+            Icon(
+                Icons.Default.Visibility,
+                contentDescription = "ความชัดภาพร่าง",
+                tint = if (guideOpacity > 0f) Color(0xFF4F46E5) else Color.Gray
+            )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        // Undo
+        IconButton(
+            onClick = onUndo,
+            enabled = canUndo,
+            modifier = Modifier
+                .size(42.dp)
+                .background(Color.White, CircleShape)
+                .shadow(2.dp, CircleShape)
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Undo,
+                contentDescription = "ย้อนกลับ",
+                tint = if (canUndo) Color(0xFF1E293B) else Color.LightGray
+            )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        // Redo
+        IconButton(
+            onClick = onRedo,
+            enabled = canRedo,
+            modifier = Modifier
+                .size(42.dp)
+                .background(Color.White, CircleShape)
+                .shadow(2.dp, CircleShape)
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Redo,
+                contentDescription = "ทำซ้ำ",
+                tint = if (canRedo) Color(0xFF1E293B) else Color.LightGray
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Finish / Claim Star Button
+        Button(
+            onClick = onFinish,
+            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF10B981)
+            ),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+            modifier = Modifier.height(42.dp)
+        ) {
+            Text("เสร็จแล้ว 🎉", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+        }
+    }
+}
+
+@Composable
+fun ColorPaletteRow(
+    selectedColor: Color,
+    isRainbowActive: Boolean,
+    isEraserActive: Boolean,
+    onSelectColor: (Color) -> Unit,
+    onOpenColorPicker: () -> Unit
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items(KIDS_PALETTE) { color ->
+            val isSelected = !isRainbowActive && !isEraserActive && selectedColor == color
+            val scale by animateFloatAsState(if (isSelected) 1.25f else 1.0f, label = "colorScale")
+
+            Box(
+                modifier = Modifier
+                    .scale(scale)
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .border(
+                        width = if (isSelected) 3.5.dp else 1.5.dp,
+                        color = if (isSelected) Color(0xFF6366F1) else Color(0xFFCBD5E1),
+                        shape = CircleShape
+                    )
+                    .clickable { onSelectColor(color) },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        tint = if (color == Color.White) Color.Black else Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        item {
+            // More Colors Button
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.sweepGradient(
+                            listOf(
+                                Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+                            )
+                        )
+                    )
+                    .border(2.dp, Color(0xFFE2E8F0), CircleShape)
+                    .clickable { onOpenColorPicker() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Palette, contentDescription = "เลือกสีเพิ่มเติม", tint = Color.White, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun PortraitToolsRow(
+    currentTool: ActiveTool,
+    currentBrushWidth: Float,
+    onSelectTool: (ActiveTool) -> Unit,
+    onChangeBrushWidth: (Float) -> Unit,
+    onClearCanvas: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Tool: Brush
+        ToolToggleButton(
+            title = "พู่กัน",
+            emoji = "🖌️",
+            isActive = currentTool == ActiveTool.BRUSH,
+            onClick = { onSelectTool(ActiveTool.BRUSH) }
+        )
+
+        // Tool: Rainbow
+        ToolToggleButton(
+            title = "สายรุ้ง",
+            emoji = "✨",
+            isActive = currentTool == ActiveTool.RAINBOW,
+            onClick = { onSelectTool(ActiveTool.RAINBOW) }
+        )
+
+        // Tool: Eraser
+        ToolToggleButton(
+            title = "ยางลบ",
+            emoji = "🧽",
+            isActive = currentTool == ActiveTool.ERASER,
+            onClick = { onSelectTool(ActiveTool.ERASER) }
+        )
+
+        // Brush Sizes: S, M, L, XL
+        Row(
+            modifier = Modifier
+                .background(Color(0xFFF1F5F9), RoundedCornerShape(16.dp))
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BrushSizeItem(size = 12f, current = currentBrushWidth, onClick = { onChangeBrushWidth(12f) })
+            BrushSizeItem(size = 24f, current = currentBrushWidth, onClick = { onChangeBrushWidth(24f) })
+            BrushSizeItem(size = 40f, current = currentBrushWidth, onClick = { onChangeBrushWidth(40f) })
+            BrushSizeItem(size = 60f, current = currentBrushWidth, onClick = { onChangeBrushWidth(60f) })
+        }
+
+        // Clear Canvas
+        IconButton(
+            onClick = onClearCanvas,
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color(0xFFFEE2E2), CircleShape)
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = "ล้าง", tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+fun LandscapeToolsPanel(
+    currentTool: ActiveTool,
+    currentBrushWidth: Float,
+    onSelectTool: (ActiveTool) -> Unit,
+    onChangeBrushWidth: (Float) -> Unit,
+    onClearCanvas: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(68.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color.White)
+            .border(2.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ToolToggleButton(
+                title = "แปรง",
+                emoji = "🖌️",
+                isActive = currentTool == ActiveTool.BRUSH,
+                onClick = { onSelectTool(ActiveTool.BRUSH) }
+            )
+
+            ToolToggleButton(
+                title = "สายรุ้ง",
+                emoji = "✨",
+                isActive = currentTool == ActiveTool.RAINBOW,
+                onClick = { onSelectTool(ActiveTool.RAINBOW) }
+            )
+
+            ToolToggleButton(
+                title = "ลบ",
+                emoji = "🧽",
+                isActive = currentTool == ActiveTool.ERASER,
+                onClick = { onSelectTool(ActiveTool.ERASER) }
+            )
+        }
+
+        // Sizes
+        Column(
+            modifier = Modifier
+                .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                .padding(vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            BrushSizeItem(size = 12f, current = currentBrushWidth, onClick = { onChangeBrushWidth(12f) })
+            BrushSizeItem(size = 24f, current = currentBrushWidth, onClick = { onChangeBrushWidth(24f) })
+            BrushSizeItem(size = 40f, current = currentBrushWidth, onClick = { onChangeBrushWidth(40f) })
+            BrushSizeItem(size = 60f, current = currentBrushWidth, onClick = { onChangeBrushWidth(60f) })
+        }
+
+        // Clear
+        IconButton(
+            onClick = onClearCanvas,
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color(0xFFFEE2E2), CircleShape)
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = "ล้าง", tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+fun ToolToggleButton(
+    title: String,
+    emoji: String,
+    isActive: Boolean,
+    onClick: () -> Unit
+) {
+    val bg = if (isActive) Color(0xFF6366F1) else Color(0xFFF1F5F9)
+    val textColor = if (isActive) Color.White else Color(0xFF475569)
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = bg,
+        modifier = Modifier.size(width = 54.dp, height = 48.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(emoji, fontSize = 16.sp)
+            Text(title, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
+        }
+    }
+}
+
+@Composable
+fun BrushSizeItem(
+    size: Float,
+    current: Float,
+    onClick: () -> Unit
+) {
+    val isSelected = current == size
+    val dotDp = when (size) {
+        12f -> 8.dp
+        24f -> 14.dp
+        40f -> 20.dp
+        else -> 26.dp
+    }
+
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(dotDp)
+                .background(
+                    if (isSelected) Color(0xFF6366F1) else Color(0xFF94A3B8),
+                    CircleShape
+                )
+        )
+    }
+}
+
+// ==================== DIALOGS ====================
+
+@Composable
+fun TemplateSelectorDialog(
+    currentIndex: Int,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedCategory by remember { mutableStateOf("ทั้งหมด") }
+    val categories = listOf("ทั้งหมด", "สัตว์น่ารัก", "พยัญชนะไทย", "ยานพาหนะ", "ของอร่อย", "วาดอิสระ")
+
+    val filteredList = COLORING_TEMPLATES.mapIndexed { idx, item -> idx to item }.filter { (_, item) ->
+        selectedCategory == "ทั้งหมด" || item.category == selectedCategory
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "🖼️ เลือกภาพระบายสี",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF1E293B)
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "ปิด")
+                    }
+                }
+
+                // Category Chips
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(categories) { cat ->
+                        val isSelected = selectedCategory == cat
+                        Surface(
+                            onClick = { selectedCategory = cat },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isSelected) Color(0xFF6366F1) else Color(0xFFF1F5F9)
+                        ) {
+                            Text(
+                                text = cat,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else Color(0xFF475569),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Templates Grid
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(filteredList) { (origIdx, template) ->
+                        val isCurrent = origIdx == currentIndex
+                        Card(
+                            onClick = { onSelect(origIdx) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (isCurrent) Color(0xFFEEF2FF) else Color(0xFFF8FAFC)),
+                            border = BorderStroke(
+                                width = if (isCurrent) 2.5.dp else 1.dp,
+                                color = if (isCurrent) Color(0xFF6366F1) else Color(0xFFE2E8F0)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                if (template.resId != null) {
+                                    Image(
+                                        painter = painterResource(id = template.resId),
+                                        contentDescription = template.title,
+                                        modifier = Modifier
+                                            .size(72.dp)
+                                            .padding(4.dp),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(72.dp)
+                                            .background(Color.White, RoundedCornerShape(12.dp))
+                                            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(12.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("🎨", fontSize = 32.sp)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = template.title,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E293B),
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomColorPickerDialog(
+    onSelectColor: (Color) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val extendedColors = listOf(
+        Color(0xFFFF3B30), Color(0xFFFF9500), Color(0xFFFFCC00), Color(0xFF34C759),
+        Color(0xFF00C853), Color(0xFF32ADE6), Color(0xFF007AFF), Color(0xFF5856D6),
+        Color(0xFFAF52DE), Color(0xFFFF2D55), Color(0xFFFF69B4), Color(0xFFFFB3C6),
+        Color(0xFF8D6E63), Color(0xFFA2845E), Color(0xFF4E342E), Color(0xFF263238),
+        Color(0xFF607D8B), Color(0xFF90A4AE), Color(0xFFCFD8DC), Color(0xFFFFFFFF),
+        Color(0xFFFF5252), Color(0xFFFF7043), Color(0xFFFFCA28), Color(0xFF66BB6A)
+    )
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("🎨 เลือกสีตามใจชอบ", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.height(240.dp)
+                ) {
+                    items(extendedColors) { c ->
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(c)
+                                .border(1.5.dp, Color(0xFFCBD5E1), CircleShape)
+                                .clickable { onSelectColor(c) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE2E8F0))
+                ) {
+                    Text("ปิด", color = Color(0xFF475569))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ColoringCelebrationDialog(
+    templateTitle: String,
+    timeSpentSeconds: Int,
+    userStars: Int,
+    onSaveImage: () -> Unit,
+    onNextPicture: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            modifier = Modifier.fillMaxWidth(0.92f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("🎉 สุดยอดเลยน้องๆ! 🌟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                Spacer(modifier = Modifier.height(6.dp))
+                Text("ระบายสี \"$templateTitle\" ได้สวยงามมาก", fontSize = 14.sp, color = Color(0xFF64748B))
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Stars Display
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("⭐", fontSize = 42.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("⭐", fontSize = 56.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("⭐", fontSize = 42.sp)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Stats Card
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFFEF3C7), RoundedCornerShape(16.dp))
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("คะแนนที่ได้", fontSize = 12.sp, color = Color(0xFF92400E))
+                        Text("+100 แต้ม", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("ดาวสะสม", fontSize = 12.sp, color = Color(0xFF92400E))
+                        Text("⭐ +3 ($userStars)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("เวลาที่ใช้", fontSize = 12.sp, color = Color(0xFF92400E))
+                        val m = timeSpentSeconds / 60
+                        val s = timeSpentSeconds % 60
+                        Text("${m}:${"%02d".format(s)} นาที", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB45309))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Save to Gallery Button
+                OutlinedButton(
+                    onClick = onSaveImage,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    border = BorderStroke(1.5.dp, Color(0xFF6366F1))
+                ) {
+                    Text("📸 บันทึกรูปลงในเครื่อง", fontWeight = FontWeight.Bold, color = Color(0xFF6366F1))
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Next Picture Button
+                Button(
+                    onClick = onNextPicture,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
+                ) {
+                    Text("🎨 ไประบายภาพต่อไป", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+// ==================== IMAGE EXPORT HELPER ====================
+
+fun saveDrawingBitmap(
+    context: Context,
+    strokes: List<ColoredStroke>,
+    templateResId: Int?,
+    width: Int,
+    height: Int,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit
+) {
+    try {
+        val w = if (width > 0) width else 1080
+        val h = if (height > 0) height else 1080
+
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        canvas.drawColor(android.graphics.Color.WHITE)
+
+        // Draw Template Image as background outline
+        if (templateResId != null) {
+            val templateBm = BitmapFactory.decodeResource(context.resources, templateResId)
+            if (templateBm != null) {
+                val scale = Math.min((w * 0.85f) / templateBm.width, (h * 0.85f) / templateBm.height)
+                val destW = (templateBm.width * scale).toInt()
+                val destH = (templateBm.height * scale).toInt()
+                val left = (w - destW) / 2
+                val top = (h - destH) / 2
+                val destRect = android.graphics.Rect(left, top, left + destW, top + destH)
+
+                val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    alpha = 180
+                }
+                canvas.drawBitmap(templateBm, null, destRect, paint)
+                templateBm.recycle()
+            }
+        }
+
+        // Draw Strokes
+        val strokePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            style = android.graphics.Paint.Style.STROKE
+            strokeCap = android.graphics.Paint.Cap.ROUND
+            strokeJoin = android.graphics.Paint.Join.ROUND
+        }
+
+        for (stroke in strokes) {
+            strokePaint.strokeWidth = stroke.strokeWidth
+            if (stroke.isEraser) {
+                strokePaint.color = android.graphics.Color.WHITE
+            } else if (stroke.isRainbow) {
+                strokePaint.color = android.graphics.Color.parseColor("#FF9500")
+            } else {
+                strokePaint.color = stroke.color.toArgb()
+            }
+
+            if (stroke.points.size > 1) {
+                val path = android.graphics.Path()
+                path.moveTo(stroke.points[0].x, stroke.points[0].y)
+                for (i in 1 until stroke.points.size) {
+                    path.lineTo(stroke.points[i].x, stroke.points[i].y)
+                }
+                canvas.drawPath(path, strokePaint)
+            } else if (stroke.points.isNotEmpty()) {
+                val fillPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    style = android.graphics.Paint.Style.FILL
+                    color = strokePaint.color
+                }
+                canvas.drawCircle(stroke.points[0].x, stroke.points[0].y, stroke.strokeWidth / 2f, fillPaint)
+            }
+        }
+
+        // Save to MediaStore
+        val filename = "kids_coloring_${System.currentTimeMillis()}.png"
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, filename)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-
-            // บอกว่าจะเก็บไว้ในโฟลเดอร์ Pictures (สำหรับ Android 10+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/MyPaintApp")
-                put(MediaStore.Images.Media.IS_PENDING, 1) // กำลังเขียน
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/KidsColoring")
+                put(MediaStore.Images.Media.IS_PENDING, 1)
             }
         }
 
-        // 3. ใช้ ContentResolver ในการสร้างไฟล์
-        val resolver = contentResolver
-        var uri: Uri? = null
-        var outputStream: OutputStream? = null
-
-        try {
-            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            if (uri == null) {
-                throw java.io.IOException("Failed to create new MediaStore record.")
+        val resolver = context.contentResolver
+        val uri: Uri? = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        if (uri != null) {
+            resolver.openOutputStream(uri)?.use { stream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
             }
-
-            outputStream = resolver.openOutputStream(uri)
-            if (outputStream == null) {
-                throw java.io.IOException("Failed to get output stream.")
-            }
-
-            // 4. เขียน Bitmap ลงในไฟล์
-            if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)) {
-                throw java.io.IOException("Failed to save bitmap.")
-            }
-
-            // 5. (สำหรับ Android 10+) บอกว่าเขียนเสร็จแล้ว
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 contentValues.clear()
                 contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
                 resolver.update(uri, contentValues, null, null)
             }
-
-            showToast("บันทึกภาพสำเร็จ!")
-
-            // ไม่ต้องใช้ sendBroadcast(ACTION_MEDIA_SCANNER_SCAN_FILE) อีกต่อไป
-            // ระบบ MediaStore จะจัดการให้เอง
-
-        } catch (e: Exception) {
-            Log.e("Error saving image", e.message.toString())
-            showToast("เกิดข้อผิดพลาดในการบันทึก")
-
-            // ถ้าเกิด Error ให้ลบไฟล์ที่สร้างค้างไว้ออก
-            uri?.let { resolver.delete(it, null, null) }
-
-        } finally {
-            outputStream?.close()
-            // ไม่ต้อง destroyDrawingCache()
+            onSuccess()
+        } else {
+            onError("Cannot create MediaStore record")
         }
+        bitmap.recycle()
+    } catch (e: Exception) {
+        onError(e.message ?: "Unknown error")
     }
+}
 
-    private fun showToast(message: String?) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
+private fun playLocalSound(context: Context, resId: Int) {
+    try {
+        val mp = MediaPlayer.create(context, resId)
+        mp?.setOnCompletionListener { it.release() }
+        mp?.start()
+    } catch (_: Exception) {}
 }

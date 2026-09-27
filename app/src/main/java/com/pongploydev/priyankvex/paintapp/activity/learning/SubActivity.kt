@@ -927,9 +927,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     itemKey = learningData.showTitle ?: learningData.speakTitle ?: "item_$selectedPos",
                     score = 100
                 )
-                dataManager.fetchUserProfile(userId).onSuccess { prof ->
-                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, 1)
-                }
+                dataManager.addStars(userId, 1)
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     Toast.makeText(this@SubActivity, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +1", Toast.LENGTH_SHORT).show()
                 }

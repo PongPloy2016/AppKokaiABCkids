@@ -462,9 +462,7 @@ class ActivityVideoDetail : AppCompatActivity(), TextToSpeech.OnInitListener {
                     itemKey = itemKey,
                     score = 100
                 )
-                dataManager.fetchUserProfile(userId).onSuccess { prof ->
-                    dataManager.addStarsAndLevel(userId, prof.totalStars, prof.currentLevel, 1)
-                }
+                dataManager.addStars(userId, 1)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@ActivityVideoDetail, "บันทึกคะแนนสำเร็จแล้ว! ⭐ +1 🎬 (จากการรับชมวิดีโอ)", Toast.LENGTH_SHORT).show()
                 }
