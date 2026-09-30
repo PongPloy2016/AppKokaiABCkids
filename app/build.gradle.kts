@@ -35,11 +35,9 @@ android {
         debug {
             isDebuggable = true
             isMinifyEnabled = false
+            extra["enableCrashlytics"] = false
             buildConfigField("boolean", "SHOW_TEST_ADS", "true")
             buildConfigField("String", "BUILD_MODE", "\"DEBUG\"")
-            //            firebaseCrashlytics {
-            //                mappingFileUploadEnabled = false
-            //            }
         }
 
         release {

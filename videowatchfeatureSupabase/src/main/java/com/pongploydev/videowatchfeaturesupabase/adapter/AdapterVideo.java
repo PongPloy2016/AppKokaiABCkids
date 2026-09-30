@@ -1,7 +1,5 @@
 package com.pongploydev.videowatchfeaturesupabase.adapter;
 
-import static com.pongploydev.videowatchfeaturesupabase.Constant.VIDEO_LIST_COMPACT;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.PorterDuff;
@@ -159,7 +157,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         RecyclerView.ViewHolder vh;
         if (viewType == VIEW_ITEM) {
-            if (sharedPref.getVideoViewType() == VIDEO_LIST_COMPACT) {
+            if (sharedPref.getVideoViewType() == Constant.VIDEO_LIST_COMPACT) {
                 View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video_compact, parent, false);
                 vh = new OriginalViewHolder(v);
             } else {
@@ -229,7 +227,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
             if (video.video_type != null && video.video_type.equalsIgnoreCase("youtube")) {
                 if (video.video_thumbnail == null || video.video_thumbnail.equals("")) {
-                    if (sharedPref.getVideoViewType() == VIDEO_LIST_COMPACT) {
+                    if (sharedPref.getVideoViewType() == Constant.VIDEO_LIST_COMPACT) {
                         Glide.with(context)
                                 .load(Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_MQ)
                                 .placeholder(R.drawable.ic_thumbnail)

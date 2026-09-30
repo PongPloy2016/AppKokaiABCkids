@@ -694,3 +694,13 @@ private fun PlanSelectionCard(
         }
     }
 }
+
+object SubscriptionDialogHelper {
+    @Composable
+    fun Show(
+        onDismiss: () -> Unit,
+        onSubscribed: ((SubscriptionPlan) -> Unit)? = null
+    ) {
+        SubscriptionDialog(onDismiss = onDismiss, onSubscribed = onSubscribed)
+    }
+}

@@ -243,6 +243,7 @@ class MenuThaiLettersActivity : ComponentActivity() {
                                     playSoundForItem(item)
                                 }
                             },
+
                             onCardLongClick = { item, position ->
                                 if (!isQuizMode && !isAutoReading) {
                                     playSoundForItem(item)

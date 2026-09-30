@@ -82,6 +82,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import com.pongploydev.profilefeature.auth.SupabaseAuthManager
 import com.pongploydev.profilefeature.data.SupabaseDataManager
+import com.pongploydev.profilefeature.compose.SubscriptionDialogHelper
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -679,6 +680,7 @@ fun HomeHeader(
     levelProgress: Float = 0.7f,
     starsRemaining: Int = 30,
     streakDays: Int = 5,
+    isSubscriptionEnabled: Boolean = true,
     onMenuClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
     onSubscriptionClick: () -> Unit = {},
@@ -833,30 +835,32 @@ fun HomeHeader(
                             )
                         }
                     }
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFFFD166).copy(alpha = 0.30f),
-                        border = BorderStroke(1.dp, Color(0xFFFFD166).copy(alpha = 0.85f)),
-                        modifier = Modifier.clickableNoRipple {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            onSubscriptionClick()
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    if (isSubscriptionEnabled) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFFFD166).copy(alpha = 0.30f),
+                            border = BorderStroke(1.dp, Color(0xFFFFD166).copy(alpha = 0.85f)),
+                            modifier = Modifier.clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onSubscriptionClick()
+                            }
                         ) {
-                            Text(
-                                text = "💎",
-                                fontSize = 12.sp
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text(
-                                text = "สนับสนุน",
-                                color = Color.White,
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "💎",
+                                    fontSize = 12.sp
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "สนับสนุน",
+                                    color = Color.White,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -1881,6 +1885,17 @@ fun MainComposeScreen(navController: NavController? = null) {
     var starCount by remember { mutableIntStateOf(dataManager.getUserTotalStars()) }
     var currentLevel by remember { mutableIntStateOf(dataManager.getUserCurrentLevel()) }
     var userDisplayName by remember { mutableStateOf(dataManager.getLocalDisplayName() ?: "คนเก่ง") }
+    var isSubscriptionEnabled by remember {
+        mutableStateOf(dataManager.getCachedAppSettings()?.isSubscriptionEnabled ?: false)
+    }
+
+    fun syncAppSettings() {
+        scope.launch {
+            dataManager.fetchAppSettings().onSuccess { settings ->
+                isSubscriptionEnabled = settings.isSubscriptionEnabled
+            }
+        }
+    }
 
     // Sync live stars and level from local persistent cache & Supabase
     fun loadSupabaseStars() {
@@ -1913,6 +1928,7 @@ fun MainComposeScreen(navController: NavController? = null) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
                 loadSupabaseStars()
+                syncAppSettings()
             }
         }
         homeLifecycleOwner.lifecycle.addObserver(observer)
@@ -1923,6 +1939,7 @@ fun MainComposeScreen(navController: NavController? = null) {
 
     LaunchedEffect(userId) {
         loadSupabaseStars()
+        syncAppSettings()
     }
 
     val menuItems = remember { getMenuItems() }
@@ -2006,8 +2023,8 @@ fun MainComposeScreen(navController: NavController? = null) {
         )
     }
 
-    if (showSubscriptionDialog) {
-        com.pongploydev.profilefeature.compose.SubscriptionDialog(
+    if (showSubscriptionDialog && isSubscriptionEnabled) {
+        SubscriptionDialogHelper.Show(
             onDismiss = { showSubscriptionDialog = false },
             onSubscribed = {
                 showSubscriptionDialog = false
@@ -2050,6 +2067,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                             levelProgress = levelProgress,
                             starsRemaining = starsNeeded,
                             streakDays = dataManager.getUserStreakDays(),
+                            isSubscriptionEnabled = isSubscriptionEnabled,
                             onMenuClick = {
                                 (context as? com.pongploydev.priyankvex.paintapp.activity.MainActivity)?.openDrawer()
                             },
@@ -2118,80 +2136,82 @@ fun MainComposeScreen(navController: NavController? = null) {
                     item { Spacer(modifier = Modifier.height(14.dp)) }
 
                     // VIP MEMBER / SUBSCRIPTION BANNER CARD
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .clickableNoRipple {
-                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                                    showSubscriptionDialog = true
-                                },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                        ) {
-                            Box(
+                    if (isSubscriptionEnabled) {
+                        item {
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(Color(0xFF6C5CE7), Color(0xFF8E44AD), Color(0xFFFF9F43))
-                                        )
-                                    )
-                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                                    .padding(horizontal = 16.dp)
+                                    .clickableNoRipple {
+                                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                        showSubscriptionDialog = true
+                                    },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0xFF6C5CE7), Color(0xFF8E44AD), Color(0xFFFF9F43))
+                                            )
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 12.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .background(Color.White.copy(alpha = 0.22f), CircleShape),
-                                            contentAlignment = Alignment.Center
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(text = "👑", fontSize = 20.sp)
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .background(Color.White.copy(alpha = 0.22f), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = "👑", fontSize = 20.sp)
+                                            }
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column {
+                                                Text(
+                                                    text = "สนับสนุน สมาชิก VIP (Subscriptions)",
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 13.sp
+                                                )
+                                                Text(
+                                                    text = "ปลดล็อกไร้โฆษณา • รับดาวโบนัส x2 • ทุกด่าน & เกม",
+                                                    color = Color.White.copy(alpha = 0.9f),
+                                                    fontSize = 10.5.sp
+                                                )
+                                            }
                                         }
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Column {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = Color(0xFFFFD166)
+                                        ) {
                                             Text(
-                                                text = "สนับสนุน สมาชิก VIP (Subscriptions)",
-                                                color = Color.White,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                fontSize = 13.sp
-                                            )
-                                            Text(
-                                                text = "ปลดล็อกไร้โฆษณา • รับดาวโบนัส x2 • ทุกด่าน & เกม",
-                                                color = Color.White.copy(alpha = 0.9f),
-                                                fontSize = 10.5.sp
+                                                text = "สมัครสมาชิก 💎",
+                                                color = Color(0xFF2D3436),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.5.sp,
+                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                                             )
                                         }
-                                    }
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = Color(0xFFFFD166)
-                                    ) {
-                                        Text(
-                                            text = "สมัครสมาชิก 💎",
-                                            color = Color(0xFF2D3436),
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.5.sp,
-                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                                        )
                                     }
                                 }
                             }
                         }
-                    }
 
-                    item { Spacer(modifier = Modifier.height(18.dp)) }
+                        item { Spacer(modifier = Modifier.height(18.dp)) }
+                    }
 
                     item {
                         val banners = remember { getHomeBanners() }

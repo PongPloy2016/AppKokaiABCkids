@@ -778,6 +778,31 @@ class SupabaseDataManager private constructor(context: Context) {
         }
     }
 
+    // ==================== APP SETTINGS & REMOTE CONFIG CACHE ====================
+
+    private val settingsPrefs = appContext.getSharedPreferences("app_remote_settings", Context.MODE_PRIVATE)
+
+    fun getCachedAppSettings(): AppSettings? {
+        val json = settingsPrefs.getString("cached_app_settings", null) ?: return null
+        return try {
+            gson.fromJson(json, AppSettings::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun saveCachedAppSettings(settings: AppSettings) {
+        try {
+            settingsPrefs.edit().putString("cached_app_settings", gson.toJson(settings)).apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun isSubscriptionFeatureEnabled(): Boolean {
+        return getCachedAppSettings()?.isSubscriptionEnabled ?: true
+    }
+
     /**
      * Fetch remote app settings from Supabase app_settings table
      */
@@ -786,21 +811,25 @@ class SupabaseDataManager private constructor(context: Context) {
         try {
             val response = dataApiService.getAppSettings(
                 apiKey = SupabaseAuthManager.SUPABASE_ANON_KEY,
-                auth = getAuthHeader(),
-                idFilter = "eq.1"
+                auth = getAnonAuthHeader(),
+                idFilter = null,
+                limit = 1
             )
             if (response.isSuccessful && !response.body().isNullOrEmpty()) {
                 val settings = response.body()!!.first()
+                saveCachedAppSettings(settings)
                 Log.d(tag, "App settings fetched successfully from Supabase: $settings")
                 Result.success(settings)
             } else {
-                val defaultSettings = AppSettings()
-                Log.w(tag, "Failed to fetch app settings (HTTP ${response.code()}), using default config.")
-                Result.success(defaultSettings)
+                val cached = getCachedAppSettings()
+                val fallback = cached ?: AppSettings()
+                Log.w(tag, "Failed to fetch app settings (HTTP ${response.code()}), using fallback config.")
+                Result.success(fallback)
             }
         } catch (e: Exception) {
-            Log.e(tag, "fetchAppSettings exception: ${e.localizedMessage}, using default config.", e)
-            Result.success(AppSettings())
+            Log.e(tag, "fetchAppSettings exception: ${e.localizedMessage}, using fallback config.", e)
+            val fallback = getCachedAppSettings() ?: AppSettings()
+            Result.success(fallback)
         }
     }
 }

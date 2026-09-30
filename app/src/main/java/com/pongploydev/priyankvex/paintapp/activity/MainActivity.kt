@@ -19,6 +19,8 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.viewpager.widget.ViewPager
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
@@ -47,6 +49,7 @@ import com.pongploydev.priyankvex.paintapp.utils.AppUpdateCustomsManager
 import com.pongploydev.priyankvex.paintapp.utils.RtlViewPager
 import com.pongploydev.priyankvex.paintapp.utils.ViewPagerHelper
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.pongploydev.profilefeature.compose.SubscriptionDialogHelper
 
 class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationView.OnNavigationItemSelectedListener {
 
@@ -481,6 +484,20 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         if (isPlayCoreAppUpdateManagerAvailable() && shouldEnableInAppUpdates()) {
             checkForUpdateInProgress()
         }
+
+        // อัปเดตสถานะการล็อก Drawer โดยเช็คจากการเข้าสู่ระบบ (เป็นสมาชิก) ไม่ใช่ VIP
+        val user = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this).getStoredUser()
+        val isMember = user != null
+        
+        if (::drawerLayout.isInitialized) {
+            if (isMember) {
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+            } else {
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+            }
+        }
+
+        updateSubscriptionMenuVisibility()
     }
 
     override fun onDestroy() {
@@ -923,6 +940,17 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         drawerLayout.addDrawerListener(drawerToggle)
         drawerToggle.syncState()
 
+        // Override การคลิกที่ปุ่มแฮมเบอร์เกอร์ (เช็คว่าเป็นสมาชิก/เข้าสู่ระบบแล้วหรือยัง)
+        toolbar.setNavigationOnClickListener {
+            val user = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this@MainActivity).getStoredUser()
+            if (user != null) {
+                drawerLayout.openDrawer(GravityCompat.START)
+            } else {
+                Toast.makeText(this@MainActivity, "กรุณาเข้าสู่ระบบเพื่อใช้งานเมนูนี้", Toast.LENGTH_SHORT).show()
+                // สามารถใส่โค้ดให้เปิดหน้าต่างล็อกอินที่นี่ได้หากต้องการ
+            }
+        }
+
         // กำหนดข้อมูลผู้ใช้ใน Nav Header (ถ้ามีการล็อกอิน)
         try {
             val headerView = navigationView.getHeaderView(0)
@@ -949,9 +977,16 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 R.color.color_light_bottom_navigation
             ))
         }
+
+        updateSubscriptionMenuVisibility()
     }
 
     fun openDrawer() {
+        val user = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this).getStoredUser()
+        if (user == null) {
+            Toast.makeText(this, "กรุณาเข้าสู่ระบบเพื่อใช้งานเมนูนี้", Toast.LENGTH_SHORT).show()
+            return
+        }
         if (::drawerLayout.isInitialized) {
             drawerLayout.openDrawer(GravityCompat.START)
         }
@@ -1017,7 +1052,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 nav.selectedItemId = R.id.navigation_profile
             }
             R.id.nav_subscription -> {
-                showSubscriptionDialog()
+                val dataManager = com.pongploydev.profilefeature.data.SupabaseDataManager.getInstance(this)
+                if (dataManager.getCachedAppSettings()?.isSubscriptionEnabled == false) {
+                    Toast.makeText(this, "ระบบสมาชิกปิดปรับปรุงชั่วคราว", Toast.LENGTH_SHORT).show()
+                } else {
+                    showSubscriptionDialog()
+                }
             }
             R.id.nav_settings -> {
                 showSettingsDialog()
@@ -1033,11 +1073,36 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         return true
     }
 
+    private fun updateSubscriptionMenuVisibility() {
+        try {
+            if (!::navigationView.isInitialized) return
+            val dataManager = com.pongploydev.profilefeature.data.SupabaseDataManager.getInstance(this)
+            val cached = dataManager.getCachedAppSettings()
+            val isEnabled = cached?.isSubscriptionEnabled ?: false
+            navigationView.menu.findItem(R.id.nav_subscription)?.isVisible = isEnabled
+
+            lifecycleScope.launch {
+                dataManager.fetchAppSettings().onSuccess { settings ->
+                    if (::navigationView.isInitialized) {
+                        navigationView.menu.findItem(R.id.nav_subscription)?.isVisible = settings.isSubscriptionEnabled
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating subscription menu visibility", e)
+        }
+    }
+
     fun showSubscriptionDialog() {
+        val dataManager = com.pongploydev.profilefeature.data.SupabaseDataManager.getInstance(this)
+        if (dataManager.getCachedAppSettings()?.isSubscriptionEnabled == false) {
+            Toast.makeText(this, "ระบบสมาชิกปิดปรับปรุงชั่วคราว", Toast.LENGTH_SHORT).show()
+            return
+        }
         val dialog = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
         val composeView = androidx.compose.ui.platform.ComposeView(this).apply {
             setContent {
-                com.pongploydev.profilefeature.compose.SubscriptionDialog(
+                SubscriptionDialogHelper.Show(
                     onDismiss = { dialog.dismiss() }
                 )
             }

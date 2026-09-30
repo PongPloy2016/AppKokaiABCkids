@@ -120,6 +120,7 @@ import com.pongploydev.profilefeature.data.UserAchievement
 import com.pongploydev.profilefeature.data.UserProfile
 import com.pongploydev.profilefeature.data.UserQuizResult
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 object KidTheme {
     val Primary = Color(0xFF6C5CE7)
@@ -289,142 +290,141 @@ fun AuthLoginViewDual(
         if (result.data == null) {
             isLoading = false
             Log.w("GoogleAuth", "Google sign-in result.data is null (user backed out)")
-            return@rememberLauncherForActivityResult
-        }
+        } else {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                if (account != null) {
+                    val googleEmail = account.email ?: ""
+                    val googleDisplayName = account.displayName ?: account.givenName ?: "เพื่อนตัวน้อย Google"
+                    val googleId = account.id ?: UUID.randomUUID().toString()
+                    val photoUrl = account.photoUrl?.toString()
+                    val idToken = account.idToken
 
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        try {
-            val account = task.getResult(ApiException::class.java)
-            if (account != null) {
-                val googleEmail = account.email ?: ""
-                val googleDisplayName = account.displayName ?: account.givenName ?: "เพื่อนตัวน้อย Google"
-                val googleId = account.id ?: java.util.UUID.randomUUID().toString()
-                val photoUrl = account.photoUrl?.toString()
-                val idToken = account.idToken
-
-                val analytics = FirebaseAnalytics.getInstance(context)
-                val bundle = Bundle().apply {
-                    putString("button_name", "google_signin_success")
-                    putString("user_email", googleEmail)
-                }
-                analytics.logEvent("select_content", bundle)
-
-                scope.launch {
-                    // 1. Supabase Auth Sync
-                    val supabaseRes = supabaseAuthManager.signInWithGoogle(
-                        email = googleEmail,
-                        displayName = googleDisplayName,
-                        googleId = googleId,
-                        avatarUrl = photoUrl,
-                        idToken = idToken
-                    )
-                    val spUser = supabaseRes.getOrNull()
-
-                    // 2. Upsert profile & device to Supabase
-                    if (spUser != null) {
-                        val dataMgr = SupabaseDataManager.getInstance(context)
-                        val currentLocalStars = dataMgr.getUserTotalStars()
-                        val currentLocalLevel = dataMgr.getUserCurrentLevel()
-                        dataMgr.upsertUserProfile(
-                            UserProfile(
-                                id = spUser.id,
-                                email = googleEmail,
-                                displayName = googleDisplayName,
-                                avatarUrl = photoUrl,
-                                totalStars = currentLocalStars,
-                                currentLevel = currentLocalLevel
-                            )
-                        )
-                        val androidId = try {
-                            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-                        } catch (e: Exception) {
-                            null
-                        } ?: java.util.UUID.randomUUID().toString()
-
-                        val appVersion = try {
-                            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-                        } catch (e: Exception) {
-                            "1.0.0"
-                        }
-                        dataMgr.registerUserDevice(
-                            userId = spUser.id,
-                            deviceId = androidId,
-                            appVersion = appVersion
-                        )
+                    val analytics = FirebaseAnalytics.getInstance(context)
+                    val bundle = Bundle().apply {
+                        putString("button_name", "google_signin_success")
+                        putString("user_email", googleEmail)
                     }
+                    analytics.logEvent("select_content", bundle)
 
-                    // 3. Firebase Auth Sync
-                    val finishAuth = {
-                        isLoading = false
+                    scope.launch {
+                        // 1. Supabase Auth Sync
+                        val supabaseRes = supabaseAuthManager.signInWithGoogle(
+                            email = googleEmail,
+                            displayName = googleDisplayName,
+                            googleId = googleId,
+                            avatarUrl = photoUrl,
+                            idToken = idToken
+                        )
+                        val spUser = supabaseRes.getOrNull()
+
+                        // 2. Upsert profile & device to Supabase
                         if (spUser != null) {
-                            onSupabaseSuccess(spUser)
-                        }
-                        Toast.makeText(context, "ยินดีต้อนรับ ${googleDisplayName}! เข้าสู่ระบบด้วย Google เรียบร้อยแล้ว 🚀⭐", Toast.LENGTH_SHORT).show()
-                    }
+                            val dataMgr = SupabaseDataManager.getInstance(context)
+                            val currentLocalStars = dataMgr.getUserTotalStars()
+                            val currentLocalLevel = dataMgr.getUserCurrentLevel()
+                            dataMgr.upsertUserProfile(
+                                UserProfile(
+                                    id = spUser.id,
+                                    email = googleEmail,
+                                    displayName = googleDisplayName,
+                                    avatarUrl = photoUrl,
+                                    totalStars = currentLocalStars,
+                                    currentLevel = currentLocalLevel
+                                )
+                            )
+                            val androidId = try {
+                                Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                            } catch (e: Exception) {
+                                null
+                            } ?: UUID.randomUUID().toString()
 
-                    if (!idToken.isNullOrBlank()) {
-                        try {
-                            val credential = GoogleAuthProvider.getCredential(idToken, null)
-                            if (firebaseAuth.currentUser?.isAnonymous == true) {
-                                firebaseAuth.signOut()
+                            val appVersion = try {
+                                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                            } catch (e: Exception) {
+                                "1.0.0"
                             }
-                            firebaseAuth.signInWithCredential(credential)
-                                .addOnSuccessListener {
-                                    finishAuth()
+                            dataMgr.registerUserDevice(
+                                userId = spUser.id,
+                                deviceId = androidId,
+                                appVersion = appVersion
+                            )
+                        }
+
+                        // 3. Firebase Auth Sync
+                        val finishAuth = {
+                            isLoading = false
+                            if (spUser != null) {
+                                onSupabaseSuccess(spUser)
+                            }
+                            Toast.makeText(context, "ยินดีต้อนรับ ${googleDisplayName}! เข้าสู่ระบบด้วย Google เรียบร้อยแล้ว 🚀⭐", Toast.LENGTH_SHORT).show()
+                        }
+
+                        if (!idToken.isNullOrBlank()) {
+                            try {
+                                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                                if (firebaseAuth.currentUser?.isAnonymous == true) {
+                                    firebaseAuth.signOut()
                                 }
-                                .addOnFailureListener { e ->
-                                    Log.w("GoogleAuth", "Firebase signInWithCredential failed: ${e.message}, keeping active session")
-                                    if (firebaseAuth.currentUser == null) {
-                                        firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
-                                    } else {
+                                firebaseAuth.signInWithCredential(credential)
+                                    .addOnSuccessListener {
                                         finishAuth()
                                     }
-                                }
-                        } catch (e: Exception) {
-                            finishAuth()
-                        }
-                    } else {
-                        if (firebaseAuth.currentUser == null) {
-                            firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
-                        } else {
-                            val u = firebaseAuth.currentUser
-                            if (u != null) {
-                                val updates = UserProfileChangeRequest.Builder()
-                                    .setDisplayName(googleDisplayName)
-                                    .build()
-                                u.updateProfile(updates)
+                                    .addOnFailureListener { e ->
+                                        Log.w("GoogleAuth", "Firebase signInWithCredential failed: ${e.message}, keeping active session")
+                                        if (firebaseAuth.currentUser == null) {
+                                            firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
+                                        } else {
+                                            finishAuth()
+                                        }
+                                    }
+                            } catch (e: Exception) {
+                                finishAuth()
                             }
-                            finishAuth()
+                        } else {
+                            if (firebaseAuth.currentUser == null) {
+                                firebaseAuth.signInAnonymously().addOnCompleteListener { finishAuth() }
+                            } else {
+                                val u = firebaseAuth.currentUser
+                                if (u != null) {
+                                    val updates = UserProfileChangeRequest.Builder()
+                                        .setDisplayName(googleDisplayName)
+                                        .build()
+                                    u.updateProfile(updates)
+                                }
+                                finishAuth()
+                            }
                         }
                     }
+                } else {
+                    isLoading = false
+                    val msg = "ไม่พบข้อมูลบัญชี Google กรุณาลองใหม่อีกครั้ง"
+                    errorMessage = msg
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 }
-            } else {
+            } catch (e: ApiException) {
                 isLoading = false
-                val msg = "ไม่พบข้อมูลบัญชี Google กรุณาลองใหม่อีกครั้ง"
+                Log.e("GoogleAuth", "Google sign-in ApiException code: ${e.statusCode}, message: ${e.message}", e)
+                if (e.statusCode == 10) {
+                    showSha1Dialog = true
+                }
+                val friendlyMsg = when (e.statusCode) {
+                    10 -> "Google Sign-In ต้องการ SHA-1 ใน Firebase Console (Code 10: DEVELOPER_ERROR)"
+                    12500 -> "การยืนยันตัวตน Google ไม่สำเร็จ (Code 12500: SIGN_IN_FAILED)"
+                    12501, 16 -> "ยกเลิกการเลือกบัญชี Google"
+                    7 -> "เครือข่ายขัดข้อง กรุณาตรวจสอบอินเทอร์เน็ต (Code 7)"
+                    else -> "เข้าสู่ระบบด้วย Google ไม่สำเร็จ (รหัสสถานะ: ${e.statusCode}) ${e.localizedMessage ?: ""}"
+                }
+                errorMessage = friendlyMsg
+                Toast.makeText(context, friendlyMsg, Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                isLoading = false
+                Log.e("GoogleAuth", "Google sign-in unexpected exception: ${e.localizedMessage}", e)
+                val msg = "เกิดข้อผิดพลาด: ${e.localizedMessage}"
                 errorMessage = msg
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
-        } catch (e: ApiException) {
-            isLoading = false
-            Log.e("GoogleAuth", "Google sign-in ApiException code: ${e.statusCode}, message: ${e.message}", e)
-            if (e.statusCode == 10) {
-                showSha1Dialog = true
-            }
-            val friendlyMsg = when (e.statusCode) {
-                10 -> "Google Sign-In ต้องการ SHA-1 ใน Firebase Console (Code 10: DEVELOPER_ERROR)"
-                12500 -> "การยืนยันตัวตน Google ไม่สำเร็จ (Code 12500: SIGN_IN_FAILED)"
-                12501, 16 -> "ยกเลิกการเลือกบัญชี Google"
-                7 -> "เครือข่ายขัดข้อง กรุณาตรวจสอบอินเทอร์เน็ต (Code 7)"
-                else -> "เข้าสู่ระบบด้วย Google ไม่สำเร็จ (รหัสสถานะ: ${e.statusCode}) ${e.localizedMessage ?: ""}"
-            }
-            errorMessage = friendlyMsg
-            Toast.makeText(context, friendlyMsg, Toast.LENGTH_LONG).show()
-        } catch (e: Exception) {
-            isLoading = false
-            Log.e("GoogleAuth", "Google sign-in unexpected exception: ${e.localizedMessage}", e)
-            val msg = "เกิดข้อผิดพลาด: ${e.localizedMessage}"
-            errorMessage = msg
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1162,6 +1162,7 @@ fun ProfileDetailsViewDual(
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showQuizHistoryDetail by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
+    var appSettings by remember { mutableStateOf(dataManager.getCachedAppSettings()) }
 
     // Load Live Data from Supabase
     fun loadSupabaseLiveData() {
@@ -1176,6 +1177,9 @@ fun ProfileDetailsViewDual(
             }
             dataManager.fetchAchievements(userId).onSuccess { ach ->
                 achievements = ach
+            }
+            dataManager.fetchAppSettings().onSuccess { settings ->
+                appSettings = settings
             }
             isDataLoading = false
         }
@@ -1489,79 +1493,81 @@ fun ProfileDetailsViewDual(
                     }
 
                     // VIP MEMBER / SUBSCRIPTION BANNER CARD
-                    val isVip = dataManager.isVipSubscriber()
-                    val vipTier = dataManager.getSubscriptionTier()
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                            .clickable { showSubscriptionDialog = true },
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isVip) Color(0xFFFFF8E1) else Color(0xFFF3E5F5)
-                        ),
-                        border = BorderStroke(
-                            1.5.dp,
-                            if (isVip) Color(0xFFFFB300) else Color(0xFFAB47BC)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                    ) {
-                        Row(
+                    if (appSettings?.isSubscriptionEnabled == true) {
+                        val isVip = dataManager.isVipSubscriber()
+                        val vipTier = dataManager.getSubscriptionTier()
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(bottom = 16.dp)
+                                .clickable { showSubscriptionDialog = true },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isVip) Color(0xFFFFF8E1) else Color(0xFFF3E5F5)
+                            ),
+                            border = BorderStroke(
+                                1.5.dp,
+                                if (isVip) Color(0xFFFFB300) else Color(0xFFAB47BC)
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
                         ) {
                             Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(46.dp)
-                                        .background(
-                                            if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD),
-                                            CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = if (isVip) "👑" else "💎", fontSize = 22.sp)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = if (isVip) "สมาชิก VIP: $vipTier" else "สนับสนุน สมาชิก (Subscriptions)",
-                                            fontWeight = FontWeight.ExtraBold,
-                                            fontSize = 13.5.sp,
-                                            color = if (isVip) Color(0xFFE65100) else Color(0xFF4A148C)
-                                        )
-                                        if (isVip) {
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(text = "👑", fontSize = 12.sp)
-                                        }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(46.dp)
+                                            .background(
+                                                if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD),
+                                                CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = if (isVip) "👑" else "💎", fontSize = 22.sp)
                                     }
-                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = if (isVip) "สมาชิก VIP: $vipTier" else "สนับสนุน สมาชิก (Subscriptions)",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 13.5.sp,
+                                                color = if (isVip) Color(0xFFE65100) else Color(0xFF4A148C)
+                                            )
+                                            if (isVip) {
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(text = "👑", fontSize = 12.sp)
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = if (isVip) "สิทธิพิเศษ VIP ทำงานอยู่ • ไร้โฆษณา • ดาว x2" else "ปลดล็อก VIP ไร้โฆษณา • ดาวโบนัส x2 • ครบทุกเกม",
+                                            fontSize = 11.sp,
+                                            color = if (isVip) Color(0xFF795548) else Color(0xFF6A1B9A)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD)
+                                ) {
                                     Text(
-                                        text = if (isVip) "สิทธิพิเศษ VIP ทำงานอยู่ • ไร้โฆษณา • ดาว x2" else "ปลดล็อก VIP ไร้โฆษณา • ดาวโบนัส x2 • ครบทุกเกม",
-                                        fontSize = 11.sp,
-                                        color = if (isVip) Color(0xFF795548) else Color(0xFF6A1B9A)
+                                        text = if (isVip) "ดูสิทธิ VIP" else "สนับสนุน 💎",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                     )
                                 }
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD)
-                            ) {
-                                Text(
-                                    text = if (isVip) "ดูสิทธิ VIP" else "สนับสนุน 💎",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                )
                             }
                         }
                     }
@@ -1952,7 +1958,7 @@ fun ProfileDetailsViewDual(
         )
     }
 
-    if (showSubscriptionDialog) {
+    if (showSubscriptionDialog && appSettings?.isSubscriptionEnabled == true) {
         SubscriptionDialog(
             onDismiss = { showSubscriptionDialog = false },
             onSubscribed = {

@@ -138,7 +138,8 @@ interface SupabaseDataApiService {
     suspend fun getAppSettings(
         @Header("apikey") apiKey: String,
         @Header("Authorization") auth: String,
-        @Query("id") idFilter: String = "eq.1",
+        @Query("id") idFilter: String? = null,
+        @Query("limit") limit: Int = 1,
         @Query("select") select: String = "*"
     ): Response<List<AppSettings>>
 }
