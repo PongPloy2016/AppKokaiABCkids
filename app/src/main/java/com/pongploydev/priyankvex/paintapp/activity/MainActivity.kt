@@ -1043,9 +1043,12 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
             R.id.nav_leaderboard -> {
                 startActivity(Intent(this, com.pongploydev.priyankvex.paintapp.activity.QuizLeaderboardActivity::class.java))
             }
-            R.id.nav_web -> {
+            R.id.nav_news -> {
                 vp.currentItem = 1
-                nav.selectedItemId = R.id.navigation_web
+                nav.selectedItemId = R.id.navigation_news
+            }
+            R.id.nav_web -> {
+                startActivity(com.pongploydev.kidswebviewfeature.KidsWebViewActivity.createIntent(this))
             }
             R.id.nav_profile -> {
                 vp.currentItem = 5
@@ -1182,7 +1185,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 updateToolbarVisibility(position)
                 val (screenName, screenClass) = when (position) {
                     0 -> Pair("หน้าแรก (Home)", "MainGridFragment")
-                    1 -> Pair("หน้าท่องเว็บสนุก (Web Fun)", "KidsWebViewFragment")
+                    1 -> Pair("หน้าข่าวสาร (News)", "NewsComposeFragment")
                     2 -> Pair("หน้าวิดีโอ (Video)", "VideoListFragment")
                     3 -> Pair("หน้าแบบทดสอบ (Quiz)", "QuizFragment")
                     4 -> Pair("หน้าเกมส์ (Game Hub)", "GameHubComposeFragment")
@@ -1199,7 +1202,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 updateToolbarVisibility(position)
                 val (screenName, screenClass) = when (position) {
                     0 -> Pair("หน้าแรก (Home)", "MainGridFragment")
-                    1 -> Pair("หน้าท่องเว็บสนุก (Web Fun)", "KidsWebViewFragment")
+                    1 -> Pair("หน้าข่าวสาร (News)", "NewsComposeFragment")
                     2 -> Pair("หน้าวิดีโอ (Video)", "VideoListFragment")
                     3 -> Pair("หน้าแบบทดสอบ (Quiz)", "QuizFragment")
                     4 -> Pair("หน้าเกมส์ (Game Hub)", "GameHubComposeFragment")

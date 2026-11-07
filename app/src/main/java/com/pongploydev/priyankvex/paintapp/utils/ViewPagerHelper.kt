@@ -11,7 +11,7 @@ import androidx.viewpager.widget.ViewPager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.pongploydev.priyankvex.paintapp.R
 import com.pongploydev.priyankvex.paintapp.fragment.ComposeFragment
-import com.pongploydev.kidswebviewfeature.fragment.KidsWebComposeFragment
+import com.pongploydev.newsfeature.fragment.NewsComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizComposeFragment
 import com.pongploydev.priyankvex.paintapp.fragment.QuizFragment
 import com.pongploydev.profilefeature.ProfileComposeFragment
@@ -37,7 +37,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_web -> {
+                R.id.navigation_news -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
@@ -84,7 +84,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             1 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_web)
+                                        activity.resources.getString(R.string.title_nav_news)
                             }
                             2 -> {
                                 titleToolbar.text =
@@ -124,7 +124,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_web -> {
+                R.id.navigation_news -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
@@ -171,7 +171,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             1 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_web)
+                                        activity.resources.getString(R.string.title_nav_news)
                             }
                             2 -> {
                                 titleToolbar.text =
@@ -211,7 +211,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_web -> {
+                R.id.navigation_news -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
@@ -258,7 +258,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             1 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_web)
+                                        activity.resources.getString(R.string.title_nav_news)
                             }
                             2 -> {
                                 titleToolbar.text =
@@ -298,7 +298,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                     viewPager.currentItem = 0
                     return@setOnItemSelectedListener true
                 }
-                R.id.navigation_web -> {
+                R.id.navigation_news -> {
                     viewPager.currentItem = 1
                     return@setOnItemSelectedListener true
                 }
@@ -345,7 +345,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
                             }
                             1 -> {
                                 titleToolbar.text =
-                                        activity.resources.getString(R.string.title_nav_web)
+                                        activity.resources.getString(R.string.title_nav_news)
                             }
                             2 -> {
                                 titleToolbar.text =
@@ -377,7 +377,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
         override fun getItem(position: Int): Fragment {
             when (position) {
                 0 -> return ComposeFragment()
-                1 -> return KidsWebComposeFragment()
+                1 -> return NewsComposeFragment()
                 2 -> return VideoListFragment()
                 3 -> return QuizComposeFragment()
                 4 -> return GameHubComposeFragment()
@@ -397,7 +397,7 @@ class ViewPagerHelper(var activity: AppCompatActivity) {
         override fun getItem(position: Int): Fragment {
             when (position) {
                 0 -> return ComposeFragment()
-                1 -> return KidsWebComposeFragment()
+                1 -> return NewsComposeFragment()
                 2 -> return VideoListFragment()
                 3 -> return QuizComposeFragment()
                 4 -> return GameHubComposeFragment()

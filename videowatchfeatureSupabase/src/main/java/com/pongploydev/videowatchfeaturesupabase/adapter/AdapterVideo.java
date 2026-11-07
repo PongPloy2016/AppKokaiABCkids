@@ -201,7 +201,20 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     vItem.txtAgeBadge.setVisibility(View.VISIBLE);
                     vItem.txtAgeBadge.setText(video.age_rating);
                     
-                    if (vItem.txtAgeBadge.getBackground() != null) {
+                    if (video.vid != null && (video.vid.startsWith("FEED_") || video.vid.startsWith("TPBS_"))) {
+                        if (video.category_name != null && video.category_name.contains("อ่าน")) {
+                            vItem.txtAgeBadge.setText("📖 นิทานฝึกอ่าน");
+                        } else if (video.category_name != null && video.category_name.contains("Kids")) {
+                            vItem.txtAgeBadge.setText("🎬 Thai PBS Kids");
+                        } else {
+                            vItem.txtAgeBadge.setText("🌟 Feed เด็ก");
+                        }
+                        try {
+                            if (vItem.txtAgeBadge.getBackground() != null) {
+                                vItem.txtAgeBadge.getBackground().mutate().setColorFilter(ContextCompat.getColor(context, R.color.kids_pink), PorterDuff.Mode.SRC_IN);
+                            }
+                        } catch (Exception ignored) {}
+                    } else if (vItem.txtAgeBadge.getBackground() != null) {
                         try {
                             String age = video.age_rating.toLowerCase();
                             int colorRes = R.color.kids_secondary;
@@ -230,12 +243,16 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     if (sharedPref.getVideoViewType() == Constant.VIDEO_LIST_COMPACT) {
                         Glide.with(context)
                                 .load(Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_MQ)
+                                .override(320, 180)
+                                .centerCrop()
                                 .placeholder(R.drawable.ic_thumbnail)
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(vItem.videoThumbnail);
                     } else {
                         Glide.with(context)
                                 .load(Constant.YOUTUBE_IMAGE_FRONT + video.video_id + Constant.YOUTUBE_IMAGE_BACK_HQ)
+                                .override(480, 270)
+                                .centerCrop()
                                 .placeholder(R.drawable.ic_thumbnail)
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(vItem.videoThumbnail);
@@ -253,6 +270,8 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     
                     Glide.with(context)
                             .load(thumbnailUrl)
+                            .override(480, 270)
+                            .centerCrop()
                             .placeholder(R.drawable.ic_thumbnail)
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(vItem.videoThumbnail);
@@ -270,6 +289,8 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
                     Glide.with(context)
                             .load(thumbnailUrl)
+                            .override(480, 270)
+                            .centerCrop()
                             .placeholder(R.drawable.ic_thumbnail)
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(vItem.videoThumbnail);

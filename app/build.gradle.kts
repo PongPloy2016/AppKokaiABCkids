@@ -22,8 +22,8 @@ android {
         minSdk = 24
         //noinspection EditedTargetSdkVersion,OldTargetApi
         targetSdk = 35
-        versionCode = 49
-        versionName = "3.0.4"
+        versionCode = 50
+        versionName = "3.0.5"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")
@@ -88,6 +88,7 @@ dependencies {
     implementation(project(":videowatchfeatureSupabase"))
     implementation(project(":livefeature"))
     implementation(project(":kidswebviewfeature"))
+    implementation(project(":newsfeature"))
     implementation(project(":profilefeature"))
     implementation("io.coil-kt:coil-compose:2.6.0")
 

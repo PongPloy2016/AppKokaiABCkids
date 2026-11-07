@@ -115,28 +115,100 @@ class Video : Parcelable {
     override fun describeContents(): Int = 0
 
     fun matchesSearch(query: String?): Boolean {
-        if (TextUtils.isEmpty(query)) return true
-        val lowercaseQuery = query!!.lowercase(Locale.getDefault())
-        if (!TextUtils.isEmpty(video_title) && video_title.lowercase(Locale.getDefault()).contains(lowercaseQuery)) return true
-        if (!TextUtils.isEmpty(video_description) && video_description.lowercase(Locale.getDefault()).contains(lowercaseQuery)) return true
-        if (!TextUtils.isEmpty(category_name) && category_name.lowercase(Locale.getDefault()).contains(lowercaseQuery)) return true
-        if (!TextUtils.isEmpty(tags) && tags.lowercase(Locale.getDefault()).contains(lowercaseQuery)) return true
+        if (query.isNullOrBlank()) return true
+        val lowercaseQuery = query.lowercase(Locale.getDefault())
+        val title = video_title.orEmpty().lowercase(Locale.getDefault())
+        val desc = video_description.orEmpty().lowercase(Locale.getDefault())
+        val cat = category_name.orEmpty().lowercase(Locale.getDefault())
+        val tagStr = tags.orEmpty().lowercase(Locale.getDefault())
+
+        if (title.contains(lowercaseQuery)) return true
+        if (desc.contains(lowercaseQuery)) return true
+        if (cat.contains(lowercaseQuery)) return true
+        if (tagStr.contains(lowercaseQuery)) return true
         return false
     }
 
     fun isInCategory(category: String?): Boolean {
-        if (TextUtils.isEmpty(category) || "all".equals(category, ignoreCase = true)) return true
-        val lowercaseCategory = category!!.lowercase(Locale.getDefault())
-        val textToSearch = "${category_name} ${video_title} ${tags} ${video_description}".lowercase(Locale.getDefault())
-        if (textToSearch.contains(lowercaseCategory)) return true
+        if (category.isNullOrBlank() || "all".equals(category, ignoreCase = true)) return true
+        val lowercaseCategory = category.lowercase(Locale.getDefault())
 
-        return when (category.lowercase(Locale.getDefault())) {
-            "cartoon" -> textToSearch.contains("การ์ตูน") || textToSearch.contains("cartoon") || textToSearch.contains("animation") || textToSearch.contains("นิทาน")
-            "music" -> textToSearch.contains("เพลง") || textToSearch.contains("music") || textToSearch.contains("song")
-            "learning", "math" -> textToSearch.contains("เรียนรู้") || textToSearch.contains("learning") || textToSearch.contains("education") || textToSearch.contains("สอน") || textToSearch.contains("math") || textToSearch.contains("คณิต") || textToSearch.contains("บวกเลข") || textToSearch.contains("คูณ") || textToSearch.contains("หาร")
-            "abc", "english" -> textToSearch.contains("abc") || textToSearch.contains("english") || textToSearch.contains("ภาษาอังกฤษ") || textToSearch.contains("อักษร") || textToSearch.contains("ก ไก่") || textToSearch.contains("พยัญชนะ") || textToSearch.contains("สระ") || textToSearch.contains("ภาษาไทย") || textToSearch.contains("phonics") || textToSearch.contains("alphabet")
-            "story" -> textToSearch.contains("นิทาน") || textToSearch.contains("story") || textToSearch.contains("tale") || textToSearch.contains("เรื่อง")
-            else -> false
+        val catName = category_name.orEmpty()
+        val title = video_title.orEmpty()
+        val tagStr = tags.orEmpty()
+        val desc = video_description.orEmpty()
+
+        val textToSearch = "$catName $title $tagStr $desc".lowercase(Locale.getDefault())
+
+        return when (lowercaseCategory) {
+            "thaipbs_kids", "thaipbs_kids_youtube" -> {
+                catName.contains("Thai PBS", ignoreCase = true) ||
+                textToSearch.contains("thaipbs") ||
+                textToSearch.contains("ไทยพีบีเอส") ||
+                tagStr.contains("#thaipbskids", ignoreCase = true) ||
+                tagStr.contains("#thaipbs_kids", ignoreCase = true)
+            }
+            "thaipbs_main", "thaipbs_youtube_main", "วิดีโอรวม" -> {
+                catName.contains("วิดีโอรวม", ignoreCase = true) ||
+                textToSearch.contains("วิดีโอรวม") ||
+                textToSearch.contains("หม้อข้าวหม้อแกง") ||
+                (textToSearch.contains("thaipbs") && !catName.contains("Kids", ignoreCase = true))
+            }
+            "programs", "thaipbs_kids_programs", "รายการเด็ก", "ฝึกอ่านและเขียน" -> {
+                catName.contains("ฝึกอ่าน", ignoreCase = true) ||
+                catName.contains("รายการเด็ก", ignoreCase = true) ||
+                catName.contains("Thai PBS Kids", ignoreCase = true) ||
+                tagStr.contains("#thaipbs_kids_programs", ignoreCase = true) ||
+                textToSearch.contains("ฝึกอ่าน") ||
+                textToSearch.contains("ก-ฮ") ||
+                textToSearch.contains("ก ไก่") ||
+                textToSearch.contains("สระ") ||
+                textToSearch.contains("เขียน") ||
+                textToSearch.contains("บ้านนักวิทยาศาสตร์") ||
+                textToSearch.contains("rangers") ||
+                textToSearch.contains("สอนศิลป์")
+            }
+            "talk", "thaipbs_talk_about_kids", "คุยกับลูก" -> {
+                catName.contains("คุยกับลูก", ignoreCase = true) ||
+                textToSearch.contains("คุยกับลูก") ||
+                textToSearch.contains("talk") ||
+                textToSearch.contains("ครอบครัว") ||
+                textToSearch.contains("ef") ||
+                textToSearch.contains("สมอง") ||
+                textToSearch.contains("สมาธิ")
+            }
+            "cartoon" -> {
+                catName.contains("Cartoon", ignoreCase = true) ||
+                textToSearch.contains("การ์ตูน") ||
+                textToSearch.contains("cartoon") ||
+                textToSearch.contains("animation")
+            }
+            "music" -> {
+                catName.contains("Music", ignoreCase = true) ||
+                textToSearch.contains("เพลง") ||
+                textToSearch.contains("music") ||
+                textToSearch.contains("song")
+            }
+            "learning", "math" -> {
+                catName.contains("Math", ignoreCase = true) ||
+                textToSearch.contains("คณิต") ||
+                textToSearch.contains("นับเลข") ||
+                textToSearch.contains("รูปทรง") ||
+                tagStr.contains("#math", ignoreCase = true)
+            }
+            "abc", "english" -> {
+                catName.contains("ABC", ignoreCase = true) ||
+                textToSearch.contains("phonics") ||
+                tagStr.contains("#abc", ignoreCase = true) ||
+                tagStr.contains("#phonics", ignoreCase = true)
+            }
+            "story", "story_feed" -> {
+                catName.contains("นิทาน", ignoreCase = true) ||
+                textToSearch.contains("นิทาน") ||
+                textToSearch.contains("อีสป") ||
+                tagStr.contains("#story", ignoreCase = true)
+            }
+            else -> textToSearch.contains(lowercaseCategory)
         }
     }
 

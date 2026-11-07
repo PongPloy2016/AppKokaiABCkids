@@ -1,6 +1,7 @@
 package com.pongploydev.videowatchfeaturesupabase.data.remote
 
 import com.pongploydev.videowatchfeaturesupabase.config.AppConfig
+import com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem
 import com.pongploydev.videowatchfeaturesupabase.model.Video
 import retrofit2.Response
 import retrofit2.http.GET
@@ -8,6 +9,15 @@ import retrofit2.http.Header
 import retrofit2.http.Query
 
 interface SupabaseApiService {
+
+    @GET("rest/v1/kids_video_feeds")
+    suspend fun getKidsVideoFeeds(
+        @Header("apikey") apiKey: String = AppConfig.SUPABASE_ANON_KEY,
+        @Header("Authorization") auth: String = "Bearer " + AppConfig.SUPABASE_ANON_KEY,
+        @Query("select") select: String = "*",
+        @Query("is_active") isActive: String = "eq.true",
+        @Query("order") order: String = "sort_order.asc"
+    ): Response<List<KidsVideoFeedItem>>
 
     @GET("rest/v1/videos")
     suspend fun getVideos(

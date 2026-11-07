@@ -502,6 +502,11 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
     private fun onFailRequest() {
         swipeProgress(false)
+        if (this.video != null) {
+            lytMainContent.visibility = View.VISIBLE
+            showFailedView(false, "")
+            return
+        }
         lytMainContent.visibility = View.GONE
         showFailedView(true, getString(R.string.failed_text))
     }

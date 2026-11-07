@@ -187,4 +187,9 @@
     <string name="all_sparks">🌈 All Sparks</string>
     <string name="math_magic">🔢 Math Magic</string>
     <string name="abc_sparks">🔤 ABC</string>
+    <string name="category_thaipbs_kids">🎬 Thai PBS Kids</string>
+    <string name="category_thaipbs_main">📺 วิดีโอรวม</string>
+    <string name="category_programs">🌟 Thai PBS Kids</string>
+    <string name="category_talk">👨‍👩‍👧 คุยกับลูก</string>
+    <string name="category_story">📖 นิทาน</string>
 </resources>

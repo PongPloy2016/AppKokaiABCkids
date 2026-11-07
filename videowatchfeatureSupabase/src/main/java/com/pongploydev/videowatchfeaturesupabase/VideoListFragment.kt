@@ -79,9 +79,23 @@ class VideoListFragment : Fragment() {
     private lateinit var categoryAll: MaterialCardView
     private lateinit var categoryLearning: MaterialCardView
     private lateinit var categoryAbc: MaterialCardView
+    private lateinit var categoryThaipbsKids: MaterialCardView
+    private lateinit var categoryThaipbsMain: MaterialCardView
+    private lateinit var categoryPrograms: MaterialCardView
+    private lateinit var categoryTalk: MaterialCardView
+    private lateinit var categoryStory: MaterialCardView
     private lateinit var txtCategoryAll: TextView
     private lateinit var txtCategoryLearning: TextView
     private lateinit var txtCategoryAbc: TextView
+    private lateinit var txtCategoryThaipbsKids: TextView
+    private lateinit var txtCategoryThaipbsMain: TextView
+    private lateinit var txtCategoryPrograms: TextView
+    private lateinit var txtCategoryTalk: TextView
+    private lateinit var txtCategoryStory: TextView
+    private var containerThaiPbsKids: FrameLayout? = null
+    private var btnLoadMoreHome: View? = null
+    private var nestedScrollViewHome: androidx.core.widget.NestedScrollView? = null
+    private val dynamicCategoryViews = mutableMapOf<String, Pair<MaterialCardView, TextView>>()
 
 
     // ตัวแปรสำหรับ Interstitial Ad
@@ -194,6 +208,8 @@ class VideoListFragment : Fragment() {
             if (videos != null) {
                 displaySearchResults(videos.toMutableList())
                 adapterVideo?.setLoaded()
+                val hasMore = viewModel.postTotal > videos.size
+                btnLoadMoreHome?.visibility = if (hasMore && containerThaiPbsKids?.visibility != View.VISIBLE) View.VISIBLE else View.GONE
                 showNoItemView(
                     videos.isEmpty() &&
                             viewModel.isLoading.value != true &&
@@ -212,6 +228,12 @@ class VideoListFragment : Fragment() {
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             if (error != null) {
                 showFailedView(true, error)
+            }
+        }
+
+        viewModel.videoFeeds.observe(viewLifecycleOwner) { feeds ->
+            if (!feeds.isNullOrEmpty()) {
+                updateCategoryTabsFromFeeds(feeds)
             }
         }
     }
@@ -262,93 +284,26 @@ class VideoListFragment : Fragment() {
             categoryAll = findViewById(R.id.category_all)
             categoryLearning = findViewById(R.id.category_learning)
             categoryAbc = findViewById(R.id.category_abc)
+            categoryThaipbsKids = findViewById(R.id.category_thaipbs_kids)
+            categoryThaipbsMain = findViewById(R.id.category_thaipbs_main)
+            categoryPrograms = findViewById(R.id.category_programs)
+            categoryTalk = findViewById(R.id.category_talk)
+            categoryStory = findViewById(R.id.category_story)
             txtCategoryAll = findViewById(R.id.txt_category_all)
             txtCategoryLearning = findViewById(R.id.txt_category_learning)
             txtCategoryAbc = findViewById(R.id.txt_category_abc)
-
-            // Today's Goal Collapsible Toggle
-            val layoutTodayGoalHeader = findViewById<View>(R.id.layout_today_goal_header)
-            val layoutTodayGoalContent = findViewById<View>(R.id.layout_today_goal_content)
-            val imgGoalToggle = findViewById<ImageView>(R.id.img_goal_toggle)
-
-            var isGoalExpanded = true
-            layoutTodayGoalHeader?.setOnClickListener {
-                isGoalExpanded = !isGoalExpanded
-                val transition = android.transition.AutoTransition().apply {
-                    duration = 200
-                }
-                (rootView as? ViewGroup)?.let { vg ->
-                    android.transition.TransitionManager.beginDelayedTransition(vg, transition)
-                }
-                if (isGoalExpanded) {
-                    layoutTodayGoalContent?.visibility = View.VISIBLE
-                    imgGoalToggle?.setImageResource(R.drawable.ic_expand_less)
-                } else {
-                    layoutTodayGoalContent?.visibility = View.GONE
-                    imgGoalToggle?.setImageResource(R.drawable.ic_expand_more)
-                }
-            }
-
-
-            val greetingText = findViewById<TextView>(R.id.greeting_text)
-            greetingText.text = HtmlCompat.fromHtml(
-                "<font color='#FF5376'><b>Hi Haya!</b></font> <b>Tap a clip and start your first spark.</b>",
-                HtmlCompat.FROM_HTML_MODE_LEGACY
-            )
-
-            rootView?.findViewById<View>(R.id.btn_help)?.setOnClickListener {
-                showSettingsDialog()
-            }
-
-
-            setupStatCards(this)
+            txtCategoryThaipbsKids = findViewById(R.id.txt_category_thaipbs_kids)
+            txtCategoryThaipbsMain = findViewById(R.id.txt_category_thaipbs_main)
+            txtCategoryPrograms = findViewById(R.id.txt_category_programs)
+            txtCategoryTalk = findViewById(R.id.txt_category_talk)
+            txtCategoryStory = findViewById(R.id.txt_category_story)
+            containerThaiPbsKids = findViewById(R.id.container_thai_pbs_kids)
+            btnLoadMoreHome = findViewById(R.id.btn_load_more_home)
+            nestedScrollViewHome = findViewById(R.id.nested_scroll_view_home)
         }
     }
 
-    private fun setupStatCards(view: View) {
-        try {
-            // Streak Card
-            val cardStreak = view.findViewById<View?>(R.id.card_streak)
-            cardStreak?.findViewById<ImageView>(R.id.stat_icon)?.apply {
-                setImageResource(R.drawable.ic_fire)
-                setColorFilter(Color.parseColor("#FF5722"))
-            }
-            cardStreak?.findViewById<TextView>(R.id.stat_value)?.apply {
-                text = "0"
-                setTextColor(Color.parseColor("#FF5722"))
-            }
-            cardStreak?.findViewById<TextView>(R.id.stat_label)?.text = getString(R.string.streak_label)
-            (cardStreak as? MaterialCardView)?.setStrokeColor(Color.parseColor("#FFEBEE"))
 
-            // Stars Card
-            val cardStars = view.findViewById<View?>(R.id.card_stars)
-            cardStars?.findViewById<ImageView>(R.id.stat_icon)?.apply {
-                setImageResource(R.drawable.ic_title_star)
-                setColorFilter(Color.parseColor("#FFA000"))
-            }
-            cardStars?.findViewById<TextView>(R.id.stat_value)?.apply {
-                text = "0"
-                setTextColor(Color.parseColor("#FFA000"))
-            }
-            cardStars?.findViewById<TextView>(R.id.stat_label)?.text = getString(R.string.stars_label)
-            (cardStars as? MaterialCardView)?.setStrokeColor(Color.parseColor("#FFF8E1"))
-
-            // Clips Card
-            val cardClips = view.findViewById<View?>(R.id.card_clips)
-            cardClips?.findViewById<ImageView>(R.id.stat_icon)?.apply {
-                setImageResource(R.drawable.ic_lightning)
-                setColorFilter(Color.parseColor("#7CB342"))
-            }
-            cardClips?.findViewById<TextView>(R.id.stat_value)?.apply {
-                text = "0"
-                setTextColor(Color.parseColor("#7CB342"))
-            }
-            cardClips?.findViewById<TextView>(R.id.stat_label)?.text = getString(R.string.clips_label)
-            (cardClips as? MaterialCardView)?.setStrokeColor(Color.parseColor("#E8F5E9"))
-        } catch (e: Exception) {
-            Log.e("VideoListFragment", "Error setting up stat cards", e)
-        }
-    }
 
     private fun setupComponents() {
         activityContext?.let {
@@ -515,6 +470,24 @@ class VideoListFragment : Fragment() {
             }
             loadInterstitialAd()
         }
+
+        btnLoadMoreHome?.setOnClickListener {
+            adapterVideo?.setLoading()
+            viewModel.loadNextPage()
+        }
+
+        nestedScrollViewHome?.setOnScrollChangeListener(
+            androidx.core.widget.NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
+                stopActivePreview()
+                if (scrollY >= (v.getChildAt(0).measuredHeight - v.measuredHeight - 350)) {
+                    val loadedItems = adapterVideo?.videoCount ?: (adapterVideo?.itemCount ?: 0)
+                    if (viewModel.postTotal > loadedItems && !viewModel.isFetchingVideos) {
+                        adapterVideo?.setLoading()
+                        viewModel.loadNextPage()
+                    }
+                }
+            }
+        )
     }
 
     private fun openFavoriteList() {
@@ -595,12 +568,141 @@ class VideoListFragment : Fragment() {
         categoryAll.setOnClickListener { selectCategory("all") }
         categoryLearning.setOnClickListener { selectCategory("learning") }
         categoryAbc.setOnClickListener { selectCategory("abc") }
+        categoryThaipbsKids.setOnClickListener { selectCategory("thaipbs_kids_youtube") }
+        categoryThaipbsMain.setOnClickListener { selectCategory("thaipbs_youtube_main") }
+        categoryPrograms.setOnClickListener { selectCategory("thaipbs_kids_programs") }
+        categoryTalk.setOnClickListener { selectCategory("thaipbs_talk_about_kids") }
+        categoryStory.setOnClickListener { selectCategory("story_feed") }
         updateCategoryUI("all")
     }
 
     private fun selectCategory(category: String) {
         updateCategoryUI(category)
-        viewModel.filterVideos(viewModel.searchQuery, category)
+        if (category == "thaipbs_kids_programs") {
+            btnLoadMoreHome?.visibility = View.GONE
+            containerThaiPbsKids?.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            lytNoItem.visibility = View.GONE
+            lytFailed.visibility = View.GONE
+            shimmerFrameLayout.visibility = View.GONE
+
+            var frag = childFragmentManager.findFragmentById(R.id.container_thai_pbs_kids) as? com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment
+            if (frag == null) {
+                frag = com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment.newInstance()
+                childFragmentManager.beginTransaction()
+                    .replace(R.id.container_thai_pbs_kids, frag)
+                    .commit()
+            } else {
+                frag.loadFeedData(force = false)
+            }
+        } else {
+            containerThaiPbsKids?.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            viewModel.filterVideos(viewModel.searchQuery, category)
+        }
+    }
+
+    private fun updateCategoryTabsFromFeeds(feeds: List<com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem>) {
+        val context = activityContext ?: return
+
+        for (feed in feeds) {
+            val label = if (!feed.icon.isNullOrEmpty()) "${feed.icon} ${feed.name}" else feed.name
+            when (feed.id) {
+                "thaipbs_kids_youtube" -> {
+                    txtCategoryThaipbsKids.text = label
+                    categoryThaipbsKids.setOnClickListener { selectCategory(feed.id) }
+                }
+                "thaipbs_youtube_main" -> {
+                    txtCategoryThaipbsMain.text = label
+                    categoryThaipbsMain.setOnClickListener { selectCategory(feed.id) }
+                }
+                "thaipbs_kids_programs" -> {
+                    txtCategoryPrograms.text = label
+                    categoryPrograms.setOnClickListener { selectCategory(feed.id) }
+                }
+                "thaipbs_talk_about_kids" -> {
+                    txtCategoryTalk.text = label
+                    categoryTalk.setOnClickListener { selectCategory(feed.id) }
+                }
+                "story_feed" -> {
+                    txtCategoryStory.text = label
+                    categoryStory.setOnClickListener { selectCategory(feed.id) }
+                }
+                else -> {
+                    // แท็บใหม่ที่เพิ่มจาก Supabase ตาราง kids_video_feeds
+                    if (!dynamicCategoryViews.containsKey(feed.id)) {
+                        createDynamicCategoryChip(context, feed)
+                    } else {
+                        dynamicCategoryViews[feed.id]?.second?.text = label
+                    }
+                }
+            }
+        }
+    }
+
+    private fun createDynamicCategoryChip(
+        context: Context,
+        feed: com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem
+    ) {
+        val density = resources.displayMetrics.density
+        val card = MaterialCardView(context).apply {
+            radius = 20 * density
+            cardElevation = 0f
+            strokeWidth = (1 * density).toInt()
+            setStrokeColor(Color.parseColor("#E0E0E0"))
+            setCardBackgroundColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginEnd = (8 * density).toInt()
+            }
+        }
+
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding((14 * density).toInt(), (10 * density).toInt(), (14 * density).toInt(), (10 * density).toInt())
+        }
+
+        val textView = TextView(context).apply {
+            text = if (!feed.icon.isNullOrEmpty()) "${feed.icon} ${feed.name}" else feed.name
+            setTextColor(Color.parseColor("#2D3047"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+
+        layout.addView(textView)
+        card.addView(layout)
+
+        card.setOnClickListener {
+            selectCategory(feed.id)
+        }
+
+        categoryContainer.addView(card)
+        dynamicCategoryViews[feed.id] = Pair(card, textView)
+    }
+
+    private fun updateCategoryCard(
+        card: MaterialCardView,
+        text: TextView,
+        isSelected: Boolean,
+        pinkColor: Int,
+        whiteColor: Int,
+        darkTextColor: Int,
+        strokeColor: Int,
+        strokeWidthPx: Int
+    ) {
+        if (isSelected) {
+            card.setCardBackgroundColor(pinkColor)
+            card.strokeWidth = 0
+            text.setTextColor(whiteColor)
+        } else {
+            card.setCardBackgroundColor(whiteColor)
+            card.setStrokeColor(strokeColor)
+            card.strokeWidth = strokeWidthPx
+            text.setTextColor(darkTextColor)
+        }
     }
 
     private fun updateCategoryUI(selectedCategory: String) {
@@ -611,40 +713,20 @@ class VideoListFragment : Fragment() {
             val strokeColor = Color.parseColor("#E0E0E0")
             val strokeWidthPx = (1 * resources.displayMetrics.density).toInt()
 
-            // All Sparks
-            if (selectedCategory == "all") {
-                categoryAll.setCardBackgroundColor(pinkColor)
-                categoryAll.strokeWidth = 0
-                txtCategoryAll.setTextColor(whiteColor)
-            } else {
-                categoryAll.setCardBackgroundColor(whiteColor)
-                categoryAll.setStrokeColor(strokeColor)
-                categoryAll.strokeWidth = strokeWidthPx
-                txtCategoryAll.setTextColor(darkTextColor)
-            }
+            val isThaipbsKidsSelected = selectedCategory == "thaipbs_kids" || selectedCategory == "thaipbs_kids_youtube"
+            val isProgramsSelected = selectedCategory == "programs" || selectedCategory == "thaipbs_kids_programs" || selectedCategory == "ฝึกอ่านและเขียน"
 
-            // Math Magic
-            if (selectedCategory == "learning" || selectedCategory == "math") {
-                categoryLearning.setCardBackgroundColor(pinkColor)
-                categoryLearning.strokeWidth = 0
-                txtCategoryLearning.setTextColor(whiteColor)
-            } else {
-                categoryLearning.setCardBackgroundColor(whiteColor)
-                categoryLearning.setStrokeColor(strokeColor)
-                categoryLearning.strokeWidth = strokeWidthPx
-                txtCategoryLearning.setTextColor(darkTextColor)
-            }
+            updateCategoryCard(categoryAll, txtCategoryAll, selectedCategory == "all", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryLearning, txtCategoryLearning, selectedCategory == "learning" || selectedCategory == "math", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryAbc, txtCategoryAbc, selectedCategory == "abc" || selectedCategory == "english", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryThaipbsKids, txtCategoryThaipbsKids, isThaipbsKidsSelected, pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryThaipbsMain, txtCategoryThaipbsMain, selectedCategory == "thaipbs_main" || selectedCategory == "thaipbs_youtube_main", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryPrograms, txtCategoryPrograms, isProgramsSelected, pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryTalk, txtCategoryTalk, selectedCategory == "talk" || selectedCategory == "thaipbs_talk_about_kids", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryStory, txtCategoryStory, selectedCategory == "story" || selectedCategory == "story_feed", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
 
-            // ABC
-            if (selectedCategory == "abc" || selectedCategory == "english") {
-                categoryAbc.setCardBackgroundColor(pinkColor)
-                categoryAbc.strokeWidth = 0
-                txtCategoryAbc.setTextColor(whiteColor)
-            } else {
-                categoryAbc.setCardBackgroundColor(whiteColor)
-                categoryAbc.setStrokeColor(strokeColor)
-                categoryAbc.strokeWidth = strokeWidthPx
-                txtCategoryAbc.setTextColor(darkTextColor)
+            for ((id, pair) in dynamicCategoryViews) {
+                updateCategoryCard(pair.first, pair.second, selectedCategory == id, pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
             }
         } catch (e: Exception) {
             Log.e("VideoListFragment", "Error updating category UI", e)
@@ -1275,13 +1357,39 @@ class VideoListFragment : Fragment() {
         }
     }
 
+    private fun isFeedVideo(video: Video): Boolean {
+        val vid = video.vid.orEmpty()
+        val tags = video.tags.orEmpty()
+        val url = video.video_url.orEmpty()
+        val cat = video.category_name.orEmpty()
+        return vid.startsWith("FEED_") ||
+                vid.startsWith("TPBS_") ||
+                tags.contains("#feed", ignoreCase = true) ||
+                tags.contains("thaipbs", ignoreCase = true) ||
+                tags.contains("ฝึกอ่าน", ignoreCase = true) ||
+                cat.contains("ฝึกอ่าน", ignoreCase = true) ||
+                cat.contains("Thai PBS", ignoreCase = true) ||
+                cat.contains("วิดีโอรวม", ignoreCase = true) ||
+                cat.contains("คุยกับลูก", ignoreCase = true) ||
+                url.contains("news.google", ignoreCase = true) ||
+                url.contains(".xml", ignoreCase = true) ||
+                url.contains("rss", ignoreCase = true)
+    }
+
     private fun openVideoDirectly(video: Video) {
         try {
-            val intent =
-                    createVideoIntent(video.video_type).apply {
-                        putExtra(Constant.KEY_VID, video.vid)
-                        putExtra(Constant.EXTRA_OBJC, video)
-                    }
+            val intent = if (isFeedVideo(video)) {
+                Log.d("VideoOpen", "📖 Opening dedicated RSS/XML Screen (RssFeedDetailActivity) for: ${video.video_title}")
+                Intent(activityContext, com.pongploydev.videowatchfeaturesupabase.activity.RssFeedDetailActivity::class.java).apply {
+                    putExtra(Constant.KEY_VID, video.vid)
+                    putExtra(Constant.EXTRA_OBJC, video)
+                }
+            } else {
+                createVideoIntent(video.video_type).apply {
+                    putExtra(Constant.KEY_VID, video.vid)
+                    putExtra(Constant.EXTRA_OBJC, video)
+                }
+            }
             startActivity(intent)
             Log.d("VideoOpen", "✅ Video activity started successfully")
         } catch (e: Exception) {
