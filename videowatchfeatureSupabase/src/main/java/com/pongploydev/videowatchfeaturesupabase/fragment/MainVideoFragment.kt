@@ -42,14 +42,14 @@ class MainVideoFragment : Fragment() {
                             tab.text = "All Videos"
                             tab.setIcon(R.drawable.ic_kids_tv)
                         }
-                        1 -> {
-                            tab.text = "🌟 Thai PBS Kids"
-                            tab.setIcon(R.drawable.ic_title_star)
-                        }
-                        2 -> {
-                            tab.text = "❤️ รายการโปรด"
-                            tab.setIcon(R.drawable.ic_heart_filled)
-                        }
+//                        1 -> {
+//                            tab.text = "🌟 Thai PBS Kids"
+//                            tab.setIcon(R.drawable.ic_title_star)
+//                        }
+//                        2 -> {
+//                            tab.text = "Favorites"
+//                            tab.setIcon(R.drawable.ic_heart_filled)
+//                        }
                     }
                 }
                 .attach()

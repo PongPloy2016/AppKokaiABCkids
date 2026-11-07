@@ -998,6 +998,14 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         }
     }
 
+    fun openFavoriteListScreen() {
+        val favoriteFragment = com.pongploydev.videowatchfeaturesupabase.FavoriteListFragment.newInstance()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, favoriteFragment, "FavoriteListFragment")
+            .addToBackStack("FavoriteListFragment")
+            .commit()
+    }
+
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         val vp = findViewById<ViewPager>(R.id.viewpager)
         val nav = findViewById<BottomNavigationView>(R.id.navigation)
@@ -1037,14 +1045,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 nav.selectedItemId = R.id.navigation_video
             }
             R.id.nav_favorite -> {
-                vp.currentItem = 2
-                nav.selectedItemId = R.id.navigation_video
-                vp.post {
-                    val frag = supportFragmentManager.fragments
-                        .filterIsInstance<com.pongploydev.videowatchfeaturesupabase.VideoListFragment>()
-                        .firstOrNull()
-                    frag?.selectFavoriteTab()
-                }
+                openFavoriteListScreen()
             }
             R.id.nav_quiz -> {
                 vp.currentItem = 3

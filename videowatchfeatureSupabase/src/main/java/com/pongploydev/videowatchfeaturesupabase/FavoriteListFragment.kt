@@ -151,8 +151,25 @@ class FavoriteListFragment : Fragment() {
         }
     }
 
+    private fun isFeedVideo(video: Video): Boolean {
+        val vid = video.vid.orEmpty()
+        val tags = video.tags.orEmpty()
+        val url = video.video_url.orEmpty()
+        val cat = video.category_name.orEmpty()
+        return vid.startsWith("FEED_") ||
+                vid.startsWith("TPBS_") ||
+                tags.contains("#feed", ignoreCase = true) ||
+                tags.contains("thaipbs", ignoreCase = true) ||
+                cat.contains("Thai PBS", ignoreCase = true) ||
+                url.contains("news.google", ignoreCase = true) ||
+                url.contains(".xml", ignoreCase = true) ||
+                url.contains("rss", ignoreCase = true)
+    }
+
     private fun openVideoActivity(video: Video) {
-        val intent = if (video.video_type?.lowercase() == "youtube") {
+        val intent = if (isFeedVideo(video)) {
+            Intent(activityContext, com.pongploydev.videowatchfeaturesupabase.activity.RssFeedDetailActivity::class.java)
+        } else if (video.video_type?.lowercase() == "youtube") {
             Intent(activityContext, ActivityVideoAutoDetail::class.java)
         } else {
             Intent(activityContext, ActivityVideoDetail::class.java)
