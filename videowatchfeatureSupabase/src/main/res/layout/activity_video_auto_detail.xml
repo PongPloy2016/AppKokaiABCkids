@@ -245,6 +245,43 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
+            <!-- Floating Top-Right PiP & FullScreen Controls -->
+            <LinearLayout
+                android:id="@+id/lyt_auto_player_controls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="10dp"
+                android:elevation="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btn_pip_auto"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_circle_button"
+                    android:backgroundTint="#99000000"
+                    android:contentDescription="ย่อจอเล็ก PiP"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_pip_kids"
+                    app:tint="@color/white" />
+
+                <ImageButton
+                    android:id="@+id/btn_fullscreen_auto"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_circle_button"
+                    android:backgroundTint="#99000000"
+                    android:contentDescription="ขยายเต็มจอ"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_fullscreen_kids"
+                    app:tint="@color/white" />
+            </LinearLayout>
+
         </FrameLayout>
     </androidx.cardview.widget.CardView>
 

@@ -1,22 +1,32 @@
 package com.pongploydev.videowatchfeaturesupabase.activity
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.text.Html
+import android.util.Rational
+import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
+import androidx.core.widget.NestedScrollView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.androidanimations.library.Techniques
@@ -24,6 +34,8 @@ import com.daimajia.androidanimations.library.YoYo
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.FullscreenListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import com.pongploydev.videowatchfeaturesupabase.Constant
 import com.pongploydev.videowatchfeaturesupabase.R
@@ -44,6 +56,25 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var isTtsReady = false
     private var isTtsPlaying = false
+    private var isVideoPlaying = false
+    private var hasStartedPlayback = false
+    private var isFullScreen = false
+    private var iframeExitFullscreenCallback: (() -> Unit)? = null
+
+    private lateinit var appBar: View
+    private lateinit var nestedScrollView: NestedScrollView
+    private lateinit var lytScrollContent: LinearLayout
+    private lateinit var cardPlayer: CardView
+    private lateinit var lytPlayerControlsOverlay: View
+    private lateinit var btnPipOverlay: ImageButton
+    private lateinit var btnFullscreenOverlay: ImageButton
+    private lateinit var lytVideoModeBar: View
+    private lateinit var btnPipMode: Button
+    private lateinit var btnFullscreenMode: Button
+    private lateinit var cardTitleMeta: View
+    private lateinit var cardTtsPlayer: View
+    private lateinit var cardStoryContent: View
+    private lateinit var flFullscreenContainer: FrameLayout
 
     private lateinit var btnBack: ImageButton
     private lateinit var btnFavorite: ImageButton
@@ -88,13 +119,32 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                stopTts()
-                finish()
+                if (isFullScreen) {
+                    exitFullScreen()
+                } else {
+                    stopTts()
+                    finish()
+                }
             }
         })
     }
 
     private fun initViews() {
+        appBar = findViewById(R.id.app_bar)
+        nestedScrollView = findViewById(R.id.nested_scroll_view)
+        lytScrollContent = findViewById(R.id.lyt_scroll_content)
+        cardPlayer = findViewById(R.id.card_player)
+        lytPlayerControlsOverlay = findViewById(R.id.lyt_player_controls_overlay)
+        btnPipOverlay = findViewById(R.id.btn_pip_overlay)
+        btnFullscreenOverlay = findViewById(R.id.btn_fullscreen_overlay)
+        lytVideoModeBar = findViewById(R.id.lyt_video_mode_bar)
+        btnPipMode = findViewById(R.id.btn_pip_mode)
+        btnFullscreenMode = findViewById(R.id.btn_fullscreen_mode)
+        cardTitleMeta = findViewById(R.id.card_title_meta)
+        cardTtsPlayer = findViewById(R.id.card_tts_player)
+        cardStoryContent = findViewById(R.id.card_story_content)
+        flFullscreenContainer = findViewById(R.id.fl_fullscreen_container)
+
         btnBack = findViewById(R.id.btn_back)
         btnFavorite = findViewById(R.id.btn_favorite)
         btnShare = findViewById(R.id.btn_share)
@@ -168,28 +218,212 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun setupYouTubePlayer(videoId: String) {
         val playerView = youTubePlayerView ?: return
-        lifecycle.addObserver(playerView)
+        playerView.enableBackgroundPlayback(true)
+
+        playerView.addFullscreenListener(object : FullscreenListener {
+            override fun onEnterFullscreen(fullscreenView: View, exitFullscreen: () -> Unit) {
+                iframeExitFullscreenCallback = exitFullscreen
+                flFullscreenContainer.removeAllViews()
+                flFullscreenContainer.addView(fullscreenView)
+                flFullscreenContainer.visibility = View.VISIBLE
+                enterFullScreen()
+            }
+
+            override fun onExitFullscreen() {
+                iframeExitFullscreenCallback = null
+                flFullscreenContainer.removeAllViews()
+                flFullscreenContainer.visibility = View.GONE
+                if (isFullScreen) {
+                    exitFullScreen()
+                }
+            }
+        })
+
+        val options = IFramePlayerOptions.Builder(this)
+            .controls(1)
+            .fullscreen(1)
+            .rel(0)
+            .build()
 
         playerView.initialize(object : AbstractYouTubePlayerListener() {
             override fun onReady(@NonNull player: YouTubePlayer) {
                 youTubePlayer = player
                 imgPlayOverlay.setOnClickListener {
-                    stopTts()
-                    lytThumbnailFallback.visibility = View.GONE
-                    playerView.visibility = View.VISIBLE
-                    player.loadVideo(videoId, 0f)
+                    startVideoPlayback(videoId)
                 }
             }
 
             override fun onStateChange(@NonNull youTubePlayer: YouTubePlayer, @NonNull state: PlayerConstants.PlayerState) {
                 super.onStateChange(youTubePlayer, state)
-                if (state == PlayerConstants.PlayerState.PLAYING) {
-                    stopTts()
-                    lytThumbnailFallback.visibility = View.GONE
-                    playerView.visibility = View.VISIBLE
+                when (state) {
+                    PlayerConstants.PlayerState.PLAYING -> {
+                        isVideoPlaying = true
+                        hasStartedPlayback = true
+                        stopTts()
+                        lytThumbnailFallback.visibility = View.GONE
+                        playerView.visibility = View.VISIBLE
+                    }
+                    PlayerConstants.PlayerState.PAUSED,
+                    PlayerConstants.PlayerState.ENDED -> {
+                        isVideoPlaying = false
+                    }
+                    else -> {}
                 }
             }
-        })
+        }, true, options)
+    }
+
+    private fun startVideoPlayback(videoId: String? = video?.video_id) {
+        val vId = videoId.orEmpty()
+        if (vId.isEmpty() || vId.length != 11) {
+            openSourceUrl(video?.video_url)
+            return
+        }
+        stopTts()
+        lytThumbnailFallback.visibility = View.GONE
+        youTubePlayerView?.visibility = View.VISIBLE
+        if (!hasStartedPlayback) {
+            hasStartedPlayback = true
+            isVideoPlaying = true
+            youTubePlayer?.loadVideo(vId, 0f)
+        } else if (!isVideoPlaying) {
+            isVideoPlaying = true
+            youTubePlayer?.play()
+        }
+    }
+
+    private fun toggleFullScreen() {
+        if (isFullScreen) {
+            exitFullScreen()
+        } else {
+            startVideoPlayback()
+            enterFullScreen()
+        }
+    }
+
+    private fun enterFullScreen() {
+        isFullScreen = true
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        )
+
+        appBar.visibility = View.GONE
+        lytVideoModeBar.visibility = View.GONE
+        cardTitleMeta.visibility = View.GONE
+        cardTtsPlayer.visibility = View.GONE
+        cardStoryContent.visibility = View.GONE
+        btnOpenWebSource.visibility = View.GONE
+
+        nestedScrollView.setPadding(0, 0, 0, 0)
+        lytScrollContent.setPadding(0, 0, 0, 0)
+
+        val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
+        params.width = ViewGroup.LayoutParams.MATCH_PARENT
+        params.height = ViewGroup.LayoutParams.MATCH_PARENT
+        params.setMargins(0, 0, 0, 0)
+        cardPlayer.layoutParams = params
+        cardPlayer.radius = 0f
+
+        btnFullscreenOverlay.setImageResource(R.drawable.ic_fullscreen_exit_kids)
+    }
+
+    private fun exitFullScreen() {
+        isFullScreen = false
+        iframeExitFullscreenCallback?.invoke()
+        iframeExitFullscreenCallback = null
+        flFullscreenContainer.removeAllViews()
+        flFullscreenContainer.visibility = View.GONE
+
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+
+        appBar.visibility = View.VISIBLE
+        lytPlayerControlsOverlay.visibility = View.VISIBLE
+        lytVideoModeBar.visibility = View.VISIBLE
+        cardTitleMeta.visibility = View.VISIBLE
+        cardTtsPlayer.visibility = View.VISIBLE
+        cardStoryContent.visibility = View.VISIBLE
+        btnOpenWebSource.visibility = View.VISIBLE
+
+        val padBottom = dpToPx(40f)
+        val padHoriz = dpToPx(14f)
+        nestedScrollView.setPadding(0, 0, 0, padBottom)
+        lytScrollContent.setPadding(padHoriz, 0, padHoriz, 0)
+
+        val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
+        params.width = ViewGroup.LayoutParams.MATCH_PARENT
+        params.height = dpToPx(230f)
+        params.setMargins(0, dpToPx(4f), 0, dpToPx(10f))
+        cardPlayer.layoutParams = params
+        cardPlayer.radius = dpToPx(20f).toFloat()
+
+        btnFullscreenOverlay.setImageResource(R.drawable.ic_fullscreen_kids)
+    }
+
+    private fun enterPipMode() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                startVideoPlayback()
+                val params = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+                enterPictureInPictureMode(params)
+            } catch (e: Exception) {
+                Toast.makeText(this, "อุปกรณ์นี้ไม่รองรับโหมดหน้าต่างลอย (PiP)", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "โหมด PiP รองรับบน Android 8.0 ขึ้นไป", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && (isVideoPlaying || hasStartedPlayback)) {
+            try {
+                val params = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+                enterPictureInPictureMode(params)
+            } catch (_: Exception) {}
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        if (isInPictureInPictureMode) {
+            appBar.visibility = View.GONE
+            lytPlayerControlsOverlay.visibility = View.GONE
+            lytVideoModeBar.visibility = View.GONE
+            cardTitleMeta.visibility = View.GONE
+            cardTtsPlayer.visibility = View.GONE
+            cardStoryContent.visibility = View.GONE
+            btnOpenWebSource.visibility = View.GONE
+
+            nestedScrollView.setPadding(0, 0, 0, 0)
+            lytScrollContent.setPadding(0, 0, 0, 0)
+
+            val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
+            params.width = ViewGroup.LayoutParams.MATCH_PARENT
+            params.height = ViewGroup.LayoutParams.MATCH_PARENT
+            params.setMargins(0, 0, 0, 0)
+            cardPlayer.layoutParams = params
+            cardPlayer.radius = 0f
+        } else {
+            if (isFullScreen) {
+                enterFullScreen()
+            } else {
+                exitFullScreen()
+            }
+        }
+    }
+
+    private fun dpToPx(dp: Float): Int {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics).toInt()
     }
 
     private fun setupTts() {
@@ -298,6 +532,22 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             stopTts()
         }
 
+        btnPipOverlay.setOnClickListener {
+            enterPipMode()
+        }
+
+        btnFullscreenOverlay.setOnClickListener {
+            toggleFullScreen()
+        }
+
+        btnPipMode.setOnClickListener {
+            enterPipMode()
+        }
+
+        btnFullscreenMode.setOnClickListener {
+            toggleFullScreen()
+        }
+
         btnOpenWebSource.setOnClickListener {
             video?.let { v ->
                 YoYo.with(Techniques.RubberBand).duration(500).playOn(btnOpenWebSource)
@@ -319,11 +569,20 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
+        if (!inPip) {
+            youTubePlayer?.pause()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         stopTts()
         tts?.shutdown()
         tts = null
+        youTubePlayerView?.release()
     }
 }
 

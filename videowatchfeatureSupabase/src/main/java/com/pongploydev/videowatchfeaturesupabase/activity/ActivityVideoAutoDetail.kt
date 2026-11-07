@@ -266,6 +266,25 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             requestAction()
             Toast.makeText(this, "กำลังรีเฟรชสัญญาณ...", Toast.LENGTH_SHORT).show()
         }
+
+        findViewById<View>(R.id.btn_fullscreen_auto)?.setOnClickListener {
+            toggleFullscreen()
+        }
+
+        findViewById<View>(R.id.btn_pip_auto)?.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    val params = PictureInPictureParams.Builder()
+                        .setAspectRatio(Rational(16, 9))
+                        .build()
+                    enterPictureInPictureMode(params)
+                } catch (_: Exception) {
+                    Toast.makeText(this, "อุปกรณ์นี้ไม่รองรับโหมดหน้าต่างลอย (PiP)", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "โหมด PiP รองรับบน Android 8.0 ขึ้นไป", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun setupFavorite() {
@@ -286,7 +305,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
     }
 
     private fun initYouTubePlayer() {
-        lifecycle.addObserver(youTubePlayerView)
+        youTubePlayerView.enableBackgroundPlayback(true)
         youTubePlayerView.initialize(object : AbstractYouTubePlayerListener() {
             override fun onReady(@NonNull player: YouTubePlayer) {
                 youTubePlayer = player
@@ -348,6 +367,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
             findViewById<View>(R.id.cardHeader).visibility = View.VISIBLE
             findViewById<View>(R.id.cardInfo).visibility = View.VISIBLE
+            findViewById<ImageButton>(R.id.btn_fullscreen_auto)?.setImageResource(R.drawable.ic_fullscreen_kids)
             isFullScreen = false
         } else {
             // ENTER FULL SCREEN
@@ -363,6 +383,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
 
             findViewById<View>(R.id.cardHeader).visibility = View.GONE
             findViewById<View>(R.id.cardInfo).visibility = View.GONE
+            findViewById<ImageButton>(R.id.btn_fullscreen_auto)?.setImageResource(R.drawable.ic_fullscreen_exit_kids)
             isFullScreen = true
         }
     }
@@ -705,10 +726,12 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
         if (isInPictureInPictureMode) {
             findViewById<View>(R.id.cardHeader).visibility = View.GONE
             findViewById<View>(R.id.cardInfo).visibility = View.GONE
+            findViewById<View>(R.id.lyt_auto_player_controls)?.visibility = View.GONE
             lytYoutubeCardContainer.radius = 0f
             (lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams).setMargins(0, 0, 0, 0)
             (lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams).height = ConstraintLayout.LayoutParams.MATCH_PARENT
         } else {
+            findViewById<View>(R.id.lyt_auto_player_controls)?.visibility = View.VISIBLE
             if (!isFullScreen) {
                 findViewById<View>(R.id.cardHeader).visibility = View.VISIBLE
                 findViewById<View>(R.id.cardInfo).visibility = View.VISIBLE

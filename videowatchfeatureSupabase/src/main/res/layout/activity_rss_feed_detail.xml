@@ -108,6 +108,7 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/nested_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
@@ -116,6 +117,7 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
+            android:id="@+id/lyt_scroll_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -127,7 +129,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="230dp"
                 android:layout_marginTop="4dp"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="10dp"
                 app:cardBackgroundColor="#000000"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="6dp">
@@ -183,11 +185,99 @@
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </RelativeLayout>
+
+                    <!-- Floating Top-Right PiP & FullScreen Controls on Video -->
+                    <LinearLayout
+                        android:id="@+id/lyt_player_controls_overlay"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:elevation="8dp">
+
+                        <ImageButton
+                            android:id="@+id/btn_pip_overlay"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_circle_button"
+                            android:backgroundTint="#99000000"
+                            android:contentDescription="ย่อจอเล็ก PiP"
+                            android:padding="8dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_pip_kids"
+                            app:tint="@color/white" />
+
+                        <ImageButton
+                            android:id="@+id/btn_fullscreen_overlay"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_circle_button"
+                            android:backgroundTint="#99000000"
+                            android:contentDescription="ขยายเต็มจอ"
+                            android:padding="8dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_fullscreen_kids"
+                            app:tint="@color/white" />
+                    </LinearLayout>
                 </FrameLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- 1.5 Quick Video Mode Buttons (PiP & Full Screen) -->
+            <LinearLayout
+                android:id="@+id/lyt_video_mode_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_pip_mode"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="🗔 ย่อจอเล็ก (PiP)"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#26A69A"
+                    app:cornerRadius="22dp"
+                    app:icon="@drawable/ic_pip_kids"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_fullscreen_mode"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="⛶ ขยายเต็มจอ"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#FF6B8E"
+                    app:cornerRadius="22dp"
+                    app:icon="@drawable/ic_fullscreen_kids"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/white" />
+            </LinearLayout>
+
             <!-- 2. Title & Meta Information Card -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/card_title_meta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
@@ -351,6 +441,7 @@
 
             <!-- 4. Story & Content Reading Box for Kids -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/card_story_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -420,5 +511,14 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Fullscreen Container for YouTube IFrame Native Fullscreen Callback -->
+    <FrameLayout
+        android:id="@+id/fl_fullscreen_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:elevation="20dp"
+        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
