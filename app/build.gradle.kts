@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.pongploydev.priyankvex.paintapp"
-    compileSdk = 35
+    compileSdk = 36
     buildToolsVersion = "35.0.0"
 
     buildFeatures {
@@ -21,9 +21,9 @@ android {
         applicationId = "com.pongploydev.priyankvex.paintapp"
         minSdk = 24
         //noinspection EditedTargetSdkVersion,OldTargetApi
-        targetSdk = 35
-        versionCode = 50
-        versionName = "3.0.5"
+        targetSdk = 36
+        versionCode = 51
+        versionName = "3.0.6"
 
         buildConfigField("boolean", "IS_CHILD_APP", "true")
         buildConfigField("String", "APP_NAME", "\"Paint App for Kids\"")

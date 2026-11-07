@@ -6,13 +6,13 @@ plugins {
 
 android {
     namespace = "com.pongploydev.videowatchfeaturesupabase"
-    compileSdk = 35
+    compileSdk = 36
 
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
