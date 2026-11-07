@@ -26,6 +26,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.NestedScrollView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -301,15 +304,20 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun setSystemBarsVisible(visible: Boolean) {
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        if (visible) {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     private fun enterFullScreen() {
         isFullScreen = true
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        )
+        setSystemBarsVisible(false)
 
         appBar.visibility = View.GONE
         lytVideoModeBar.visibility = View.GONE
@@ -323,7 +331,8 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
         params.width = ViewGroup.LayoutParams.MATCH_PARENT
-        params.height = ViewGroup.LayoutParams.MATCH_PARENT
+        params.height = 0
+        params.weight = 1f
         params.setMargins(0, 0, 0, 0)
         cardPlayer.layoutParams = params
         cardPlayer.radius = 0f
@@ -339,8 +348,7 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         flFullscreenContainer.visibility = View.GONE
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        setSystemBarsVisible(true)
 
         appBar.visibility = View.VISIBLE
         lytPlayerControlsOverlay.visibility = View.VISIBLE
@@ -358,6 +366,7 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
         params.width = ViewGroup.LayoutParams.MATCH_PARENT
         params.height = dpToPx(230f)
+        params.weight = 0f
         params.setMargins(0, dpToPx(4f), 0, dpToPx(10f))
         cardPlayer.layoutParams = params
         cardPlayer.radius = dpToPx(20f).toFloat()
@@ -409,7 +418,8 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
             params.width = ViewGroup.LayoutParams.MATCH_PARENT
-            params.height = ViewGroup.LayoutParams.MATCH_PARENT
+            params.height = 0
+            params.weight = 1f
             params.setMargins(0, 0, 0, 0)
             cardPlayer.layoutParams = params
             cardPlayer.radius = 0f
