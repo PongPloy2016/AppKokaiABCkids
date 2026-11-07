@@ -70,11 +70,13 @@ object VideoFeedRepository {
     suspend fun loadFeedVideos(feed: KidsVideoFeedItem, force: Boolean = false): List<Video> {
         val cached = feedCache[feed.id]
         if (!force && cached != null && System.currentTimeMillis() - cached.fetchedAt < CACHE_TTL_MS) {
-            val hasStaleGoogleNews = cached.videos.any {
+            val hasStaleData = cached.videos.any {
                 it.video_url.contains("news.google.com") ||
+                it.video_title.contains("โดดเรียน") ||
+                it.video_title.contains("บอยแบนด์") ||
                 (cached.videos.count { v -> v.video_thumbnail.contains("-a1Qe12xMh4") } > 1)
             }
-            if (!hasStaleGoogleNews) {
+            if (!hasStaleData) {
                 return cached.videos
             }
         }
@@ -87,11 +89,11 @@ object VideoFeedRepository {
                 emptyList()
             }
 
-            val finalVideos = if (videos.size >= 6) {
+            val finalVideos = if (videos.size >= 4) {
                 videos
             } else {
                 val fallback = getFallbackVideosForFeed(feed)
-                (videos + fallback).distinctBy { it.video_title }
+                (videos + fallback).distinctBy { if (it.video_id.isNotEmpty()) it.video_id else it.video_title }
             }
 
             feedCache[feed.id] = CachedVideos(System.currentTimeMillis(), finalVideos)
@@ -100,48 +102,53 @@ object VideoFeedRepository {
     }
 
     private fun sanitizeFeedUrl(rawUrl: String, feed: KidsVideoFeedItem? = null): String {
-        var url = rawUrl.trim()
+        val url = rawUrl.trim()
         val feedId = feed?.id?.lowercase(Locale.ROOT) ?: ""
         val feedName = feed?.name?.lowercase(Locale.ROOT) ?: ""
 
-        // 1. นิทานก่อนนอน (Bedtime Story) -> Indysong Kids Official Channel RSS
-        if (feedId.contains("bedtime") || feedId.contains("story") || feedName.contains("นิทาน")) {
-            return "https://www.youtube.com/feeds/videos.xml?channel_id=UC103Yv2QS7C2Vf17XIMk0AQ"
+        // 1. นิทานก่อนนอน (kids_bedtime_story_feed) -> Playlist นิทานอีสปก่อนนอน สอนหนูน้อยเป็นเด็กดี 50 เรื่อง (MISbook)
+        if (feedId.contains("bedtime") || feedName.contains("นิทานก่อนนอน")) {
+            return "https://www.youtube.com/feeds/videos.xml?playlist_id=PLYSzQdnk6q9ZrhdSXFx2Wz9m3gv3L2nOj"
         }
 
-        // 2. การ์ตูนเด็ก (Kids Cartoon / Animation) -> BabyBus Thailand Channel RSS
+        // 2. นิทานทั่วไป (story_feed) -> Playlist นิทานก่อนนอน Thai Fairy Tales
+        if (feedId.contains("story") || feedName.contains("นิทาน")) {
+            return "https://www.youtube.com/feeds/videos.xml?playlist_id=PLeVWRKDCgkibvHA4EzYUH_Lvirf0AaXSH"
+        }
+
+        // 3. การ์ตูนเด็ก (kids_cartoon_feed) -> Playlist การ์ตูน ลิตเติล มอนสเตอร์ แฟมิลี่ (Thai PBS Kids Official)
         if (feedId.contains("cartoon") || feedName.contains("การ์ตูน")) {
-            return "https://www.youtube.com/feeds/videos.xml?channel_id=UCKpFt-Nh3A2Sg--mLmCebZQ"
+            return "https://www.youtube.com/feeds/videos.xml?playlist_id=PL78EDk_9jZAEnJzU6CIacF5pk2R8t8PbO"
         }
 
-        // 3. เพลงเด็ก (Kids Songs / Rhymes) -> Pinkfong Thailand Channel RSS
+        // 4. เพลงเด็ก (kids_song_feed) -> Playlist เพลงเด็ก ก เอ๋ย ก ไก่ & เพลงอนุบาล (KidsMeSong)
         if (feedId.contains("song") || feedId.contains("music") || feedName.contains("เพลง")) {
-            return "https://www.youtube.com/feeds/videos.xml?channel_id=UCjKVU1NouDYZHDvAdwLQwvg"
+            return "https://www.youtube.com/feeds/videos.xml?playlist_id=PLRkCAAfpKzZRTxTyR3zo-IdITnIRnlv3V"
         }
 
-        // 4. วิทยาศาสตร์น้อย (Kids Science / Experiments) -> Thai PBS Kids (บ้านนักวิทยาศาสตร์น้อย & Kid Rangers)
+        // 5. วิทยาศาสตร์น้อย (kids_science_feed) -> Playlist บ้านนักวิทยาศาสตร์น้อย (Thai PBS Kids Official)
         if (feedId.contains("science") || feedName.contains("วิทย์")) {
-            return "https://www.youtube.com/feeds/videos.xml?channel_id=UCkBuvFq-7IcZdIwfG8zrLyg"
+            return "https://www.youtube.com/feeds/videos.xml?playlist_id=PL78EDk_9jZAG0CS1_nSeW4qpwmOTXnATy"
         }
 
-        // 5. Thai PBS Kids รายการเด็ก
+        // 6. Thai PBS Kids รายการเด็กสร้างสรรค์ (thaipbs_kids_programs / thaipbs_kids_youtube) -> Playlist Kid Rangers & รายการเด็กสร้างสรรค์
         if (feedId.contains("thaipbs_kids") || feedName.contains("thai pbs kids") ||
             url.contains("user=ThaiPBSKids", ignoreCase = true) ||
             (url.contains("thaipbs", ignoreCase = true) && url.contains("kids", ignoreCase = true))) {
+            return "https://www.youtube.com/feeds/videos.xml?playlist_id=PL78EDk_9jZAH5Nw5Tly6tGP46Mn_qYQtI"
+        }
+
+        // 7. วิดีโอรวม / Thai PBS Main
+        if (feedId.contains("main") || feedName.contains("วิดีโอรวม") || url.contains("user=ThaiPBS", ignoreCase = true)) {
             return "https://www.youtube.com/feeds/videos.xml?channel_id=UCkBuvFq-7IcZdIwfG8zrLyg"
         }
 
-        // 6. วิดีโอรวม / Thai PBS Main
-        if (feedId.contains("main") || feedName.contains("วิดีโอรวม") || url.contains("user=ThaiPBS", ignoreCase = true)) {
-            return "https://www.youtube.com/feeds/videos.xml?channel_id=UC5TOFhyb_LxL2VG_Zenhpzw"
-        }
-
-        // 7. คุยกับลูก
+        // 8. คุยกับลูก
         if (feedId.contains("talk") || feedName.contains("คุย")) {
             return "https://www.youtube.com/feeds/videos.xml?channel_id=UC5TOFhyb_LxL2VG_Zenhpzw"
         }
 
-        // 8. ถ้าเป็น URL ของ YouTube RSS อยู่แล้วให้ใช้เลย
+        // 9. ถ้าเป็น URL ของ YouTube RSS อยู่แล้วให้ใช้เลย
         if (url.contains("youtube.com/feeds/videos.xml")) {
             return url
         }
@@ -388,11 +395,17 @@ object VideoFeedRepository {
      * คืนค่าชุดวิดีโอเด็กที่คัดสรรแล้วตามหมวดหมู่ feed เพื่อเป็น Fallback รับประกันว่าจะไม่มีหน้าว่าง (Empty Screen)
      */
     fun getFallbackVideosForFeed(feed: KidsVideoFeedItem): List<Video> {
+        val feedId = feed.id.lowercase(Locale.ROOT)
+        val feedName = feed.name.lowercase(Locale.ROOT)
         val specific = when {
-            feed.id.contains("program", ignoreCase = true) || feed.name.contains("อ่าน") || feed.name.contains("เขียน") -> getCuratedProgramsVideos()
-            feed.id.contains("kids", ignoreCase = true) || feed.provider.contains("Kids", ignoreCase = true) -> getCuratedThaiPbsKidsVideos()
-            feed.id.contains("main", ignoreCase = true) || feed.name.contains("รวม") -> getCuratedThaiPbsMainVideos()
-            feed.id.contains("talk", ignoreCase = true) || feed.name.contains("คุย") -> getCuratedTalkVideos()
+            feedId.contains("bedtime") || feedId.contains("story") || feedName.contains("นิทาน") -> getCuratedBedtimeStoryVideos(feed.name.ifEmpty { "นิทานก่อนนอน" })
+            feedId.contains("cartoon") || feedName.contains("การ์ตูน") -> getCuratedCartoonVideos(feed.name.ifEmpty { "การ์ตูนเด็ก" })
+            feedId.contains("song") || feedId.contains("music") || feedName.contains("เพลง") -> getCuratedSongVideos(feed.name.ifEmpty { "เพลงเด็ก" })
+            feedId.contains("science") || feedName.contains("วิทย์") -> getCuratedScienceVideos(feed.name.ifEmpty { "วิทยาศาสตร์น้อย" })
+            feedId.contains("thaipbs_kids") || feedName.contains("thai pbs") || feed.provider.contains("Kids", ignoreCase = true) -> getCuratedThaiPbsKidsVideos()
+            feedId.contains("program") || feedName.contains("อ่าน") || feedName.contains("เขียน") -> getCuratedProgramsVideos()
+            feedId.contains("main") || feedName.contains("รวม") -> getCuratedThaiPbsMainVideos()
+            feedId.contains("talk") || feedName.contains("คุย") -> getCuratedTalkVideos()
             else -> emptyList()
         }
         if (specific.isNotEmpty()) {
@@ -405,7 +418,144 @@ object VideoFeedRepository {
             return matching
         }
 
-        return getCuratedProgramsVideos()
+        return getCuratedThaiPbsKidsVideos()
+    }
+
+    private fun getCuratedBedtimeStoryVideos(catName: String): List<Video> {
+        return listOf(
+            Video().apply {
+                id = 601; vid = "STORY_01"
+                video_title = "นิทานอีสป: หมาป่ากับลูกแกะ (The Wolf and the Lamb) 🐺🐑"
+                category_name = catName; video_type = "youtube"
+                video_id = "Y5U3nB7A9E4"
+                video_url = "https://www.youtube.com/watch?v=Y5U3nB7A9E4"
+                video_thumbnail = "https://img.youtube.com/vi/Y5U3nB7A9E4/hqdefault.jpg"
+                video_duration = "04:45"
+                video_description = "นิทานอีสปก่อนนอนสอนหนูน้อยเป็นเด็กดี เรียนรู้ความมีเหตุผลและความระมัดระวังตัว"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_bedtime_story_feed #นิทานก่อนนอน #นิทานอีสป"
+                total_views = 185000
+            },
+            Video().apply {
+                id = 602; vid = "STORY_02"
+                video_title = "นิทานอีสป: กระต่ายกับเต่า นิทานสอนใจ 🐢🐇"
+                category_name = catName; video_type = "youtube"
+                video_id = "-a1Qe12xMh4"
+                video_url = "https://www.youtube.com/watch?v=-a1Qe12xMh4"
+                video_thumbnail = "https://img.youtube.com/vi/-a1Qe12xMh4/hqdefault.jpg"
+                video_duration = "04:30"
+                video_description = "นิทานคติสอนใจเรื่องความพยายามและความไม่ประมาท ภาพการ์ตูนสีสันสดใส"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_bedtime_story_feed #นิทานก่อนนอน #กระต่ายกับเต่า"
+                total_views = 210000
+            },
+            Video().apply {
+                id = 603; vid = "STORY_03"
+                video_title = "นิทานลูกหมู 3 ตัว: นิทานก่อนนอนสอนความขยัน 🐷🏡"
+                category_name = catName; video_type = "youtube"
+                video_id = "f0Tq1mBsmk0"
+                video_url = "https://www.youtube.com/watch?v=f0Tq1mBsmk0"
+                video_thumbnail = "https://img.youtube.com/vi/f0Tq1mBsmk0/hqdefault.jpg"
+                video_duration = "05:10"
+                video_description = "เรื่องราวของลูกหมูสามตัวกับการสร้างบ้าน สอนให้เด็กๆ รู้จักความอดทนและตั้งใจทำงาน"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_bedtime_story_feed #นิทานก่อนนอน #ลูกหมูสามตัว"
+                total_views = 175000
+            }
+        )
+    }
+
+    private fun getCuratedCartoonVideos(catName: String): List<Video> {
+        return listOf(
+            Video().apply {
+                id = 701; vid = "CARTOON_01"
+                video_title = "ลิตเติล มอนสเตอร์ แฟมิลี่: ทางกลับบ้าน 🎨👾"
+                category_name = catName; video_type = "youtube"
+                video_id = "u3e_fN4bK9c"
+                video_url = "https://www.youtube.com/watch?v=u3e_fN4bK9c"
+                video_thumbnail = "https://img.youtube.com/vi/u3e_fN4bK9c/hqdefault.jpg"
+                video_duration = "06:20"
+                video_description = "การ์ตูนแอนิเมชันสำหรับเด็ก เรื่องราวอบอุ่นของครอบครัวมอนสเตอร์ตัวน้อยจาก Thai PBS Kids"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_cartoon_feed #การ์ตูนเด็ก #แอนิเมชัน"
+                total_views = 132000
+            },
+            Video().apply {
+                id = 702; vid = "CARTOON_02"
+                video_title = "ขบวนการ Fun น้ำนม: ตื่นมาสนุกยามเช้ากับเพื่อนรัก 🌈"
+                category_name = catName; video_type = "youtube"
+                video_id = "x_PsuCO4D_I"
+                video_url = "https://www.youtube.com/watch?v=x_PsuCO4D_I"
+                video_thumbnail = "https://img.youtube.com/vi/x_PsuCO4D_I/hqdefault.jpg"
+                video_duration = "07:15"
+                video_description = "รายการการ์ตูนและนิทานสร้างเสริมจินตนาการสำหรับเด็กปฐมวัย"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_cartoon_feed #การ์ตูนเด็ก #funน้ำนม"
+                total_views = 148000
+            }
+        )
+    }
+
+    private fun getCuratedSongVideos(catName: String): List<Video> {
+        return listOf(
+            Video().apply {
+                id = 801; vid = "SONG_01"
+                video_title = "เพลง ก ไก่ ในสวนสนุก แสนสนุก 🎪🎵"
+                category_name = catName; video_type = "youtube"
+                video_id = "AcLn892iPo0"
+                video_url = "https://www.youtube.com/watch?v=AcLn892iPo0"
+                video_thumbnail = "https://img.youtube.com/vi/AcLn892iPo0/hqdefault.jpg"
+                video_duration = "02:10"
+                video_description = "เพลงท่องพยัญชนะไทย 44 ตัว พร้อมภาพการ์ตูนสีสันสดใส ชวนร้องตามง่าย"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_song_feed #เพลงเด็ก #กไก่"
+                total_views = 280000
+            },
+            Video().apply {
+                id = 802; vid = "SONG_02"
+                video_title = "ABC Phonics Alphabet Song ภาษาอังกฤษแสนสนุก 🔤🎶"
+                category_name = catName; video_type = "youtube"
+                video_id = "BELlZKpi1Zs"
+                video_url = "https://www.youtube.com/watch?v=BELlZKpi1Zs"
+                video_thumbnail = "https://img.youtube.com/vi/BELlZKpi1Zs/hqdefault.jpg"
+                video_duration = "03:15"
+                video_description = "เรียนรู้ออกเสียงโฟนิกส์ A ถึง Z สนุกเพลิดเพลินไปกับบทเพลงภาษาอังกฤษสำหรับเด็ก"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_song_feed #เพลงเด็ก #abc"
+                total_views = 310000
+            }
+        )
+    }
+
+    private fun getCuratedScienceVideos(catName: String): List<Video> {
+        return listOf(
+            Video().apply {
+                id = 901; vid = "SCI_01"
+                video_title = "บ้านนักวิทยาศาสตร์น้อย: วิทยาศาสตร์แสนสนุกสำหรับเด็ก 🧪"
+                category_name = catName; video_type = "youtube"
+                video_id = "n1kdvZ76OPo"
+                video_url = "https://www.youtube.com/watch?v=n1kdvZ76OPo"
+                video_thumbnail = "https://img.youtube.com/vi/n1kdvZ76OPo/hqdefault.jpg"
+                video_duration = "06:15"
+                video_description = "การทดลองวิทยาศาสตร์ง่ายๆ เสริมสร้างความคิดสร้างสรรค์และการสังเกตสำหรับเด็กปฐมวัย"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_science_feed #วิทยาศาสตร์น้อย #บ้านนักวิทยาศาสตร์น้อย"
+                total_views = 142000
+            },
+            Video().apply {
+                id = 902; vid = "SCI_02"
+                video_title = "บ้านนักวิทยาศาสตร์น้อย: นักซิ่งล้อเดียว สมดุลและแรงโน้มถ่วง 🔬"
+                category_name = catName; video_type = "youtube"
+                video_id = "oSOCfvMT3Cc"
+                video_url = "https://www.youtube.com/watch?v=oSOCfvMT3Cc"
+                video_thumbnail = "https://img.youtube.com/vi/oSOCfvMT3Cc/hqdefault.jpg"
+                video_duration = "06:40"
+                video_description = "เรียนรู้เรื่องจุดศูนย์ถ่วงและการทรงตัวผ่านของเล่นประดิษฐ์แสนสนุก"
+                age_rating = "เด็กและครอบครัว"
+                tags = "#kids_science_feed #วิทยาศาสตร์น้อย #การทดลอง"
+                total_views = 119000
+            }
+        )
     }
 
     private fun getCuratedThaiPbsKidsVideos(): List<Video> {
@@ -651,9 +801,9 @@ object VideoFeedRepository {
                 video_title = "นิทานลูกหมู 3 ตัว: นิทานก่อนนอนสอนความขยัน 🐷🏡"
                 category_name = "ฝึกอ่านและเขียน"
                 video_type = "youtube"
-                video_id = "-a1Qe12xMh4"
-                video_url = "https://www.youtube.com/watch?v=-a1Qe12xMh4"
-                video_thumbnail = "https://img.youtube.com/vi/-a1Qe12xMh4/hqdefault.jpg"
+                video_id = "f0Tq1mBsmk0"
+                video_url = "https://www.youtube.com/watch?v=f0Tq1mBsmk0"
+                video_thumbnail = "https://img.youtube.com/vi/f0Tq1mBsmk0/hqdefault.jpg"
                 video_duration = "05:10"
                 video_description = "เรื่องราวของลูกหมูสามตัวกับการสร้างบ้านด้วยฟาง ไม้ และอิฐ สอนให้เด็กๆ รู้จักความอดทนและตั้งใจทำงาน"
                 age_rating = "2-8 yrs"

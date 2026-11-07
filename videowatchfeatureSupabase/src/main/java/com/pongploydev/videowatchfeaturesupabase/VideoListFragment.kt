@@ -448,7 +448,11 @@ class VideoListFragment : Fragment() {
 
     private fun setupListeners() {
         swipeRefreshLayout.setOnRefreshListener {
-            if (sharedPref.isUseSupabaseApi) {
+            if (containerThaiPbsKids?.visibility == View.VISIBLE) {
+                val frag = childFragmentManager.findFragmentById(R.id.container_thai_pbs_kids) as? com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment
+                frag?.loadFeedData(force = true)
+                swipeProgress(false)
+            } else if (sharedPref.isUseSupabaseApi) {
                 requestAction(1, true)
             } else {
                 ensureCookieChallengeSolved {
@@ -573,12 +577,25 @@ class VideoListFragment : Fragment() {
         categoryPrograms.setOnClickListener { selectCategory("thaipbs_kids_programs") }
         categoryTalk.setOnClickListener { selectCategory("thaipbs_talk_about_kids") }
         categoryStory.setOnClickListener { selectCategory("story_feed") }
+
+        // ซ่อนแท็บเก่าที่ไม่ได้อยู่ในตาราง Supabase kids_video_feeds เริ่มต้นก่อน
+        categoryThaipbsKids.visibility = View.GONE
+        categoryThaipbsMain.visibility = View.GONE
+        categoryTalk.visibility = View.GONE
+        categoryStory.visibility = View.GONE
+
+        updateCategoryTabsFromFeeds(com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem.DEFAULT_FEEDS)
         updateCategoryUI("all")
+    }
+
+    private fun isRssFeedCategory(category: String): Boolean {
+        val nonFeedCategories = setOf("all", "learning", "math", "abc", "english")
+        return category.lowercase() !in nonFeedCategories
     }
 
     private fun selectCategory(category: String) {
         updateCategoryUI(category)
-        if (category == "thaipbs_kids_programs") {
+        if (isRssFeedCategory(category)) {
             btnLoadMoreHome?.visibility = View.GONE
             containerThaiPbsKids?.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -588,12 +605,12 @@ class VideoListFragment : Fragment() {
 
             var frag = childFragmentManager.findFragmentById(R.id.container_thai_pbs_kids) as? com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment
             if (frag == null) {
-                frag = com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment.newInstance()
+                frag = com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment.newInstance(category)
                 childFragmentManager.beginTransaction()
                     .replace(R.id.container_thai_pbs_kids, frag)
-                    .commit()
+                    .commitNowAllowingStateLoss()
             } else {
-                frag.loadFeedData(force = false)
+                frag.loadFeedById(category, force = false)
             }
         } else {
             containerThaiPbsKids?.visibility = View.GONE
@@ -604,8 +621,16 @@ class VideoListFragment : Fragment() {
 
     private fun updateCategoryTabsFromFeeds(feeds: List<com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem>) {
         val context = activityContext ?: return
+        val activeFeedIds = feeds.map { it.id }.toSet()
 
-        for (feed in feeds) {
+        categoryThaipbsKids.visibility = if ("thaipbs_kids_youtube" in activeFeedIds) View.VISIBLE else View.GONE
+        categoryThaipbsMain.visibility = if ("thaipbs_youtube_main" in activeFeedIds) View.VISIBLE else View.GONE
+        categoryPrograms.visibility = if ("thaipbs_kids_programs" in activeFeedIds) View.VISIBLE else View.GONE
+        categoryTalk.visibility = if ("thaipbs_talk_about_kids" in activeFeedIds) View.VISIBLE else View.GONE
+        categoryStory.visibility = if ("story_feed" in activeFeedIds) View.VISIBLE else View.GONE
+
+        val sortedFeeds = feeds.sortedBy { it.sortOrder }
+        for (feed in sortedFeeds) {
             val label = if (!feed.icon.isNullOrEmpty()) "${feed.icon} ${feed.name}" else feed.name
             when (feed.id) {
                 "thaipbs_kids_youtube" -> {
@@ -679,7 +704,13 @@ class VideoListFragment : Fragment() {
             selectCategory(feed.id)
         }
 
-        categoryContainer.addView(card)
+        val sortBtn = rootView?.findViewById<View>(R.id.btn_sort_new)
+        val sortIndex = if (sortBtn != null) categoryContainer.indexOfChild(sortBtn) else -1
+        if (sortIndex >= 0) {
+            categoryContainer.addView(card, sortIndex)
+        } else {
+            categoryContainer.addView(card)
+        }
         dynamicCategoryViews[feed.id] = Pair(card, textView)
     }
 

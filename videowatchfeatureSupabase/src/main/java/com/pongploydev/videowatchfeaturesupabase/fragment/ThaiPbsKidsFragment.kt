@@ -37,6 +37,7 @@ class ThaiPbsKidsFragment : Fragment() {
     private lateinit var btnLoadMore: View
     private lateinit var txtBannerIcon: TextView
     private lateinit var txtBannerTitle: TextView
+    private lateinit var txtBannerSubtitle: TextView
     private lateinit var txtBannerDescription: TextView
 
     private var adapterVideo: AdapterVideo? = null
@@ -44,15 +45,26 @@ class ThaiPbsKidsFragment : Fragment() {
     private val allVideos = mutableListOf<Video>()
     private val PAGE_SIZE = 10
 
+    private var currentFeedId: String = DEFAULT_FEED_ID
     private var currentFeed: KidsVideoFeedItem? = null
 
     companion object {
         private const val TAG = "ThaiPbsKidsFragment"
+        private const val ARG_FEED_ID = "arg_feed_id"
         private const val DEFAULT_FEED_ID = "thaipbs_kids_programs"
 
-        fun newInstance(): ThaiPbsKidsFragment {
-            return ThaiPbsKidsFragment()
+        fun newInstance(feedId: String = DEFAULT_FEED_ID): ThaiPbsKidsFragment {
+            return ThaiPbsKidsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_FEED_ID, feedId)
+                }
+            }
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        currentFeedId = arguments?.getString(ARG_FEED_ID) ?: DEFAULT_FEED_ID
     }
 
     override fun onCreateView(
@@ -64,7 +76,7 @@ class ThaiPbsKidsFragment : Fragment() {
         initViews(view)
         setupRecyclerView()
         setupListeners()
-        loadFeedData(force = false)
+        loadFeedById(currentFeedId, force = false)
         return view
     }
 
@@ -76,6 +88,7 @@ class ThaiPbsKidsFragment : Fragment() {
         btnLoadMore = view.findViewById(R.id.btn_load_more)
         txtBannerIcon = view.findViewById(R.id.txt_banner_icon)
         txtBannerTitle = view.findViewById(R.id.txt_banner_title)
+        txtBannerSubtitle = view.findViewById(R.id.txt_banner_subtitle)
         txtBannerDescription = view.findViewById(R.id.txt_banner_description)
     }
 
@@ -116,24 +129,25 @@ class ThaiPbsKidsFragment : Fragment() {
     }
 
     fun loadFeedData(force: Boolean = false) {
+        loadFeedById(currentFeedId, force)
+    }
+
+    fun loadFeedById(feedId: String, force: Boolean = false) {
+        val isSwitchingFeed = currentFeed?.id != feedId
+        currentFeedId = feedId
+        if (!isAdded || view == null) return
+
         viewLifecycleOwner.lifecycleScope.launch {
+            if (isSwitchingFeed) {
+                allVideos.clear()
+                videoList.clear()
+                adapterVideo?.notifyDataSetChanged()
+            }
             setLoading(true)
             try {
                 // 1. ดึงข้อมูลฟีดจาก Supabase kids_video_feeds
                 val feeds = VideoFeedRepository.getFeeds(force)
-                val targetFeed = feeds.firstOrNull {
-                    it.id == DEFAULT_FEED_ID ||
-                            (it.name.contains("Thai PBS", ignoreCase = true) && it.icon?.contains("🌟") == true) ||
-                            it.name.contains("Thai PBS Kids", ignoreCase = true)
-                } ?: KidsVideoFeedItem(
-                    id = DEFAULT_FEED_ID,
-                    name = "Thai PBS Kids",
-                    icon = "🌟",
-                    feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=UCkBuvFq-7IcZdIwfG8zrLyg",
-                    provider = "Thai PBS Kids",
-                    category = "video",
-                    description = "แหล่งรวมรายการเด็กสร้างสรรค์ เช่น บ้านนักวิทยาศาสตร์น้อย, Kid Rangers, สอนศิลป์, หม้อข้าวหม้อแกง"
-                )
+                val targetFeed = resolveFeedForId(feedId, feeds)
 
                 currentFeed = targetFeed
                 updateBanner(targetFeed)
@@ -161,11 +175,10 @@ class ThaiPbsKidsFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading Thai PBS Kids feed: ${e.message}")
+                Log.e(TAG, "Error loading feed $feedId: ${e.message}")
                 if (videoList.isEmpty()) {
-                    // Fallback to curated videos
                     val fallback = VideoFeedRepository.getFallbackVideosForFeed(
-                        currentFeed ?: KidsVideoFeedItem(id = DEFAULT_FEED_ID, name = "Thai PBS Kids")
+                        currentFeed ?: resolveFeedForId(feedId, emptyList())
                     )
                     allVideos.clear()
                     allVideos.addAll(fallback)
@@ -182,10 +195,24 @@ class ThaiPbsKidsFragment : Fragment() {
         }
     }
 
+    private fun resolveFeedForId(feedId: String, feeds: List<KidsVideoFeedItem>): KidsVideoFeedItem {
+        val combined = feeds + KidsVideoFeedItem.DEFAULT_FEEDS
+        return combined.firstOrNull { it.id.equals(feedId, ignoreCase = true) }
+            ?: when {
+                feedId.contains("bedtime") || feedId.contains("story") -> combined.firstOrNull { it.id.contains("bedtime") || it.id.contains("story") }
+                feedId.contains("cartoon") -> combined.firstOrNull { it.id.contains("cartoon") }
+                feedId.contains("song") -> combined.firstOrNull { it.id.contains("song") }
+                feedId.contains("science") -> combined.firstOrNull { it.id.contains("science") }
+                else -> combined.firstOrNull { it.id == DEFAULT_FEED_ID }
+            }
+            ?: KidsVideoFeedItem.DEFAULT_FEEDS.first()
+    }
+
     private fun updateBanner(feed: KidsVideoFeedItem) {
         txtBannerIcon.text = feed.icon.ifNullOrEmpty("🌟")
         txtBannerTitle.text = feed.name.ifNullOrEmpty("Thai PBS Kids")
-        txtBannerDescription.text = feed.description.ifNullOrEmpty("แหล่งรวมรายการเด็กสร้างสรรค์ เช่น บ้านนักวิทยาศาสตร์น้อย, Kid Rangers, สอนศิลป์, หม้อข้าวหม้อแกง")
+        txtBannerSubtitle.text = "🎬 ${feed.provider.ifNullOrEmpty("รายการเด็กคุณภาพ")}"
+        txtBannerDescription.text = feed.description.ifNullOrEmpty("แหล่งรวมรายการวิดีโอสร้างสรรค์และปลอดภัยสำหรับเด็กและครอบครัว")
     }
 
     private fun setLoading(isLoading: Boolean) {

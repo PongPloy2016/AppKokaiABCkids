@@ -39,32 +39,10 @@ data class KidsVideoFeedItem(
     companion object {
         val DEFAULT_FEEDS = listOf(
             KidsVideoFeedItem(
-                id = "thaipbs_kids_youtube",
-                name = "Thai PBS Kids",
-                icon = "🎬",
-                feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=UCkBuvFq-7IcZdIwfG8zrLyg",
-                provider = "Thai PBS Kids (YouTube)",
-                category = "video",
-                description = "วิดีโอสร้างสรรค์ การทดลอง นิทาน และการเรียนรู้แสนสนุกสำหรับเด็กและครอบครัว",
-                isKidsFilterRequired = false,
-                sortOrder = 5
-            ),
-            KidsVideoFeedItem(
-                id = "thaipbs_youtube_main",
-                name = "วิดีโอรวม",
-                icon = "📺",
-                feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=UC5TOFhyb_LxL2VG_Zenhpzw",
-                provider = "Thai PBS (YouTube)",
-                category = "video",
-                description = "รายการเด็ก นิทาน ละครเด็ก และการเรียนรู้ คัดเฉพาะเนื้อหาที่เหมาะสมสำหรับเด็ก",
-                isKidsFilterRequired = true,
-                sortOrder = 6
-            ),
-            KidsVideoFeedItem(
                 id = "thaipbs_kids_programs",
                 name = "Thai PBS Kids",
                 icon = "🌟",
-                feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=UCkBuvFq-7IcZdIwfG8zrLyg",
+                feedUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL78EDk_9jZAH5Nw5Tly6tGP46Mn_qYQtI",
                 provider = "Thai PBS Kids",
                 category = "video",
                 description = "แหล่งรวมรายการเด็กสร้างสรรค์ เช่น บ้านนักวิทยาศาสตร์น้อย, Kid Rangers, สอนศิลป์, หม้อข้าวหม้อแกง",
@@ -72,26 +50,48 @@ data class KidsVideoFeedItem(
                 sortOrder = 7
             ),
             KidsVideoFeedItem(
-                id = "thaipbs_talk_about_kids",
-                name = "คุยกับลูก",
-                icon = "👨‍👩‍👧",
-                feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=UC5TOFhyb_LxL2VG_Zenhpzw",
-                provider = "Thai PBS",
+                id = "kids_cartoon_feed",
+                name = "การ์ตูนเด็ก",
+                icon = "🎨",
+                feedUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL78EDk_9jZAEnJzU6CIacF5pk2R8t8PbO",
+                provider = "Thai PBS Kids Animation",
                 category = "video",
-                description = "รายการวิดีโอพัฒนาการเด็ก สมอง EF และความรู้สร้างเสริมสายสัมพันธ์ครอบครัว",
+                description = "การ์ตูนและแอนิเมชันสำหรับเด็ก",
                 isKidsFilterRequired = false,
-                sortOrder = 8
+                sortOrder = 10
             ),
             KidsVideoFeedItem(
-                id = "story_feed",
-                name = "นิทาน",
-                icon = "📖",
-                feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=UC103Yv2QS7C2Vf17XIMk0AQ",
-                provider = "Indysong Kids",
+                id = "kids_song_feed",
+                name = "เพลงเด็ก",
+                icon = "🎵",
+                feedUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=PLRkCAAfpKzZRTxTyR3zo-IdITnIRnlv3V",
+                provider = "KidsMeSong",
                 category = "video",
-                description = "นิทานสอนใจ นิทานอีสป และเพลงเด็กสร้างสรรค์จาก Indysong Kids",
+                description = "เพลงเด็ก เพลงท่องศัพท์ เพลงประกอบท่าทาง",
                 isKidsFilterRequired = false,
-                sortOrder = 9
+                sortOrder = 11
+            ),
+            KidsVideoFeedItem(
+                id = "kids_science_feed",
+                name = "วิทยาศาสตร์น้อย",
+                icon = "🔬",
+                feedUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=PL78EDk_9jZAG0CS1_nSeW4qpwmOTXnATy",
+                provider = "บ้านนักวิทยาศาสตร์น้อย",
+                category = "video",
+                description = "การทดลองและความรู้วิทยาศาสตร์สำหรับเด็ก",
+                isKidsFilterRequired = false,
+                sortOrder = 12
+            ),
+            KidsVideoFeedItem(
+                id = "kids_bedtime_story_feed",
+                name = "นิทานก่อนนอน",
+                icon = "🌙",
+                feedUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=PLYSzQdnk6q9ZrhdSXFx2Wz9m3gv3L2nOj",
+                provider = "นิทานอีสปก่อนนอน",
+                category = "video",
+                description = "นิทานก่อนนอนสำหรับเด็ก",
+                isKidsFilterRequired = false,
+                sortOrder = 13
             )
         )
     }
