@@ -64,6 +64,7 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var isFullScreen = false
     private var iframeExitFullscreenCallback: (() -> Unit)? = null
 
+    private lateinit var rootCoordinator: View
     private lateinit var appBar: View
     private lateinit var nestedScrollView: NestedScrollView
     private lateinit var lytScrollContent: LinearLayout
@@ -133,6 +134,7 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun initViews() {
+        rootCoordinator = findViewById(R.id.root_coordinator)
         appBar = findViewById(R.id.app_bar)
         nestedScrollView = findViewById(R.id.nested_scroll_view)
         lytScrollContent = findViewById(R.id.lyt_scroll_content)
@@ -305,6 +307,16 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun setSystemBarsVisible(visible: Boolean) {
+        WindowCompat.setDecorFitsSystemWindows(window, visible)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = if (visible) {
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                } else {
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+            }
+        }
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         if (visible) {
             controller.show(WindowInsetsCompat.Type.systemBars())
@@ -314,29 +326,45 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun movePlayerToFullscreenContainer() {
+        rootCoordinator.setBackgroundColor(android.graphics.Color.BLACK)
+        appBar.visibility = View.GONE
+        nestedScrollView.visibility = View.GONE
+
+        if (cardPlayer.parent !== flFullscreenContainer) {
+            (cardPlayer.parent as? ViewGroup)?.removeView(cardPlayer)
+            flFullscreenContainer.addView(
+                cardPlayer,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        } else {
+            cardPlayer.layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        cardPlayer.radius = 0f
+        cardPlayer.cardElevation = 0f
+        youTubePlayerView?.matchParent()
+        flFullscreenContainer.visibility = View.VISIBLE
+    }
+
     private fun enterFullScreen() {
         isFullScreen = true
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         setSystemBarsVisible(false)
-
-        appBar.visibility = View.GONE
-        lytVideoModeBar.visibility = View.GONE
-        cardTitleMeta.visibility = View.GONE
-        cardTtsPlayer.visibility = View.GONE
-        cardStoryContent.visibility = View.GONE
-        btnOpenWebSource.visibility = View.GONE
-
-        nestedScrollView.setPadding(0, 0, 0, 0)
-        lytScrollContent.setPadding(0, 0, 0, 0)
-
-        val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
-        params.width = ViewGroup.LayoutParams.MATCH_PARENT
-        params.height = 0
-        params.weight = 1f
-        params.setMargins(0, 0, 0, 0)
-        cardPlayer.layoutParams = params
-        cardPlayer.radius = 0f
-
+        lytPlayerControlsOverlay.visibility = View.VISIBLE
+        if (flFullscreenContainer.childCount == 0 || cardPlayer.parent === flFullscreenContainer) {
+            movePlayerToFullscreenContainer()
+        } else {
+            rootCoordinator.setBackgroundColor(android.graphics.Color.BLACK)
+            appBar.visibility = View.GONE
+            nestedScrollView.visibility = View.GONE
+            flFullscreenContainer.visibility = View.VISIBLE
+        }
         btnFullscreenOverlay.setImageResource(R.drawable.ic_fullscreen_exit_kids)
     }
 
@@ -344,32 +372,43 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         isFullScreen = false
         iframeExitFullscreenCallback?.invoke()
         iframeExitFullscreenCallback = null
-        flFullscreenContainer.removeAllViews()
-        flFullscreenContainer.visibility = View.GONE
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setSystemBarsVisible(true)
+        rootCoordinator.setBackgroundResource(R.drawable.bg_gradient_kids)
+
+        if (cardPlayer.parent !== lytScrollContent) {
+            (cardPlayer.parent as? ViewGroup)?.removeView(cardPlayer)
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(230f)
+            ).apply {
+                setMargins(0, dpToPx(4f), 0, dpToPx(10f))
+            }
+            lytScrollContent.addView(cardPlayer, 0, params)
+        } else {
+            val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
+            params.width = ViewGroup.LayoutParams.MATCH_PARENT
+            params.height = dpToPx(230f)
+            params.weight = 0f
+            params.setMargins(0, dpToPx(4f), 0, dpToPx(10f))
+            cardPlayer.layoutParams = params
+        }
+        cardPlayer.radius = dpToPx(20f).toFloat()
+        cardPlayer.cardElevation = dpToPx(6f).toFloat()
+        youTubePlayerView?.matchParent()
+
+        flFullscreenContainer.removeAllViews()
+        flFullscreenContainer.visibility = View.GONE
 
         appBar.visibility = View.VISIBLE
+        nestedScrollView.visibility = View.VISIBLE
         lytPlayerControlsOverlay.visibility = View.VISIBLE
         lytVideoModeBar.visibility = View.VISIBLE
         cardTitleMeta.visibility = View.VISIBLE
         cardTtsPlayer.visibility = View.VISIBLE
         cardStoryContent.visibility = View.VISIBLE
         btnOpenWebSource.visibility = View.VISIBLE
-
-        val padBottom = dpToPx(40f)
-        val padHoriz = dpToPx(14f)
-        nestedScrollView.setPadding(0, 0, 0, padBottom)
-        lytScrollContent.setPadding(padHoriz, 0, padHoriz, 0)
-
-        val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
-        params.width = ViewGroup.LayoutParams.MATCH_PARENT
-        params.height = dpToPx(230f)
-        params.weight = 0f
-        params.setMargins(0, dpToPx(4f), 0, dpToPx(10f))
-        cardPlayer.layoutParams = params
-        cardPlayer.radius = dpToPx(20f).toFloat()
 
         btnFullscreenOverlay.setImageResource(R.drawable.ic_fullscreen_kids)
     }
@@ -405,24 +444,8 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         if (isInPictureInPictureMode) {
-            appBar.visibility = View.GONE
             lytPlayerControlsOverlay.visibility = View.GONE
-            lytVideoModeBar.visibility = View.GONE
-            cardTitleMeta.visibility = View.GONE
-            cardTtsPlayer.visibility = View.GONE
-            cardStoryContent.visibility = View.GONE
-            btnOpenWebSource.visibility = View.GONE
-
-            nestedScrollView.setPadding(0, 0, 0, 0)
-            lytScrollContent.setPadding(0, 0, 0, 0)
-
-            val params = cardPlayer.layoutParams as LinearLayout.LayoutParams
-            params.width = ViewGroup.LayoutParams.MATCH_PARENT
-            params.height = 0
-            params.weight = 1f
-            params.setMargins(0, 0, 0, 0)
-            cardPlayer.layoutParams = params
-            cardPlayer.radius = 0f
+            movePlayerToFullscreenContainer()
         } else {
             if (isFullScreen) {
                 enterFullScreen()

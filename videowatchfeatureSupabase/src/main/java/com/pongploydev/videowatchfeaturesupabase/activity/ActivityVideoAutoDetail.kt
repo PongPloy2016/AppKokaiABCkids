@@ -352,6 +352,8 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             // EXIT FULL SCREEN
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            findViewById<View>(R.id.root_view)?.setBackgroundResource(R.drawable.bg_gradient_kids)
+            swipeRefreshLayout.visibility = View.VISIBLE
 
             val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
             params.setMargins(
@@ -364,6 +366,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             params.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 250f, resources.displayMetrics).toInt()
             lytYoutubeCardContainer.layoutParams = params
             lytYoutubeCardContainer.radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics)
+            youTubePlayerView.matchParent()
 
             findViewById<View>(R.id.cardHeader).visibility = View.VISIBLE
             findViewById<View>(R.id.cardInfo).visibility = View.VISIBLE
@@ -373,6 +376,8 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             // ENTER FULL SCREEN
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+            findViewById<View>(R.id.root_view)?.setBackgroundColor(android.graphics.Color.BLACK)
+            swipeRefreshLayout.visibility = View.GONE
 
             val params = lytYoutubeCardContainer.layoutParams as ConstraintLayout.LayoutParams
             params.setMargins(0, 0, 0, 0)
@@ -380,6 +385,7 @@ class ActivityVideoAutoDetail : AppCompatActivity() {
             params.height = ConstraintLayout.LayoutParams.MATCH_PARENT
             lytYoutubeCardContainer.layoutParams = params
             lytYoutubeCardContainer.radius = 0f
+            youTubePlayerView.matchParent()
 
             findViewById<View>(R.id.cardHeader).visibility = View.GONE
             findViewById<View>(R.id.cardInfo).visibility = View.GONE
