@@ -30,6 +30,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.NestedScrollView
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.androidanimations.library.Techniques
@@ -42,9 +43,14 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFram
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import com.pongploydev.videowatchfeaturesupabase.Constant
 import com.pongploydev.videowatchfeaturesupabase.R
+import com.pongploydev.videowatchfeaturesupabase.databases.room.AppDatabase
+import com.pongploydev.videowatchfeaturesupabase.databases.room.FavoriteEntity
 import com.pongploydev.videowatchfeaturesupabase.model.Video
+import com.pongploydev.videowatchfeaturesupabase.repository.FavoriteRepository
 import com.pongploydev.videowatchfeaturesupabase.utils.Tools
 import java.util.Locale
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /**
  * หน้าจอเฉพาะสำหรับเนื้อหาที่มาจาก RSS / XML Feeds (เช่น Google News RSS, Thai PBS Kids, YouTube Atom feeds)
@@ -63,6 +69,7 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var hasStartedPlayback = false
     private var isFullScreen = false
     private var iframeExitFullscreenCallback: (() -> Unit)? = null
+    private lateinit var favoriteRepository: FavoriteRepository
 
     private lateinit var rootCoordinator: View
     private lateinit var appBar: View
@@ -116,6 +123,7 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         this.video = passedVideo
+        favoriteRepository = FavoriteRepository(AppDatabase.getDatabase(this).favoriteDao())
         initViews()
         bindData(passedVideo)
         setupTts()
@@ -217,6 +225,20 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         } else {
             imgPlayOverlay.setOnClickListener {
                 openSourceUrl(item.video_url)
+            }
+        }
+
+        // Check Favorite status from Room DB
+        val safeVid = item.vid.orEmpty().ifBlank {
+            "FEED_${item.video_id.orEmpty().ifEmpty { item.video_title.orEmpty().hashCode().toString() }}"
+        }
+        item.vid = safeVid
+        lifecycleScope.launch {
+            favoriteRepository.checkFavorite(safeVid).collectLatest { isFav ->
+                item.isFavorite = isFav
+                btnFavorite.setImageResource(
+                    if (isFav) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
+                )
             }
         }
     }
@@ -534,8 +556,20 @@ class RssFeedDetailActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         btnFavorite.setOnClickListener {
             YoYo.with(Techniques.Bounce).duration(500).playOn(btnFavorite)
             video?.let { v ->
-                v.isFavorite = !v.isFavorite
-                if (v.isFavorite) {
+                val safeVid = v.vid.orEmpty().ifBlank {
+                    "FEED_${v.video_id.orEmpty().ifEmpty { v.video_title.orEmpty().hashCode().toString() }}"
+                }
+                v.vid = safeVid
+                val newFav = !v.isFavorite
+                v.isFavorite = newFav
+                lifecycleScope.launch {
+                    if (newFav) {
+                        favoriteRepository.insert(FavoriteEntity.fromVideo(v))
+                    } else {
+                        favoriteRepository.delete(safeVid)
+                    }
+                }
+                if (newFav) {
                     btnFavorite.setImageResource(R.drawable.ic_heart_filled)
                     Toast.makeText(this, "บันทึกในรายการโปรดแล้ว ❤️", Toast.LENGTH_SHORT).show()
                 } else {

@@ -48,6 +48,7 @@ import com.pongploydev.videowatchfeaturesupabase.databases.prefs.AdsPref
 import com.pongploydev.videowatchfeaturesupabase.databases.prefs.SharedPref
 import com.pongploydev.videowatchfeaturesupabase.model.Video
 import com.pongploydev.videowatchfeaturesupabase.utils.Tools
+import com.pongploydev.videowatchfeaturesupabase.viewmodel.FavoritesViewModel
 import com.pongploydev.videowatchfeaturesupabase.viewmodel.VideoListViewModel
 
 class VideoListFragment : Fragment() {
@@ -77,6 +78,7 @@ class VideoListFragment : Fragment() {
     // private lateinit var switchViewButton: ImageView
     private lateinit var categoryContainer: LinearLayout
     private lateinit var categoryAll: MaterialCardView
+    private lateinit var categoryFavorite: MaterialCardView
     private lateinit var categoryLearning: MaterialCardView
     private lateinit var categoryAbc: MaterialCardView
     private lateinit var categoryThaipbsKids: MaterialCardView
@@ -85,6 +87,7 @@ class VideoListFragment : Fragment() {
     private lateinit var categoryTalk: MaterialCardView
     private lateinit var categoryStory: MaterialCardView
     private lateinit var txtCategoryAll: TextView
+    private lateinit var txtCategoryFavorite: TextView
     private lateinit var txtCategoryLearning: TextView
     private lateinit var txtCategoryAbc: TextView
     private lateinit var txtCategoryThaipbsKids: TextView
@@ -92,10 +95,13 @@ class VideoListFragment : Fragment() {
     private lateinit var txtCategoryPrograms: TextView
     private lateinit var txtCategoryTalk: TextView
     private lateinit var txtCategoryStory: TextView
+    private var btnFavoriteQuick: ImageView? = null
     private var containerThaiPbsKids: FrameLayout? = null
     private var btnLoadMoreHome: View? = null
     private var nestedScrollViewHome: androidx.core.widget.NestedScrollView? = null
     private val dynamicCategoryViews = mutableMapOf<String, Pair<MaterialCardView, TextView>>()
+    private var selectedCategoryKey = "all"
+    private var favoriteVideos: List<Video> = emptyList()
 
 
     // ตัวแปรสำหรับ Interstitial Ad
@@ -134,6 +140,7 @@ class VideoListFragment : Fragment() {
 
     // ViewModel
     private lateinit var viewModel: VideoListViewModel
+    private lateinit var favoritesViewModel: FavoritesViewModel
 
     // Inline YouTube Preview Variables
     private var activeYouTubePlayerView: YouTubePlayerView? = null
@@ -155,6 +162,7 @@ class VideoListFragment : Fragment() {
 
         // Initialize ViewModel
         viewModel = ViewModelProvider(this).get(VideoListViewModel::class.java)
+        favoritesViewModel = ViewModelProvider(this).get(FavoritesViewModel::class.java)
 
         initViews()
         setupComponents()
@@ -205,7 +213,7 @@ class VideoListFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.videoList.observe(viewLifecycleOwner) { videos ->
-            if (videos != null) {
+            if (videos != null && selectedCategoryKey != "favorite") {
                 displaySearchResults(videos.toMutableList())
                 adapterVideo?.setLoaded()
                 val hasMore = viewModel.postTotal > videos.size
@@ -216,6 +224,17 @@ class VideoListFragment : Fragment() {
                             viewModel.searchQuery.isEmpty() &&
                             viewModel.currentCategory == "all"
                 )
+            }
+        }
+
+        favoritesViewModel.allFavorites.observe(viewLifecycleOwner) { favs ->
+            favoriteVideos = favs ?: emptyList()
+            val count = favoriteVideos.size
+            if (::txtCategoryFavorite.isInitialized) {
+                txtCategoryFavorite.text = if (count > 0) "❤️ รายการโปรด ($count)" else "❤️ รายการโปรด"
+            }
+            if (selectedCategoryKey == "favorite") {
+                displayFavoriteVideos()
             }
         }
 
@@ -282,6 +301,7 @@ class VideoListFragment : Fragment() {
             // switchViewButton = findViewById(R.id.switch_view_button)
             categoryContainer = findViewById(R.id.category_container)
             categoryAll = findViewById(R.id.category_all)
+            categoryFavorite = findViewById(R.id.category_favorite)
             categoryLearning = findViewById(R.id.category_learning)
             categoryAbc = findViewById(R.id.category_abc)
             categoryThaipbsKids = findViewById(R.id.category_thaipbs_kids)
@@ -290,6 +310,7 @@ class VideoListFragment : Fragment() {
             categoryTalk = findViewById(R.id.category_talk)
             categoryStory = findViewById(R.id.category_story)
             txtCategoryAll = findViewById(R.id.txt_category_all)
+            txtCategoryFavorite = findViewById(R.id.txt_category_favorite)
             txtCategoryLearning = findViewById(R.id.txt_category_learning)
             txtCategoryAbc = findViewById(R.id.txt_category_abc)
             txtCategoryThaipbsKids = findViewById(R.id.txt_category_thaipbs_kids)
@@ -297,6 +318,7 @@ class VideoListFragment : Fragment() {
             txtCategoryPrograms = findViewById(R.id.txt_category_programs)
             txtCategoryTalk = findViewById(R.id.txt_category_talk)
             txtCategoryStory = findViewById(R.id.txt_category_story)
+            btnFavoriteQuick = findViewById(R.id.btn_favorite_quick)
             containerThaiPbsKids = findViewById(R.id.container_thai_pbs_kids)
             btnLoadMoreHome = findViewById(R.id.btn_load_more_home)
             nestedScrollViewHome = findViewById(R.id.nested_scroll_view_home)
@@ -448,7 +470,10 @@ class VideoListFragment : Fragment() {
 
     private fun setupListeners() {
         swipeRefreshLayout.setOnRefreshListener {
-            if (containerThaiPbsKids?.visibility == View.VISIBLE) {
+            if (selectedCategoryKey == "favorite") {
+                displayFavoriteVideos()
+                swipeProgress(false)
+            } else if (containerThaiPbsKids?.visibility == View.VISIBLE) {
                 val frag = childFragmentManager.findFragmentById(R.id.container_thai_pbs_kids) as? com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment
                 frag?.loadFeedData(force = true)
                 swipeProgress(false)
@@ -570,6 +595,14 @@ class VideoListFragment : Fragment() {
 
     private fun setupCategories() {
         categoryAll.setOnClickListener { selectCategory("all") }
+        categoryFavorite.setOnClickListener { selectCategory("favorite") }
+        btnFavoriteQuick?.setOnClickListener {
+            if (selectedCategoryKey == "favorite") {
+                selectCategory("all")
+            } else {
+                selectCategory("favorite")
+            }
+        }
         categoryLearning.setOnClickListener { selectCategory("learning") }
         categoryAbc.setOnClickListener { selectCategory("abc") }
         categoryThaipbsKids.setOnClickListener { selectCategory("thaipbs_kids_youtube") }
@@ -588,14 +621,57 @@ class VideoListFragment : Fragment() {
         updateCategoryUI("all")
     }
 
+    fun selectFavoriteTab() {
+        if (isAdded && view != null) {
+            selectCategory("favorite")
+        }
+    }
+
+    private fun displayFavoriteVideos() {
+        btnLoadMoreHome?.visibility = View.GONE
+        containerThaiPbsKids?.visibility = View.GONE
+        lytFailed.visibility = View.GONE
+        shimmerFrameLayout.visibility = View.GONE
+        swipeProgress(false)
+
+        val query = searchQuery.trim()
+        val filteredFavs = if (query.isEmpty()) {
+            favoriteVideos
+        } else {
+            favoriteVideos.filter { v ->
+                v.video_title.orEmpty().contains(query, ignoreCase = true) ||
+                        v.video_description.orEmpty().contains(query, ignoreCase = true) ||
+                        v.category_name.orEmpty().contains(query, ignoreCase = true)
+            }
+        }
+
+        if (filteredFavs.isEmpty()) {
+            recyclerView.visibility = View.GONE
+            lytNoItem.visibility = View.VISIBLE
+            txtNoItemMessage.text = if (query.isNotEmpty()) {
+                "ไม่พบวิดีโอในรายการโปรดสำหรับ \"$query\""
+            } else {
+                "ยังไม่มีวิดีโอในรายการโปรด ❤️\nกดปุ่มหัวใจที่หน้าวิดีโอเพื่อบันทึกไว้ดูภายหลังได้เลย!"
+            }
+        } else {
+            lytNoItem.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            displaySearchResults(filteredFavs.toMutableList())
+            adapterVideo?.setLoaded()
+        }
+    }
+
     private fun isRssFeedCategory(category: String): Boolean {
-        val nonFeedCategories = setOf("all", "learning", "math", "abc", "english")
+        val nonFeedCategories = setOf("all", "favorite", "learning", "math", "abc", "english")
         return category.lowercase() !in nonFeedCategories
     }
 
     private fun selectCategory(category: String) {
+        selectedCategoryKey = category
         updateCategoryUI(category)
-        if (isRssFeedCategory(category)) {
+        if (category == "favorite") {
+            displayFavoriteVideos()
+        } else if (isRssFeedCategory(category)) {
             btnLoadMoreHome?.visibility = View.GONE
             containerThaiPbsKids?.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -748,6 +824,7 @@ class VideoListFragment : Fragment() {
             val isProgramsSelected = selectedCategory == "programs" || selectedCategory == "thaipbs_kids_programs" || selectedCategory == "ฝึกอ่านและเขียน"
 
             updateCategoryCard(categoryAll, txtCategoryAll, selectedCategory == "all", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
+            updateCategoryCard(categoryFavorite, txtCategoryFavorite, selectedCategory == "favorite", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
             updateCategoryCard(categoryLearning, txtCategoryLearning, selectedCategory == "learning" || selectedCategory == "math", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
             updateCategoryCard(categoryAbc, txtCategoryAbc, selectedCategory == "abc" || selectedCategory == "english", pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
             updateCategoryCard(categoryThaipbsKids, txtCategoryThaipbsKids, isThaipbsKidsSelected, pinkColor, whiteColor, darkTextColor, strokeColor, strokeWidthPx)
@@ -797,7 +874,11 @@ class VideoListFragment : Fragment() {
 
 
     private fun performSearch(query: String) {
-        viewModel.filterVideos(query, viewModel.currentCategory)
+        if (selectedCategoryKey == "favorite") {
+            displayFavoriteVideos()
+        } else {
+            viewModel.filterVideos(query, viewModel.currentCategory)
+        }
     }
 
     private fun displaySearchResults(videos: List<Video>) {

@@ -31,24 +31,30 @@ data class FavoriteEntity(
         video.video_type = this.video_type
         video.total_views = this.total_views
         video.date_time = this.date_time
+        if (this.vid.startsWith("FEED_") || this.vid.startsWith("TPBS_")) {
+            video.tags = "#feed"
+        }
         video.isFavorite = true
         return video
     }
 
     companion object {
         fun fromVideo(video: Video): FavoriteEntity {
+            val safeVid = video.vid.orEmpty().ifBlank {
+                "FEED_${video.video_id.orEmpty().ifEmpty { video.video_title.orEmpty().hashCode().toString() }}"
+            }
             return FavoriteEntity(
-                    vid = video.vid,
-                    category_name = video.category_name,
-                    video_title = video.video_title,
-                    video_url = video.video_url,
-                    video_id = video.video_id,
-                    video_thumbnail = video.video_thumbnail,
-                    video_duration = video.video_duration,
-                    video_description = video.video_description,
-                    video_type = video.video_type,
+                    vid = safeVid,
+                    category_name = video.category_name.orEmpty(),
+                    video_title = video.video_title.orEmpty(),
+                    video_url = video.video_url.orEmpty(),
+                    video_id = video.video_id.orEmpty(),
+                    video_thumbnail = video.video_thumbnail.orEmpty(),
+                    video_duration = video.video_duration.orEmpty(),
+                    video_description = video.video_description.orEmpty(),
+                    video_type = video.video_type.orEmpty().ifBlank { "youtube" },
                     total_views = video.total_views,
-                    date_time = video.date_time
+                    date_time = video.date_time.orEmpty()
             )
         }
     }

@@ -1036,6 +1036,16 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 vp.currentItem = 2
                 nav.selectedItemId = R.id.navigation_video
             }
+            R.id.nav_favorite -> {
+                vp.currentItem = 2
+                nav.selectedItemId = R.id.navigation_video
+                vp.post {
+                    val frag = supportFragmentManager.fragments
+                        .filterIsInstance<com.pongploydev.videowatchfeaturesupabase.VideoListFragment>()
+                        .firstOrNull()
+                    frag?.selectFavoriteTab()
+                }
+            }
             R.id.nav_quiz -> {
                 vp.currentItem = 3
                 nav.selectedItemId = R.id.navigation_quiz

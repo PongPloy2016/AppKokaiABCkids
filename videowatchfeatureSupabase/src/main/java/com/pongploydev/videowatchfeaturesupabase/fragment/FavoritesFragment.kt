@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.pongploydev.videowatchfeaturesupabase.R
 import com.pongploydev.videowatchfeaturesupabase.activity.ActivityVideoAutoDetail
+import com.pongploydev.videowatchfeaturesupabase.activity.RssFeedDetailActivity
 import com.pongploydev.videowatchfeaturesupabase.adapter.AdapterVideo
 import com.pongploydev.videowatchfeaturesupabase.viewmodel.FavoritesViewModel
 
@@ -50,7 +51,10 @@ class FavoritesFragment : Fragment() {
         // Fix: Pass recyclerView as the 2nd argument
         adapterVideo = AdapterVideo(requireContext(), recyclerView, ArrayList())
         adapterVideo?.setOnItemClickListener { view, video, position ->
-            val intent = Intent(context, ActivityVideoAutoDetail::class.java)
+            val vid = video.vid.orEmpty()
+            val isFeed = vid.startsWith("FEED_") || vid.startsWith("TPBS_") || video.tags.orEmpty().contains("feed", ignoreCase = true)
+            val targetClass = if (isFeed) RssFeedDetailActivity::class.java else ActivityVideoAutoDetail::class.java
+            val intent = Intent(context, targetClass)
             intent.putExtra(com.pongploydev.videowatchfeaturesupabase.Constant.KEY_VID, video.vid)
             intent.putExtra(com.pongploydev.videowatchfeaturesupabase.Constant.EXTRA_OBJC, video)
             startActivity(intent)
