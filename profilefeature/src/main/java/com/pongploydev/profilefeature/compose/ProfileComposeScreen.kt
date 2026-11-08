@@ -186,8 +186,19 @@ fun ProfileComposeScreen() {
     LaunchedEffect(firebaseUser, showAuthScreen) {
         if (firebaseUser == null && !showAuthScreen) {
             try {
+                val guestName = supabaseAuthManager.getOrCreateGuestDisplayName()
+                if (supabaseUser == null) {
+                    supabaseAuthManager.signInAnonymously().onSuccess { spUser ->
+                        supabaseUser = spUser
+                    }
+                }
                 firebaseAuth.signInAnonymously()
                     .addOnSuccessListener { result ->
+                        result.user?.updateProfile(
+                            UserProfileChangeRequest.Builder()
+                                .setDisplayName(guestName)
+                                .build()
+                        )
                         firebaseUser = result.user
                     }
                     .addOnFailureListener { e ->
@@ -1013,6 +1024,14 @@ fun AuthLoginViewDual(
                                     errorMessage = null
 
                                     scope.launch {
+                                        val guestName = supabaseAuthManager.getOrCreateGuestDisplayName()
+                                        val dataMgr = SupabaseDataManager.getInstance(context)
+                                        dataMgr.saveUserProgress(
+                                            stars = dataMgr.getUserTotalStars(),
+                                            level = dataMgr.getUserCurrentLevel(),
+                                            displayName = guestName
+                                        )
+
                                         // Supabase Guest Sign In
                                         val supabaseResult = supabaseAuthManager.signInAnonymously()
                                         supabaseResult.onSuccess { spUser ->
@@ -1027,7 +1046,15 @@ fun AuthLoginViewDual(
                                             } catch (e: Exception) {
                                                 "1.0.0"
                                             }
-                                            val dataMgr = SupabaseDataManager.getInstance(context)
+                                            dataMgr.upsertUserProfile(
+                                                UserProfile(
+                                                    id = spUser.id,
+                                                    email = spUser.email ?: "guest@supabase.io",
+                                                    displayName = guestName,
+                                                    totalStars = dataMgr.getUserTotalStars(),
+                                                    currentLevel = dataMgr.getUserCurrentLevel()
+                                                )
+                                            )
                                             dataMgr.registerUserDevice(
                                                 userId = spUser.id,
                                                 deviceId = androidId,
@@ -1038,14 +1065,19 @@ fun AuthLoginViewDual(
 
                                         // Firebase Guest Sign In
                                         firebaseAuth.signInAnonymously()
-                                            .addOnSuccessListener {
+                                            .addOnSuccessListener { authRes ->
+                                                authRes.user?.updateProfile(
+                                                    UserProfileChangeRequest.Builder()
+                                                        .setDisplayName(guestName)
+                                                        .build()
+                                                )
                                                 isLoading = false
-                                                Toast.makeText(context, "เข้าเล่นเป็นแขกตัวน้อยเรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, "เข้าเล่นในชื่อ $guestName เรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
                                             }
                                             .addOnFailureListener { e ->
                                                 isLoading = false
                                                 if (supabaseResult.isSuccess) {
-                                                    Toast.makeText(context, "เข้าเล่นเป็นแขกตัวน้อยเรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "เข้าเล่นในชื่อ $guestName เรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     errorMessage = e.localizedMessage ?: "เข้าใช้งานแบบ Guest ไม่สำเร็จ"
                                                 }
@@ -1241,18 +1273,16 @@ fun ProfileDetailsViewDual(
         }
     }
 
-    val initialName = profileData?.displayName
-        ?: firebaseUser?.displayName
-        ?: supabaseUser?.userMetadata?.displayName
-        ?: "นักอ่านตัวน้อย"
+    val guestDefaultName = remember { supabaseAuthManager.getOrCreateGuestDisplayName() }
 
-    var newName by remember { mutableStateOf(initialName) }
+    val initialName = profileData?.displayName?.takeIf { it.isNotBlank() && it != "นักอ่านตัวน้อย" && !it.startsWith("ผู้ใช้ชั่วคราว") }
+        ?: supabaseUser?.userMetadata?.displayName?.takeIf { it.isNotBlank() && !it.startsWith("ผู้ใช้ชั่วคราว") }
+        ?: firebaseUser?.displayName?.takeIf { it.isNotBlank() }
+        ?: guestDefaultName
 
-    val displayName = if (firebaseUser?.isAnonymous == true || supabaseUser?.isAnonymous == true) {
-        "ผู้ใช้ชั่วคราว (Guest)"
-    } else {
-        initialName
-    }
+    var newName by remember(initialName) { mutableStateOf(initialName) }
+
+    val displayName = initialName
 
     val emailText = firebaseUser?.email ?: supabaseUser?.email ?: profileData?.email ?: "ยังไม่ได้เชื่อมต่ออีเมล"
 

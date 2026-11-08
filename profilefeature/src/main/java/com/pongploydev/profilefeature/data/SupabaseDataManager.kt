@@ -59,7 +59,12 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     fun getLocalDisplayName(): String? {
-        return statsPrefs.getString("display_name", null)
+        val saved = statsPrefs.getString("display_name", null)
+        return if (!saved.isNullOrBlank() && saved != "คนเก่ง" && saved != "นักอ่านตัวน้อย" && !saved.startsWith("ผู้ใช้ชั่วคราว")) {
+            saved
+        } else {
+            authManager.getOrCreateGuestDisplayName()
+        }
     }
 
     fun getLocalAvatarUrl(): String? {
@@ -213,7 +218,7 @@ class SupabaseDataManager private constructor(context: Context) {
                 val cloudProfile = response.body()!!.first()
                 val resolvedStars = maxOf(localStars, cloudProfile.totalStars)
                 val resolvedLevel = maxOf(localLevel, cloudProfile.currentLevel, 1 + (resolvedStars / 50))
-                val resolvedName = if (!cloudProfile.displayName.isNullOrBlank() && cloudProfile.displayName != "นักอ่านตัวน้อย") {
+                val resolvedName = if (!cloudProfile.displayName.isNullOrBlank() && cloudProfile.displayName != "นักอ่านตัวน้อย" && !cloudProfile.displayName.startsWith("ผู้ใช้ชั่วคราว")) {
                     cloudProfile.displayName
                 } else {
                     localName
@@ -235,9 +240,9 @@ class SupabaseDataManager private constructor(context: Context) {
                     currentLevel = resolvedLevel
                 )
 
-                if (resolvedStars > cloudProfile.totalStars || resolvedLevel > cloudProfile.currentLevel) {
+                if (resolvedStars > cloudProfile.totalStars || resolvedLevel > cloudProfile.currentLevel || resolvedName != cloudProfile.displayName) {
                     try {
-                        updateUserProfile(validId, UserProfileUpdate(totalStars = resolvedStars, currentLevel = resolvedLevel))
+                        updateUserProfile(validId, UserProfileUpdate(displayName = resolvedName, totalStars = resolvedStars, currentLevel = resolvedLevel))
                     } catch (e: Exception) {
                         Log.w("SupabaseDataManager", "Syncing local stars to cloud failed: ${e.message}")
                     }

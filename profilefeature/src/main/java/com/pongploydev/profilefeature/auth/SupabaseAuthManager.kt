@@ -2,6 +2,7 @@ package com.pongploydev.profilefeature.auth
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.provider.Settings
 import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -10,6 +11,9 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class SupabaseAuthManager private constructor(context: Context) {
@@ -21,6 +25,7 @@ class SupabaseAuthManager private constructor(context: Context) {
         private const val PREFS_NAME = "supabase_auth_prefs"
         private const val KEY_USER = "key_user"
         private const val KEY_ACCESS_TOKEN = "key_access_token"
+        private const val KEY_GUEST_DISPLAY_NAME = "key_guest_display_name"
 
         @Volatile
         private var instance: SupabaseAuthManager? = null
@@ -32,7 +37,8 @@ class SupabaseAuthManager private constructor(context: Context) {
         }
     }
 
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext: Context = context.applicationContext
+    private val prefs: SharedPreferences = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
 
     private val apiService: SupabaseAuthApiService by lazy {
@@ -53,10 +59,41 @@ class SupabaseAuthManager private constructor(context: Context) {
             .create(SupabaseAuthApiService::class.java)
     }
 
+    fun getOrCreateGuestDisplayName(): String {
+        val existing = prefs.getString(KEY_GUEST_DISPLAY_NAME, null)
+        if (!existing.isNullOrBlank() && existing.startsWith("guest", ignoreCase = true)) {
+            return existing
+        }
+        val datePart = SimpleDateFormat("ddyyyyMM", Locale.US).format(Date())
+        val rawDeviceId = try {
+            Settings.Secure.getString(appContext.contentResolver, Settings.Secure.ANDROID_ID)
+        } catch (e: Exception) {
+            null
+        }
+        val cleanDevice = rawDeviceId
+            ?.filter { it.isLetterOrDigit() }
+            ?.takeLast(6)
+            ?.ifBlank { null }
+            ?: (100000..999999).random().toString()
+        val generated = "guest${datePart}${cleanDevice}"
+        prefs.edit().putString(KEY_GUEST_DISPLAY_NAME, generated).apply()
+        return generated
+    }
+
     fun getStoredUser(): SupabaseUser? {
         val json = prefs.getString(KEY_USER, null) ?: return null
         return try {
-            gson.fromJson(json, SupabaseUser::class.java)
+            val user = gson.fromJson(json, SupabaseUser::class.java)
+            if (user != null && user.isAnonymous == true) {
+                val curName = user.userMetadata?.displayName
+                if (curName.isNullOrBlank() || curName.startsWith("ผู้ใช้ชั่วคราว")) {
+                    val guestName = getOrCreateGuestDisplayName()
+                    val updated = user.copy(userMetadata = SupabaseUserMetadata(displayName = guestName, avatarUrl = user.userMetadata?.avatarUrl))
+                    saveSession(getAccessToken(), updated)
+                    return updated
+                }
+            }
+            user
         } catch (e: Exception) {
             null
         }
@@ -211,14 +248,20 @@ class SupabaseAuthManager private constructor(context: Context) {
 
     suspend fun signInAnonymously(): Result<SupabaseUser> = withContext(Dispatchers.IO) {
         try {
-            val guestId = "sp_guest_" + UUID.randomUUID().toString().take(12)
+            val guestName = getOrCreateGuestDisplayName()
+            val rawDeviceId = try {
+                Settings.Secure.getString(appContext.contentResolver, Settings.Secure.ANDROID_ID)
+            } catch (e: Exception) {
+                null
+            }
+            val guestId = "sp_guest_" + (rawDeviceId?.filter { it.isLetterOrDigit() }?.take(12)?.ifBlank { null } ?: UUID.randomUUID().toString().take(12))
             val guestUser = SupabaseUser(
                 id = guestId,
                 email = "guest@supabase.io",
-                userMetadata = SupabaseUserMetadata("ผู้ใช้ชั่วคราว (Supabase Guest)"),
+                userMetadata = SupabaseUserMetadata(guestName),
                 isAnonymous = true
             )
-            Log.d(TAG, "Supabase signInAnonymously: generated guest id $guestId")
+            Log.d(TAG, "Supabase signInAnonymously: generated guest id $guestId with name $guestName")
             saveSession("sb_anon_guest_token", guestUser)
             Result.success(guestUser)
         } catch (e: Exception) {
@@ -251,7 +294,10 @@ class SupabaseAuthManager private constructor(context: Context) {
     }
 
     fun signOut() {
-        prefs.edit().clear().apply()
+        prefs.edit()
+            .remove(KEY_USER)
+            .remove(KEY_ACCESS_TOKEN)
+            .apply()
     }
 }
 

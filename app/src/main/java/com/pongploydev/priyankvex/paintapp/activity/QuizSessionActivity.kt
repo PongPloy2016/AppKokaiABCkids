@@ -655,14 +655,21 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             withContext(Dispatchers.Main) {
                 if (isFinishing) return@withContext
 
-                val memberName = userProf?.displayName?.ifBlank { null }
-                    ?: supabaseUser?.userMetadata?.displayName?.ifBlank { null }
-                    ?: firebaseUser?.displayName?.ifBlank { null }
-                    ?: supabaseUser?.email?.substringBefore("@")?.ifBlank { null }
-                    ?: firebaseUser?.email?.substringBefore("@")?.ifBlank { null }
+                val authManager = SupabaseAuthManager.getInstance(this@QuizSessionActivity)
+                val guestDefaultName = authManager.getOrCreateGuestDisplayName()
+
+                val isRegisteredMember = (supabaseUser != null && supabaseUser.isAnonymous != true) ||
+                    (firebaseUser != null && !firebaseUser.isAnonymous)
+
+                val memberName = userProf?.displayName?.takeIf { it.isNotBlank() && it != "นักอ่านตัวน้อย" && !it.startsWith("ผู้ใช้ชั่วคราว") }
+                    ?: supabaseUser?.userMetadata?.displayName?.takeIf { it.isNotBlank() && !it.startsWith("ผู้ใช้ชั่วคราว") }
+                    ?: firebaseUser?.displayName?.takeIf { it.isNotBlank() }
+                    ?: supabaseUser?.email?.substringBefore("@")?.takeIf { it.isNotBlank() && it != "guest" }
+                    ?: firebaseUser?.email?.substringBefore("@")?.takeIf { it.isNotBlank() }
+                    ?: guestDefaultName
 
                 val avatarUrl = userProf?.avatarUrl?.ifBlank { null }
-                val isMember = !memberName.isNullOrBlank()
+                val isMember = isRegisteredMember
 
                 val container = LinearLayout(this@QuizSessionActivity).apply {
                     orientation = LinearLayout.VERTICAL
@@ -707,7 +714,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 container.addView(avatarCard)
 
                 val tvLabel = android.widget.TextView(this@QuizSessionActivity).apply {
-                    text = if (isMember) "👤 ชื่อสมาชิก (สามารถแก้ไขได้):" else "👤 กรอกชื่อเล่นของคุณ:"
+                    text = if (isMember) "👤 ชื่อสมาชิก (สามารถแก้ไขได้):" else "👤 ชื่อผู้เล่น Guest (สามารถแก้ไขได้):"
                     textSize = 14f
                     setTypeface(null, android.graphics.Typeface.BOLD)
                     setTextColor(Color.parseColor("#333333"))
@@ -716,18 +723,19 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 container.addView(tvLabel)
 
                 val nameInput = EditText(this@QuizSessionActivity).apply {
-                    if (isMember && memberName != null) {
-                        setText(memberName)
-                    } else {
-                        hint = "ใส่ชื่อเล่นของคุณที่นี่"
-                    }
+                    setText(memberName)
+                    hint = "ใส่ชื่อเล่นของคุณที่นี่"
                     setPadding(40, 24, 40, 24)
                     setBackgroundResource(android.R.drawable.editbox_background)
                 }
                 container.addView(nameInput)
 
                 val tvSub = android.widget.TextView(this@QuizSessionActivity).apply {
-                    text = if (isMember) "✅ สมาชิก (นำชื่อและรูปโปรไฟล์มาใช้ให้อัตโนมัติ)" else "💡 คุณยังไม่ได้เข้าสู่ระบบ (สามารถกรอกชื่อเพื่อบันทึกคะแนน)"
+                    text = if (isMember) {
+                        "✅ สมาชิก (นำชื่อและรูปโปรไฟล์มาใช้ให้อัตโนมัติ)"
+                    } else {
+                        "🎈 โหมดไม่ลงทะเบียน: สุ่มชื่อ $memberName ให้อัตโนมัติ"
+                    }
                     textSize = 12f
                     setTextColor(Color.parseColor("#666666"))
                     gravity = android.view.Gravity.CENTER
@@ -743,7 +751,7 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     .setView(container)
                     .setPositiveButton("บันทึกคะแนน") { _, _ ->
                         val finalName = nameInput.text.toString().trim().ifEmpty {
-                            memberName ?: "ผู้เล่นนิรนาม"
+                            memberName
                         }
                         saveScoreToFirestore(finalName, score, duration)
                     }
@@ -806,6 +814,11 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val dataManager = SupabaseDataManager.getInstance(this@QuizSessionActivity)
+            dataManager.saveUserProgress(
+                stars = dataManager.getUserTotalStars(),
+                level = dataManager.getUserCurrentLevel(),
+                displayName = name
+            )
             val userProf = dataManager.fetchUserProfile(userId).getOrNull()
             val avatarUrl = userProf?.avatarUrl?.ifBlank { null }
             val email = userProf?.email?.ifBlank { null } ?: supabaseUser?.email?.ifBlank { null }
