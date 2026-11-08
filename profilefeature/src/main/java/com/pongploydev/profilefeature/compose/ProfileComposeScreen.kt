@@ -187,9 +187,28 @@ fun ProfileComposeScreen() {
         if (firebaseUser == null && !showAuthScreen) {
             try {
                 val guestName = supabaseAuthManager.getOrCreateGuestDisplayName()
+                val dataMgr = SupabaseDataManager.getInstance(context)
+                dataMgr.saveUserProgress(
+                    stars = dataMgr.getUserTotalStars(),
+                    level = dataMgr.getUserCurrentLevel(),
+                    displayName = guestName
+                )
                 if (supabaseUser == null) {
                     supabaseAuthManager.signInAnonymously().onSuccess { spUser ->
                         supabaseUser = spUser
+                        dataMgr.upsertUserProfile(
+                            UserProfile(
+                                id = spUser.id,
+                                email = null,
+                                displayName = guestName,
+                                avatarUrl = dataMgr.getLocalAvatarUrl() ?: "",
+                                role = "student",
+                                totalStars = dataMgr.getUserTotalStars(),
+                                totalCoins = 0,
+                                currentLevel = dataMgr.getUserCurrentLevel(),
+                                streakDays = dataMgr.getUserStreakDays()
+                            )
+                        )
                     }
                 }
                 firebaseAuth.signInAnonymously()
@@ -1049,10 +1068,14 @@ fun AuthLoginViewDual(
                                             dataMgr.upsertUserProfile(
                                                 UserProfile(
                                                     id = spUser.id,
-                                                    email = spUser.email ?: "guest@supabase.io",
+                                                    email = null,
                                                     displayName = guestName,
+                                                    avatarUrl = dataMgr.getLocalAvatarUrl() ?: "",
+                                                    role = "student",
                                                     totalStars = dataMgr.getUserTotalStars(),
-                                                    currentLevel = dataMgr.getUserCurrentLevel()
+                                                    totalCoins = 0,
+                                                    currentLevel = dataMgr.getUserCurrentLevel(),
+                                                    streakDays = dataMgr.getUserStreakDays()
                                                 )
                                             )
                                             dataMgr.registerUserDevice(
@@ -1182,7 +1205,7 @@ fun ProfileDetailsViewDual(
     val scope = rememberCoroutineScope()
     val dataManager = remember { SupabaseDataManager.getInstance(context) }
 
-    val userId = supabaseUser?.id ?: firebaseUser?.uid ?: "guest_user"
+    val userId = supabaseUser?.id ?: firebaseUser?.uid ?: supabaseAuthManager.getGuestUserId()
 
     var profileData by remember { mutableStateOf<UserProfile?>(null) }
     var quizResults by remember { mutableStateOf<List<UserQuizResult>>(emptyList()) }

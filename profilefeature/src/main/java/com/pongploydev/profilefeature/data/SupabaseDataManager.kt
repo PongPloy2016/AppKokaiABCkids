@@ -250,11 +250,15 @@ class SupabaseDataManager private constructor(context: Context) {
                 Result.success(mergedProfile)
             } else {
                 // If profile doesn't exist yet in Supabase, auto-create (upsert) default profile with local stats!
+                val storedEmail = authManager.getStoredUser()?.email?.takeIf { it.isNotBlank() && it != "guest@supabase.io" }
                 val defaultProfile = UserProfile(
                     id = validId,
+                    email = storedEmail,
                     displayName = localName,
                     avatarUrl = localAvatar,
+                    role = "student",
                     totalStars = localStars,
+                    totalCoins = 0,
                     currentLevel = localLevel,
                     streakDays = localStreak
                 )
@@ -263,11 +267,15 @@ class SupabaseDataManager private constructor(context: Context) {
             }
         } catch (e: Exception) {
             Log.e("SupabaseDataManager", "fetchUserProfile Exception: ${e.message}", e)
+            val storedEmail = authManager.getStoredUser()?.email?.takeIf { it.isNotBlank() && it != "guest@supabase.io" }
             val fallbackProfile = UserProfile(
                 id = validId,
+                email = storedEmail,
                 displayName = localName,
                 avatarUrl = localAvatar,
+                role = "student",
                 totalStars = localStars,
+                totalCoins = 0,
                 currentLevel = localLevel,
                 streakDays = localStreak
             )

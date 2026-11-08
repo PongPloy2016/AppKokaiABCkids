@@ -12,17 +12,22 @@ data class UserProfile(
     @SerializedName("total_coins") val totalCoins: Int = 0,
     @SerializedName("current_level") val currentLevel: Int = 1,
     @SerializedName("streak_days") val streakDays: Int = 1,
+    @SerializedName("last_active_at") val lastActiveAt: String? = null,
     @SerializedName("created_at") val createdAt: String? = null,
     @SerializedName("updated_at") val updatedAt: String? = null
 )
 
 data class UserProfileUpdate(
+    @SerializedName("email") val email: String? = null,
     @SerializedName("display_name") val displayName: String? = null,
     @SerializedName("avatar_url") val avatarUrl: String? = null,
+    @SerializedName("role") val role: String? = null,
     @SerializedName("total_stars") val totalStars: Int? = null,
     @SerializedName("total_coins") val totalCoins: Int? = null,
     @SerializedName("current_level") val currentLevel: Int? = null,
-    @SerializedName("streak_days") val streakDays: Int? = null
+    @SerializedName("streak_days") val streakDays: Int? = null,
+    @SerializedName("last_active_at") val lastActiveAt: String? = null,
+    @SerializedName("updated_at") val updatedAt: String? = null
 )
 
 data class UserLearningProgress(
