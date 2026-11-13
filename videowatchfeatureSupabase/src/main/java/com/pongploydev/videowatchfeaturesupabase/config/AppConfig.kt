@@ -14,6 +14,9 @@ object AppConfig {
     const val SUPABASE_URL = "https://qriqerrkxccpnwabphdc.supabase.co"
     const val SUPABASE_ANON_KEY = "sb_publishable_4pbBttafKQoR_Bj78vtARA_eDMkRe66"
 
+    // YouTube Data API v3 Key (จาก Google Cloud Project 424696681721 - ต้องเปิดใช้งาน YouTube Data API v3 ใน Console)
+    const val YOUTUBE_DATA_API_KEY = "AIzaSyD6GNVtBLTtwUa5Rp74ypVHqHC7qzJyQh4"
+
 
     // ==================== AdMob Configuration ====================
 

@@ -3,12 +3,13 @@ package com.pongploydev.videowatchfeaturesupabase.data.repository
 import android.net.Uri
 import android.text.Html
 import android.util.Log
+import com.pongploydev.videowatchfeaturesupabase.config.AppConfig
 import com.pongploydev.videowatchfeaturesupabase.data.remote.SupabaseClient
 import com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem
 import com.pongploydev.videowatchfeaturesupabase.model.Video
-import com.pongploydev.videowatchfeaturesupabase.viewmodel.VideoListViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.InputStream
@@ -124,6 +125,21 @@ object VideoFeedRepository {
         if (cleanUrl.isEmpty()) {
             Log.w(TAG, "Feed ${feed.id} has empty feed_url")
             return emptyList()
+        }
+
+        // รองรับ YouTube Data API v3 ทั้งจาก URL API โดยตรง หรือแปลงจาก Google News site:youtube.com query
+        if (cleanUrl.contains("googleapis.com/youtube/v3/", ignoreCase = true) ||
+            (cleanUrl.contains("news.google.com/rss/search", ignoreCase = true) &&
+                cleanUrl.contains("youtube.com", ignoreCase = true))
+        ) {
+            val ytApiVideos = tryLoadFromYouTubeDataApi(cleanUrl, feed)
+            if (ytApiVideos.isNotEmpty()) {
+                return ytApiVideos
+            }
+            // ถ้ายังไม่ได้เปิดใช้ YouTube Data API v3 และเป็นลิงก์ Google News RSS ให้ fallback ไปโหลด RSS เดิมต่อ
+            if (cleanUrl.contains("googleapis.com/youtube/v3/", ignoreCase = true)) {
+                return emptyList()
+            }
         }
 
         val connection = URL(cleanUrl).openConnection() as HttpURLConnection
@@ -289,6 +305,114 @@ object VideoFeedRepository {
         if (badWords.any { lower.contains(it) }) return false
         val goodWords = listOf("นิทาน", "เด็ก", "อ่าน", "ก-ฮ", "ก ไก่", "สระ", "เขียน", "อนุบาล", "การ์ตูน", "ลูกหมู", "พินอคคิโอ", "สอน", "เรียนรู้", "เพลง", "ปฐมวัย", "หลับสบาย", "นิทานก่อนนอน", "สัตว์")
         return goodWords.any { lower.contains(it) }
+    }
+
+    private fun tryLoadFromYouTubeDataApi(sourceUrl: String, feed: KidsVideoFeedItem): List<Video> {
+        val apiKey = AppConfig.YOUTUBE_DATA_API_KEY
+        if (apiKey.isBlank()) return emptyList()
+
+        val requestUrl = try {
+            if (sourceUrl.contains("googleapis.com/youtube/v3/", ignoreCase = true)) {
+                if (sourceUrl.contains("key=", ignoreCase = true)) sourceUrl
+                else if (sourceUrl.contains("?")) "$sourceUrl&key=$apiKey"
+                else "$sourceUrl?key=$apiKey"
+            } else {
+                val uri = Uri.parse(sourceUrl)
+                val rawQ = uri.getQueryParameter("q").orEmpty()
+                val cleanedQ = rawQ
+                    .replace(Regex("site:youtube\\.com", RegexOption.IGNORE_CASE), "")
+                    .replace("(", "")
+                    .replace(")", "")
+                    .replace(Regex("\\s+OR\\s+", RegexOption.IGNORE_CASE), "|")
+                    .trim()
+                if (cleanedQ.isEmpty()) return emptyList()
+                val encodedQ = URLEncoder.encode(cleanedQ, "UTF-8")
+                "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&safeSearch=strict&relevanceLanguage=th&regionCode=TH&maxResults=30&q=$encodedQ&key=$apiKey"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error building YouTube API URL: ${e.message}")
+            return emptyList()
+        }
+
+        val connection = URL(requestUrl).openConnection() as HttpURLConnection
+        return try {
+            connection.connectTimeout = CONNECT_TIMEOUT_MS
+            connection.readTimeout = READ_TIMEOUT_MS
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/json")
+
+            val code = connection.responseCode
+            if (code != HttpURLConnection.HTTP_OK) {
+                val errBody = connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                Log.w(TAG, "YouTube Data API v3 returned HTTP $code: $errBody")
+                return emptyList()
+            }
+
+            val jsonText = connection.inputStream.bufferedReader().use { it.readText() }
+            parseYouTubeApiJson(jsonText, feed)
+        } catch (e: Exception) {
+            Log.e(TAG, "YouTube Data API v3 request failed: ${e.message}")
+            emptyList()
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun parseYouTubeApiJson(jsonText: String, feed: KidsVideoFeedItem): List<Video> {
+        val result = mutableListOf<Video>()
+        val root = JSONObject(jsonText)
+        val items = root.optJSONArray("items") ?: return emptyList()
+
+        for (i in 0 until items.length()) {
+            val itemObj = items.optJSONObject(i) ?: continue
+            val idObj = itemObj.optJSONObject("id")
+            val videoId = idObj?.optString("videoId")?.trim().orEmpty()
+            if (videoId.isEmpty()) continue
+
+            val snippet = itemObj.optJSONObject("snippet") ?: continue
+            val rawTitle = snippet.optString("title").trim()
+            val cleanTitle = Html.fromHtml(rawTitle).toString().trim()
+            if (cleanTitle.isEmpty()) continue
+
+            if (feed.isKidsFilterRequired && !isTitleKidsSafe(cleanTitle)) {
+                continue
+            }
+
+            val desc = Html.fromHtml(snippet.optString("description").trim()).toString().trim()
+            val publishedAt = snippet.optString("publishedAt").trim()
+            val channelTitle = snippet.optString("channelTitle").trim()
+
+            val thumbs = snippet.optJSONObject("thumbnails")
+            val thumbUrl = thumbs?.optJSONObject("high")?.optString("url")
+                ?.takeIf { it.isNotBlank() }
+                ?: thumbs?.optJSONObject("medium")?.optString("url")?.takeIf { it.isNotBlank() }
+                ?: thumbs?.optJSONObject("default")?.optString("url")?.takeIf { it.isNotBlank() }
+                ?: "https://img.youtube.com/vi/$videoId/hqdefault.jpg"
+
+            result.add(
+                Video().apply {
+                    id = 2000 + i
+                    vid = "FEED_$videoId"
+                    video_title = cleanTitle
+                    video_url = "https://www.youtube.com/watch?v=$videoId"
+                    video_id = videoId
+                    video_thumbnail = thumbUrl
+                    video_duration = "YouTube"
+                    video_description = desc.ifEmpty {
+                        "วิดีโอสำหรับเด็กจาก $channelTitle (${feed.name})"
+                    }
+                    video_type = "youtube"
+                    category_name = feed.name
+                    tags = "#${feed.id} #${feed.name.replace(" ", "")} #เด็กและครอบครัว"
+                    age_rating = "เด็กและครอบครัว"
+                    date_time = publishedAt
+                    total_views = 45000L + (Math.abs(cleanTitle.hashCode()) % 80000)
+                    rating = 4.9f
+                    isNew = true
+                }
+            )
+        }
+        return result.distinctBy { it.video_id }
     }
 
     fun extractYouTubeId(url: String): String {
