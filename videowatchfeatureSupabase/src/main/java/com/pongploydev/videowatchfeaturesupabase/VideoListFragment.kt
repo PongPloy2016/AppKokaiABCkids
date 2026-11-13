@@ -144,6 +144,7 @@ class VideoListFragment : Fragment() {
     private var activeViewHolder: AdapterVideo.OriginalViewHolder? = null
     private var activeYouTubePlayer: YouTubePlayer? = null
     private var isPreviewMuted = true
+    private var selectedFeedId: String? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -197,13 +198,6 @@ class VideoListFragment : Fragment() {
         initializeAds()
 
         swipeProgress(true)
-        if (sharedPref.isUseSupabaseApi) {
-            requestAction(1)
-        } else {
-            ensureCookieChallengeSolved {
-                requestAction(1)
-            }
-        }
 
         return rootView
     }
@@ -237,8 +231,16 @@ class VideoListFragment : Fragment() {
         }
 
         viewModel.videoFeeds.observe(viewLifecycleOwner) { feeds ->
+            swipeProgress(false)
             if (!feeds.isNullOrEmpty()) {
                 updateCategoryTabsFromFeeds(feeds)
+                val sortedFeeds = feeds.sortedBy { it.sortOrder }
+                val activeIds = sortedFeeds.map { it.id }.toSet()
+                if (selectedFeedId == null || selectedFeedId !in activeIds) {
+                    selectCategory(sortedFeeds.first().id)
+                }
+            } else {
+                showNoItemView(true)
             }
         }
     }
@@ -582,25 +584,22 @@ class VideoListFragment : Fragment() {
     }
 
     private fun setupCategories() {
-        categoryAll.setOnClickListener { selectCategory("all") }
         btnFavoritePage?.setOnClickListener { openFavoriteList() }
         btnFavoriteQuick?.setOnClickListener { openFavoriteList() }
-        categoryLearning.setOnClickListener { selectCategory("learning") }
-        categoryAbc.setOnClickListener { selectCategory("abc") }
-        categoryThaipbsKids.setOnClickListener { selectCategory("thaipbs_kids_youtube") }
-        categoryThaipbsMain.setOnClickListener { selectCategory("thaipbs_youtube_main") }
-        categoryPrograms.setOnClickListener { selectCategory("thaipbs_kids_programs") }
-        categoryTalk.setOnClickListener { selectCategory("thaipbs_talk_about_kids") }
-        categoryStory.setOnClickListener { selectCategory("story_feed") }
 
-        // ซ่อนแท็บฟีดทั้งหมดไว้ก่อน จนกว่าจะดึงข้อมูลจากตาราง Supabase kids_video_feeds สำเร็จ
+        // ซ่อนแท็บที่ไม่ได้ดึงจาก Supabase kids_video_feeds ทั้งหมด
+        categoryAll.visibility = View.GONE
+        categoryLearning.visibility = View.GONE
+        categoryAbc.visibility = View.GONE
         categoryThaipbsKids.visibility = View.GONE
         categoryThaipbsMain.visibility = View.GONE
         categoryPrograms.visibility = View.GONE
         categoryTalk.visibility = View.GONE
         categoryStory.visibility = View.GONE
 
-        updateCategoryUI("all")
+        recyclerView.visibility = View.GONE
+        btnLoadMoreHome?.visibility = View.GONE
+        containerThaiPbsKids?.visibility = View.VISIBLE
     }
 
     private fun isRssFeedCategory(category: String): Boolean {
@@ -609,6 +608,7 @@ class VideoListFragment : Fragment() {
     }
 
     private fun selectCategory(category: String) {
+        selectedFeedId = category
         updateCategoryUI(category)
         if (isRssFeedCategory(category)) {
             btnLoadMoreHome?.visibility = View.GONE

@@ -125,12 +125,13 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- All Sparks Chip -->
+                    <!-- All Sparks Chip (hidden: use Supabase kids_video_feeds tabs only) -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/category_all"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
+                        android:visibility="gone"
                         app:cardBackgroundColor="#FF6B8E"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp"
@@ -154,12 +155,13 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Math Magic Chip -->
+                    <!-- Math Magic Chip (hidden: use Supabase kids_video_feeds tabs only) -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/category_learning"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
+                        android:visibility="gone"
                         app:cardBackgroundColor="@color/white"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp"
@@ -184,12 +186,13 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- ABC Chip -->
+                    <!-- ABC Chip (hidden: use Supabase kids_video_feeds tabs only) -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/category_abc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
+                        android:visibility="gone"
                         app:cardBackgroundColor="@color/white"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp"
