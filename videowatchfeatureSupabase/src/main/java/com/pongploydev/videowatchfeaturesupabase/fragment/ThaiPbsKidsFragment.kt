@@ -133,21 +133,24 @@ class ThaiPbsKidsFragment : Fragment() {
         btnLoadMore.visibility = if (videoList.size < allVideos.size) View.VISIBLE else View.GONE
     }
 
-    fun loadFeedData(force: Boolean = false) {
-        loadFeedById(currentFeedId, force)
+    fun loadFeedData(force: Boolean = false, onComplete: (() -> Unit)? = null) {
+        loadFeedById(currentFeedId, force, onComplete)
     }
 
-    fun loadFeedById(feedId: String, force: Boolean = false) {
+    fun loadFeedById(feedId: String, force: Boolean = false, onComplete: (() -> Unit)? = null) {
         val isSwitchingFeed = currentFeed?.id != feedId
         currentFeedId = feedId
-        if (!isAdded || view == null || !::recyclerView.isInitialized) return
+        if (!isAdded || view == null || !::recyclerView.isInitialized) {
+            onComplete?.invoke()
+            return
+        }
 
         // อัปเดต Banner ทันทีจากค่าเริ่มต้นเพื่อให้ผู้ใช้เห็นหัวข้อที่เลือกทันที
         updateBanner(resolveFeedForId(feedId, emptyList()))
 
         loadJob?.cancel()
         loadJob = viewLifecycleOwner.lifecycleScope.launch {
-            if (isSwitchingFeed) {
+            if (isSwitchingFeed || force) {
                 allVideos.clear()
                 videoList.clear()
                 adapterVideo?.setItems(emptyList())
@@ -208,6 +211,7 @@ class ThaiPbsKidsFragment : Fragment() {
                 }
             } finally {
                 setLoading(false)
+                onComplete?.invoke()
             }
         }
     }

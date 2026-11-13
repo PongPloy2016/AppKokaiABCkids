@@ -65,10 +65,10 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
         filterVideos("", "all")
     }
 
-    fun loadVideoFeeds() {
+    fun loadVideoFeeds(force: Boolean = false) {
         viewModelScope.launch {
             try {
-                val feeds = com.pongploydev.videowatchfeaturesupabase.data.repository.VideoFeedRepository.getFeeds()
+                val feeds = com.pongploydev.videowatchfeaturesupabase.data.repository.VideoFeedRepository.getFeeds(force)
                 _videoFeeds.value = feeds
             } catch (e: Exception) {
                 _videoFeeds.value = com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem.DEFAULT_FEEDS
@@ -102,6 +102,11 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
     fun fetchVideos(pageNo: Int, isRefresh: Boolean = false) {
         if (isFetching && !isRefresh) return
         isFetching = true
+
+        if (isRefresh) {
+            feedVideosCache.clear()
+            loadVideoFeeds(force = true)
+        }
 
         // If loading first page or refreshing, set loading state
         if (pageNo == 1 && (originalVideos.isEmpty() || isRefresh)) {

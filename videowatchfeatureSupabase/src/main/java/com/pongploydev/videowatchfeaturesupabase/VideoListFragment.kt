@@ -456,9 +456,15 @@ class VideoListFragment : Fragment() {
     private fun setupListeners() {
         swipeRefreshLayout.setOnRefreshListener {
             if (containerThaiPbsKids?.visibility == View.VISIBLE) {
+                viewModel.loadVideoFeeds(force = true)
                 val frag = childFragmentManager.findFragmentById(R.id.container_thai_pbs_kids) as? com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment
-                frag?.loadFeedData(force = true)
-                swipeProgress(false)
+                if (frag != null) {
+                    frag.loadFeedData(force = true) {
+                        swipeProgress(false)
+                    }
+                } else {
+                    swipeProgress(false)
+                }
             } else if (sharedPref.isUseSupabaseApi) {
                 requestAction(1, true)
             } else {

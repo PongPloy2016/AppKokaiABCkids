@@ -26,13 +26,13 @@ class VideoListRepositoryImpl(private val apiInterfaceV1: ApiInterfaceV1) : Vide
                             com.pongploydev.videowatchfeaturesupabase.viewmodel.VideoListViewModel
                                     .getCuratedKidVideos()
 
-                    // รวมวิดีโอเด็กคุณภาพสูงและวิดีโอจาก Supabase เข้าด้วยกัน
-                    // ให้มีข้อมูลครบทุกหมวดเสมอ
+                    // รวมวิดีโอจาก Supabase (ล่าสุดอยู่ด้านบน) และวิดีโอเด็กคุณภาพสูงเข้าด้วยกัน
+                    // ให้มีข้อมูลใหม่และครบทุกหมวดเสมอ
                     val combined = mutableListOf<Video>()
-                    combined.addAll(curated)
+                    combined.addAll(supabaseVideos)
                     val existingVids = combined.map { it.vid }.toSet()
-                    val newSupabase = supabaseVideos.filter { it.vid !in existingVids }
-                    combined.addAll(newSupabase)
+                    val remainingCurated = curated.filter { it.vid !in existingVids }
+                    combined.addAll(remainingCurated)
 
                     val offset = (page - 1) * count
                     val paged: List<Video> =
