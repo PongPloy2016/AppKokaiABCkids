@@ -593,13 +593,13 @@ class VideoListFragment : Fragment() {
         categoryTalk.setOnClickListener { selectCategory("thaipbs_talk_about_kids") }
         categoryStory.setOnClickListener { selectCategory("story_feed") }
 
-        // ซ่อนแท็บเก่าที่ไม่ได้อยู่ในตาราง Supabase kids_video_feeds เริ่มต้นก่อน
+        // ซ่อนแท็บฟีดทั้งหมดไว้ก่อน จนกว่าจะดึงข้อมูลจากตาราง Supabase kids_video_feeds สำเร็จ
         categoryThaipbsKids.visibility = View.GONE
         categoryThaipbsMain.visibility = View.GONE
+        categoryPrograms.visibility = View.GONE
         categoryTalk.visibility = View.GONE
         categoryStory.visibility = View.GONE
 
-        updateCategoryTabsFromFeeds(com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem.DEFAULT_FEEDS)
         updateCategoryUI("all")
     }
 

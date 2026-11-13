@@ -71,7 +71,7 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
                 val feeds = com.pongploydev.videowatchfeaturesupabase.data.repository.VideoFeedRepository.getFeeds(force)
                 _videoFeeds.value = feeds
             } catch (e: Exception) {
-                _videoFeeds.value = com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem.DEFAULT_FEEDS
+                _videoFeeds.value = emptyList()
             }
         }
     }
@@ -194,7 +194,7 @@ class VideoListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun findMatchingFeed(categoryKey: String): com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem? {
-        val feeds = _videoFeeds.value ?: com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem.DEFAULT_FEEDS
+        val feeds = _videoFeeds.value.orEmpty()
         val keyLower = categoryKey.lowercase()
 
         // 1. หาตาม ID โดยตรง

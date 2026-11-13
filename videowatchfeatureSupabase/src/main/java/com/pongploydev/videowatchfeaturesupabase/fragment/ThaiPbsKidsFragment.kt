@@ -145,9 +145,6 @@ class ThaiPbsKidsFragment : Fragment() {
             return
         }
 
-        // อัปเดต Banner ทันทีจากค่าเริ่มต้นเพื่อให้ผู้ใช้เห็นหัวข้อที่เลือกทันที
-        updateBanner(resolveFeedForId(feedId, emptyList()))
-
         loadJob?.cancel()
         loadJob = viewLifecycleOwner.lifecycleScope.launch {
             if (isSwitchingFeed || force) {
@@ -161,17 +158,20 @@ class ThaiPbsKidsFragment : Fragment() {
                 val feeds = VideoFeedRepository.getFeeds(force)
                 val targetFeed = resolveFeedForId(feedId, feeds)
 
+                if (targetFeed == null) {
+                    btnLoadMore.visibility = View.GONE
+                    lytNoItem.visibility = View.VISIBLE
+                    lytFailed.visibility = View.GONE
+                    recyclerView.visibility = View.GONE
+                    return@launch
+                }
+
                 currentFeed = targetFeed
                 updateBanner(targetFeed)
 
-                // 2. โหลดรายการวิดีโอจาก feed_url
-                val fetchedVideos = withContext(Dispatchers.IO) {
+                // 2. โหลดรายการวิดีโอจาก feed_url ของ Supabase โดยตรง
+                val videos = withContext(Dispatchers.IO) {
                     VideoFeedRepository.loadFeedVideos(targetFeed, force)
-                }
-                val videos = if (fetchedVideos.isNotEmpty()) {
-                    fetchedVideos
-                } else {
-                    VideoFeedRepository.getFallbackVideosForFeed(targetFeed)
                 }
 
                 if (videos.isNotEmpty()) {
@@ -185,29 +185,20 @@ class ThaiPbsKidsFragment : Fragment() {
                     lytNoItem.visibility = View.GONE
                     lytFailed.visibility = View.GONE
                 } else {
-                    if (videoList.isEmpty()) {
-                        btnLoadMore.visibility = View.GONE
-                        lytNoItem.visibility = View.VISIBLE
-                        recyclerView.visibility = View.GONE
-                    }
+                    btnLoadMore.visibility = View.GONE
+                    lytNoItem.visibility = View.VISIBLE
+                    lytFailed.visibility = View.GONE
+                    recyclerView.visibility = View.GONE
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading feed $feedId: ${e.message}")
                 if (videoList.isEmpty()) {
-                    val fallback = VideoFeedRepository.getFallbackVideosForFeed(
-                        currentFeed ?: resolveFeedForId(feedId, emptyList())
-                    )
-                    allVideos.clear()
-                    allVideos.addAll(fallback)
-                    videoList.clear()
-                    videoList.addAll(allVideos.take(PAGE_SIZE))
-                    adapterVideo?.setItems(videoList)
-                    btnLoadMore.visibility = if (allVideos.size > videoList.size) View.VISIBLE else View.GONE
-                    recyclerView.visibility = View.VISIBLE
+                    btnLoadMore.visibility = View.GONE
+                    recyclerView.visibility = View.GONE
                     lytNoItem.visibility = View.GONE
-                    lytFailed.visibility = View.GONE
+                    lytFailed.visibility = View.VISIBLE
                 }
             } finally {
                 setLoading(false)
@@ -216,17 +207,10 @@ class ThaiPbsKidsFragment : Fragment() {
         }
     }
 
-    private fun resolveFeedForId(feedId: String, feeds: List<KidsVideoFeedItem>): KidsVideoFeedItem {
-        val combined = feeds + KidsVideoFeedItem.DEFAULT_FEEDS
-        return combined.firstOrNull { it.id.equals(feedId, ignoreCase = true) }
-            ?: when {
-                feedId.contains("bedtime") || feedId.contains("story") -> combined.firstOrNull { it.id.contains("bedtime") || it.id.contains("story") }
-                feedId.contains("cartoon") -> combined.firstOrNull { it.id.contains("cartoon") }
-                feedId.contains("song") -> combined.firstOrNull { it.id.contains("song") }
-                feedId.contains("science") -> combined.firstOrNull { it.id.contains("science") }
-                else -> combined.firstOrNull { it.id == DEFAULT_FEED_ID }
-            }
-            ?: KidsVideoFeedItem.DEFAULT_FEEDS.first()
+    private fun resolveFeedForId(feedId: String, feeds: List<KidsVideoFeedItem>): KidsVideoFeedItem? {
+        return feeds.firstOrNull { it.id.equals(feedId, ignoreCase = true) }
+            ?: feeds.firstOrNull { it.id == DEFAULT_FEED_ID }
+            ?: feeds.firstOrNull()
     }
 
     private fun updateBanner(feed: KidsVideoFeedItem) {
