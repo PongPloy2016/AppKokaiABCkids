@@ -145,6 +145,7 @@ class VideoListFragment : Fragment() {
     private var activeYouTubePlayer: YouTubePlayer? = null
     private var isPreviewMuted = true
     private var selectedFeedId: String? = null
+    private var isSwipeLoading = false
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -1585,17 +1586,29 @@ class VideoListFragment : Fragment() {
     }
 
     private fun swipeProgress(show: Boolean) {
+        isSwipeLoading = show
         if (!show) {
             swipeRefreshLayout.isRefreshing = false
             shimmerFrameLayout.visibility = View.GONE
             shimmerFrameLayout.stopShimmer()
+            swipeRefreshLayout.post {
+                if (!isSwipeLoading) {
+                    swipeRefreshLayout.isRefreshing = false
+                    shimmerFrameLayout.visibility = View.GONE
+                    shimmerFrameLayout.stopShimmer()
+                }
+            }
             return
         }
 
         swipeRefreshLayout.post {
-            swipeRefreshLayout.isRefreshing = true
-            shimmerFrameLayout.visibility = View.VISIBLE
-            shimmerFrameLayout.startShimmer()
+            if (isSwipeLoading) {
+                swipeRefreshLayout.isRefreshing = true
+                if (containerThaiPbsKids?.visibility != View.VISIBLE) {
+                    shimmerFrameLayout.visibility = View.VISIBLE
+                    shimmerFrameLayout.startShimmer()
+                }
+            }
         }
     }
 
