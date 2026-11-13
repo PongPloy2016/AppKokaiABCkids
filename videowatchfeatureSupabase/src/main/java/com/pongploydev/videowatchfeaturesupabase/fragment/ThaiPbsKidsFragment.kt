@@ -47,6 +47,7 @@ class ThaiPbsKidsFragment : Fragment() {
 
     private var currentFeedId: String = DEFAULT_FEED_ID
     private var currentFeed: KidsVideoFeedItem? = null
+    private var loadJob: kotlinx.coroutines.Job? = null
 
     companion object {
         private const val TAG = "ThaiPbsKidsFragment"
@@ -76,8 +77,12 @@ class ThaiPbsKidsFragment : Fragment() {
         initViews(view)
         setupRecyclerView()
         setupListeners()
-        loadFeedById(currentFeedId, force = false)
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        loadFeedById(currentFeedId, force = false)
     }
 
     private fun initViews(view: View) {
@@ -135,13 +140,17 @@ class ThaiPbsKidsFragment : Fragment() {
     fun loadFeedById(feedId: String, force: Boolean = false) {
         val isSwitchingFeed = currentFeed?.id != feedId
         currentFeedId = feedId
-        if (!isAdded || view == null) return
+        if (!isAdded || view == null || !::recyclerView.isInitialized) return
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        // อัปเดต Banner ทันทีจากค่าเริ่มต้นเพื่อให้ผู้ใช้เห็นหัวข้อที่เลือกทันที
+        updateBanner(resolveFeedForId(feedId, emptyList()))
+
+        loadJob?.cancel()
+        loadJob = viewLifecycleOwner.lifecycleScope.launch {
             if (isSwitchingFeed) {
                 allVideos.clear()
                 videoList.clear()
-                adapterVideo?.notifyDataSetChanged()
+                adapterVideo?.setItems(emptyList())
             }
             setLoading(true)
             try {
@@ -153,8 +162,13 @@ class ThaiPbsKidsFragment : Fragment() {
                 updateBanner(targetFeed)
 
                 // 2. โหลดรายการวิดีโอจาก feed_url
-                val videos = withContext(Dispatchers.IO) {
+                val fetchedVideos = withContext(Dispatchers.IO) {
                     VideoFeedRepository.loadFeedVideos(targetFeed, force)
+                }
+                val videos = if (fetchedVideos.isNotEmpty()) {
+                    fetchedVideos
+                } else {
+                    VideoFeedRepository.getFallbackVideosForFeed(targetFeed)
                 }
 
                 if (videos.isNotEmpty()) {
@@ -162,7 +176,7 @@ class ThaiPbsKidsFragment : Fragment() {
                     allVideos.addAll(videos)
                     videoList.clear()
                     videoList.addAll(allVideos.take(PAGE_SIZE))
-                    adapterVideo?.notifyDataSetChanged()
+                    adapterVideo?.setItems(videoList)
                     recyclerView.visibility = View.VISIBLE
                     btnLoadMore.visibility = if (allVideos.size > videoList.size) View.VISIBLE else View.GONE
                     lytNoItem.visibility = View.GONE
@@ -174,6 +188,8 @@ class ThaiPbsKidsFragment : Fragment() {
                         recyclerView.visibility = View.GONE
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading feed $feedId: ${e.message}")
                 if (videoList.isEmpty()) {
@@ -184,9 +200,10 @@ class ThaiPbsKidsFragment : Fragment() {
                     allVideos.addAll(fallback)
                     videoList.clear()
                     videoList.addAll(allVideos.take(PAGE_SIZE))
-                    adapterVideo?.notifyDataSetChanged()
+                    adapterVideo?.setItems(videoList)
                     btnLoadMore.visibility = if (allVideos.size > videoList.size) View.VISIBLE else View.GONE
                     recyclerView.visibility = View.VISIBLE
+                    lytNoItem.visibility = View.GONE
                     lytFailed.visibility = View.GONE
                 }
             } finally {

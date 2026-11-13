@@ -65,7 +65,7 @@
                                 android:paddingHorizontal="8dp"
                                 android:paddingVertical="2dp"
                                 android:text="🎬 แหล่งรวมรายการเด็กสร้างสรรค์"
-                                android:textColor="@color/white"
+                                android:textColor="#D81B60"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
