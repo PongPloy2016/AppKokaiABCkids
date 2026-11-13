@@ -238,20 +238,17 @@ object VideoFeedRepository {
                         val cleanTitle = currentTitle.replace(" - YouTube", "").trim()
 
                         if (cleanTitle.isNotEmpty()) {
-                            // คัดกรองสำหรับ Google News ให้ผ่านเฉพาะเนื้อหาที่เกี่ยวกับเด็กและปลอดภัย 100%
-                            val isUnsafe = feed.feedUrl.contains("news.google.com", ignoreCase = true) && !isTitleKidsSafe(cleanTitle)
-                            if (isUnsafe) {
+                            // กรองคำที่ไม่เหมาะสมเฉพาะเมื่อแท็บนั้นเปิด is_kids_filter_required ใน Supabase
+                            if (feed.isKidsFilterRequired && !isTitleKidsSafe(cleanTitle)) {
                                 eventType = parser.next()
                                 continue
                             }
 
                             val vId = if (currentVideoId.isNotEmpty()) currentVideoId else "vid_${Math.abs((cleanTitle + currentLink).hashCode())}"
-                            val thumb = if (currentThumbnail.isNotEmpty()) {
-                                currentThumbnail
-                            } else if (currentVideoId.isNotEmpty()) {
-                                "https://img.youtube.com/vi/$currentVideoId/hqdefault.jpg"
-                            } else {
-                                pickKidsThumbnail(cleanTitle)
+                            val thumb = when {
+                                currentThumbnail.isNotEmpty() -> currentThumbnail
+                                currentVideoId.isNotEmpty() -> "https://img.youtube.com/vi/$currentVideoId/hqdefault.jpg"
+                                else -> ""
                             }
 
                             val video = Video().apply {
@@ -263,7 +260,7 @@ object VideoFeedRepository {
                                 video_thumbnail = thumb
                                 video_duration = "05:20"
                                 video_description = currentDescription.ifEmpty { "รายการวิดีโอคุณภาพสำหรับเด็กและครอบครัว จาก ${feed.provider.ifEmpty { feed.name }}" }
-                                video_type = "youtube"
+                                video_type = if (currentVideoId.isNotEmpty()) "youtube" else "rss"
                                 category_name = feed.name
                                 tags = "#${feed.id} #${feed.name.replace(" ", "")} #เด็กและครอบครัว"
                                 age_rating = "เด็กและครอบครัว"
@@ -292,26 +289,6 @@ object VideoFeedRepository {
         if (badWords.any { lower.contains(it) }) return false
         val goodWords = listOf("นิทาน", "เด็ก", "อ่าน", "ก-ฮ", "ก ไก่", "สระ", "เขียน", "อนุบาล", "การ์ตูน", "ลูกหมู", "พินอคคิโอ", "สอน", "เรียนรู้", "เพลง", "ปฐมวัย", "หลับสบาย", "นิทานก่อนนอน", "สัตว์")
         return goodWords.any { lower.contains(it) }
-    }
-
-    private val kidThumbnails = listOf(
-        "https://img.youtube.com/vi/fJowGHv9Q7w/hqdefault.jpg", // คิดส์เรนเจอร์
-        "https://img.youtube.com/vi/e2Sus3plcV8/hqdefault.jpg", // สอนศิลป์
-        "https://img.youtube.com/vi/n1kdvZ76OPo/hqdefault.jpg", // บ้านนักวิทยาศาสตร์น้อย
-        "https://img.youtube.com/vi/xa2GRJC8Yac/hqdefault.jpg", // หม้อข้าวหม้อแกง
-        "https://img.youtube.com/vi/AcLn892iPo0/hqdefault.jpg", // ก ไก่
-        "https://img.youtube.com/vi/mdw6UNfz9Og/hqdefault.jpg", // สระไทย
-        "https://img.youtube.com/vi/BELlZKpi1Zs/hqdefault.jpg", // ABC Phonics
-        "https://img.youtube.com/vi/f0Tq1mBsmk0/hqdefault.jpg", // ลูกหมูสามตัว
-        "https://img.youtube.com/vi/-a1Qe12xMh4/hqdefault.jpg", // กระต่ายกับเต่า
-        "https://img.youtube.com/vi/oSOCfvMT3Cc/hqdefault.jpg", // นักซิ่งล้อเดียว
-        "https://img.youtube.com/vi/x_PsuCO4D_I/hqdefault.jpg", // ขบวนการ Fun น้ำนม
-        "https://img.youtube.com/vi/DR-cfDsHCGA/hqdefault.jpg"  // นับเลข 1-10
-    )
-
-    private fun pickKidsThumbnail(title: String): String {
-        val index = Math.abs(title.hashCode()) % kidThumbnails.size
-        return kidThumbnails[index]
     }
 
     fun extractYouTubeId(url: String): String {

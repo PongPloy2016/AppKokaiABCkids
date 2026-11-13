@@ -202,14 +202,13 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     vItem.txtAgeBadge.setText(video.age_rating);
                     
                     if (video.vid != null && (video.vid.startsWith("FEED_") || video.vid.startsWith("TPBS_"))) {
-                        if (video.category_name != null && video.category_name.contains("อ่าน")) {
-                            vItem.txtAgeBadge.setText("📖 นิทานฝึกอ่าน");
-                        } else if (video.category_name != null && video.category_name.contains("Kids")) {
-                            vItem.txtAgeBadge.setText("🎬 Thai PBS Kids");
+                        if (video.category_name != null && !video.category_name.trim().isEmpty()) {
+                            vItem.txtAgeBadge.setText("🎬 " + video.category_name);
                         } else {
                             vItem.txtAgeBadge.setText("🌟 Feed เด็ก");
                         }
                         try {
+                            vItem.txtAgeBadge.setTextColor(ContextCompat.getColor(context, android.R.color.white));
                             if (vItem.txtAgeBadge.getBackground() != null) {
                                 vItem.txtAgeBadge.getBackground().mutate().setColorFilter(ContextCompat.getColor(context, R.color.kids_pink), PorterDuff.Mode.SRC_IN);
                             }
@@ -238,7 +237,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             vItem.lytYouTubeContainer.removeAllViews();
             vItem.imgPlay.setVisibility(View.VISIBLE);
 
-            if (video.video_type != null && video.video_type.equalsIgnoreCase("youtube")) {
+            if (video.video_type != null && video.video_type.equalsIgnoreCase("youtube") && video.video_id != null && !video.video_id.trim().isEmpty()) {
                 if (video.video_thumbnail == null || video.video_thumbnail.equals("")) {
                     if (sharedPref.getVideoViewType() == Constant.VIDEO_LIST_COMPACT) {
                         Glide.with(context)
