@@ -294,7 +294,7 @@ public class AdapterVideo extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(vItem.videoThumbnail);
                 } else {
-                    vItem.videoThumbnail.setImageResource(R.drawable.ic_thumbnail);
+                    vItem.videoThumbnail.setImageResource(R.drawable.bg_rss_video_placeholder);
                 }
             }
 
