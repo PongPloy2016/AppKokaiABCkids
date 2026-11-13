@@ -270,7 +270,7 @@ object VideoFeedRepository {
                                 isNew = true
                             }
                             result.add(video)
-                            if (result.size >= 30) {
+                            if (result.size >= 100) {
                                 break
                             }
                         }

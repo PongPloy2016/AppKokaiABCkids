@@ -500,10 +500,15 @@ class VideoListFragment : Fragment() {
             androidx.core.widget.NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
                 stopActivePreview()
                 if (scrollY >= (v.getChildAt(0).measuredHeight - v.measuredHeight - 350)) {
-                    val loadedItems = adapterVideo?.videoCount ?: (adapterVideo?.itemCount ?: 0)
-                    if (viewModel.postTotal > loadedItems && !viewModel.isFetchingVideos) {
-                        adapterVideo?.setLoading()
-                        viewModel.loadNextPage()
+                    if (containerThaiPbsKids?.visibility == View.VISIBLE) {
+                        val frag = childFragmentManager.findFragmentById(R.id.container_thai_pbs_kids) as? com.pongploydev.videowatchfeaturesupabase.fragment.ThaiPbsKidsFragment
+                        frag?.loadNextBatch()
+                    } else {
+                        val loadedItems = adapterVideo?.videoCount ?: (adapterVideo?.itemCount ?: 0)
+                        if (viewModel.postTotal > loadedItems && !viewModel.isFetchingVideos) {
+                            adapterVideo?.setLoading()
+                            viewModel.loadNextPage()
+                        }
                     }
                 }
             }

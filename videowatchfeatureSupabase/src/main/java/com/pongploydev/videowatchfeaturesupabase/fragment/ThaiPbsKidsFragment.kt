@@ -120,7 +120,7 @@ class ThaiPbsKidsFragment : Fragment() {
         }
     }
 
-    private fun loadNextBatch() {
+    fun loadNextBatch() {
         val currentSize = videoList.size
         if (currentSize >= allVideos.size) {
             btnLoadMore.visibility = View.GONE
@@ -129,7 +129,7 @@ class ThaiPbsKidsFragment : Fragment() {
         val nextSize = minOf(currentSize + PAGE_SIZE, allVideos.size)
         val nextItems = allVideos.subList(currentSize, nextSize)
         videoList.addAll(nextItems)
-        adapterVideo?.notifyItemRangeInserted(currentSize, nextItems.size)
+        adapterVideo?.setItems(videoList)
         btnLoadMore.visibility = if (videoList.size < allVideos.size) View.VISIBLE else View.GONE
     }
 
