@@ -60,6 +60,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.MusicOff
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Quiz
+import androidx.compose.material.icons.rounded.SportsEsports
+import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -934,9 +941,11 @@ fun HomeHeader(
                             }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = if (isMusicEnabled) "🎵" else "🔇",
-                                fontSize = 15.sp
+                            Icon(
+                                imageVector = if (isMusicEnabled) Icons.Rounded.MusicNote else Icons.Rounded.MusicOff,
+                                contentDescription = if (isMusicEnabled) "ปิดเพลง" else "เปิดเพลง",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -993,9 +1002,8 @@ fun HomeHeader(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                Surface(
+                Box(
                     modifier = Modifier
-                        .size(68.dp)
                         .graphicsLayer {
                             scaleX = avatarScale
                             scaleY = avatarScale
@@ -1006,18 +1014,35 @@ fun HomeHeader(
                             avatarBounceTrigger = 1
                             messageIndex = (messageIndex + 1) % encouragingMessages.size
                             showSpeechBubble = true
-                        },
-                    shape = CircleShape,
-                    color = Color(0xFFFFF8E7),
-                    border = BorderStroke(3.dp, KidTheme.Accent),
-                    shadowElevation = 8.dp
+                        }
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.app),
-                        contentDescription = "แตะเพื่อคุยกับฉัน",
-                        modifier = Modifier.fillMaxSize().padding(3.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
+                    Surface(
+                        modifier = Modifier.size(70.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFFFF8E7),
+                        border = BorderStroke(3.dp, KidTheme.Accent),
+                        shadowElevation = 8.dp
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.app),
+                            contentDescription = "แตะเพื่อคุยกับฉัน",
+                            modifier = Modifier.fillMaxSize().padding(2.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(22.dp),
+                        shape = CircleShape,
+                        color = KidTheme.Accent,
+                        border = BorderStroke(1.5.dp, Color.White),
+                        shadowElevation = 3.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(text = "💬", fontSize = 11.sp)
+                        }
+                    }
                 }
             }
 
@@ -1176,18 +1201,24 @@ fun HomeHeader(
 
 // ==================== QUICK ACTIONS ====================
 
-data class QuickAction(val emoji: String, val label: String, val color: Color, val id: Int)
+data class QuickAction(
+    val icon: ImageVector,
+    val label: String,
+    val color: Color,
+    val topColor: Color,
+    val id: Int
+)
 
 @Composable
 fun QuickActionRow(onActionClick: (Int) -> Unit) {
     val ctx = LocalContext.current
     val actions = remember {
         listOf(
-            QuickAction("✏️", "ฝึกเขียน", Color(0xFFFF5252), 1),
-            QuickAction("🔊", "ฝึกอ่าน", Color(0xFF00B4D8), 2),
-            QuickAction("🎨", "ระบายสี", Color(0xFFFF9F1C), 3),
-            QuickAction("🎮", "เกมสนุก", Color(0xFFFF4081), 5),
-            QuickAction("🧠", "ทดสอบ", Color(0xFF7C4DFF), 4)
+            QuickAction(Icons.Rounded.Edit, "ฝึกเขียน", Color(0xFFFF5E5B), Color(0xFFFF9A8B), 1),
+            QuickAction(Icons.Rounded.VolumeUp, "ฝึกอ่าน", Color(0xFF0EA5E9), Color(0xFF67E8F9), 2),
+            QuickAction(Icons.Rounded.Palette, "ระบายสี", Color(0xFFFF9F1C), Color(0xFFFFD166), 3),
+            QuickAction(Icons.Rounded.SportsEsports, "เกมสนุก", Color(0xFFEC4899), Color(0xFFF9A8D4), 5),
+            QuickAction(Icons.Rounded.Quiz, "ทดสอบ", Color(0xFF7C3AED), Color(0xFFC4B5FD), 4)
         )
     }
 
@@ -1232,56 +1263,54 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     color = Color.White,
                     shadowElevation = 5.dp,
                     border = BorderStroke(
                         1.5.dp,
                         Brush.verticalGradient(
-                            listOf(a.color.copy(alpha = 0.50f), a.color.copy(alpha = 0.15f))
+                            listOf(a.color.copy(alpha = 0.55f), a.color.copy(alpha = 0.18f))
                         )
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp)
+                        .height(64.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Soft pastel gradient fill inside card
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(
                                     Brush.verticalGradient(
-                                        listOf(a.color.copy(alpha = 0.14f), a.color.copy(alpha = 0.03f))
+                                        listOf(a.color.copy(alpha = 0.16f), a.color.copy(alpha = 0.04f))
                                     )
                                 )
                         )
 
-                        // Circular badge for emoji icon
+                        // ปุ่มไอคอนลูกกวาด 3D สีสดใสสำหรับเด็ก
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
+                                .size(42.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    Brush.radialGradient(
-                                        listOf(
-                                            a.color.copy(alpha = 0.22f),
-                                            a.color.copy(alpha = 0.05f)
-                                        )
+                                    Brush.linearGradient(
+                                        listOf(a.topColor, a.color)
                                     )
-                                ),
+                                )
+                                .border(1.5.dp, Color.White.copy(alpha = 0.85f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = a.emoji,
-                                fontSize = 23.sp
+                            Icon(
+                                imageVector = a.icon,
+                                contentDescription = a.label,
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
-                        // 3D bottom indicator bar
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1291,7 +1320,7 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
                                     Brush.horizontalGradient(
                                         listOf(
                                             a.color.copy(alpha = 0.25f),
-                                            a.color.copy(alpha = 0.70f),
+                                            a.color.copy(alpha = 0.78f),
                                             a.color.copy(alpha = 0.25f)
                                         )
                                     )
@@ -3130,7 +3159,7 @@ private fun getMenuItems(): List<MenuItem> = listOf(
     MenuItem(2, "ฝึกเขียน ก - ฮ", R.drawable.card_one, 1),
     MenuItem(3, "ฝึกเขียน A - Z", R.drawable.card_two, 2),
     MenuItem(4, "กิจกรรมเสริม", R.drawable.card_three, 3),
-    MenuItem(5, "บทความน่ารู้", R.drawable.leraning_kid, 4),
+    MenuItem(5, "บทความน่ารู้", R.drawable.app, 4),
     MenuItem(6, "แบบทดสอบ", R.drawable.card_three_two, 5),
     MenuItem(7, "ดู DLTV Live", R.drawable.card_four, 6, isLive = true),
     MenuItem(8, "วาดระบายสี", R.drawable.home_color, 7),

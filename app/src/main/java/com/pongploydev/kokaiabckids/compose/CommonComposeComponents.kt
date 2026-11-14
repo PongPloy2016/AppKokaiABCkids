@@ -90,45 +90,105 @@ fun KidBackground(modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
 
+        // พื้นหลังท้องฟ้าพาสเทลสดใสสำหรับเด็ก
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFFF8FAFD),
-                    Color(0xFFF1F5FF),
-                    Color(0xFFFFF8F2)
+                    Color(0xFFEAF4FF),
+                    Color(0xFFF6F1FF),
+                    Color(0xFFFFF8EC),
+                    Color(0xFFEEFFF5)
                 )
             )
         )
 
-        val cloudPath = Path().apply {
-            moveTo(0f, h * 0.86f)
-            cubicTo(w * 0.15f, h * 0.82f, w * 0.3f, h * 0.89f, w * 0.5f, h * 0.85f)
-            cubicTo(w * 0.7f, h * 0.81f, w * 0.85f, h * 0.88f, w, h * 0.84f)
+        // สายรุ้งพาสเทลจาง ๆ เพิ่มความสดใสแบบไม่กวนสายตา
+        val rainbowCenter = Offset(w * 0.85f, h * 0.42f)
+        val rainbowRadius = w * 0.72f
+        val rainbowColors = listOf(
+            Color(0x22FF758F),
+            Color(0x22FFB347),
+            Color(0x22FFE066),
+            Color(0x226BCB77),
+            Color(0x224D96FF)
+        )
+        rainbowColors.forEachIndexed { idx, col ->
+            val r = rainbowRadius - idx * (11f * density)
+            if (r > 0f) {
+                drawArc(
+                    color = col,
+                    startAngle = 150f,
+                    sweepAngle = 125f,
+                    useCenter = false,
+                    topLeft = Offset(rainbowCenter.x - r, rainbowCenter.y - r),
+                    size = androidx.compose.ui.geometry.Size(r * 2f, r * 2f),
+                    style = Stroke(width = 10f * density, cap = StrokeCap.Round)
+                )
+            }
+        }
+
+        // ก้อนเมฆปุยนุ่มด้านบน/กลาง
+        val drift = sin(swayTick) * 8f * density
+        val cloudColor = Color.White.copy(alpha = 0.72f)
+        // เมฆซ้าย
+        val c1x = w * 0.16f + drift
+        val c1y = h * 0.34f
+        drawCircle(cloudColor, radius = 26f * density, center = Offset(c1x, c1y))
+        drawCircle(cloudColor, radius = 20f * density, center = Offset(c1x - 20f * density, c1y + 6f * density))
+        drawCircle(cloudColor, radius = 22f * density, center = Offset(c1x + 22f * density, c1y + 5f * density))
+        // เมฆขวา
+        val c2x = w * 0.82f - drift * 0.8f
+        val c2y = h * 0.62f
+        drawCircle(cloudColor, radius = 24f * density, center = Offset(c2x, c2y))
+        drawCircle(cloudColor, radius = 18f * density, center = Offset(c2x - 19f * density, c2y + 5f * density))
+        drawCircle(cloudColor, radius = 19f * density, center = Offset(c2x + 19f * density, c2y + 5f * density))
+
+        // เนินหญ้าและก้อนเมฆด้านล่างนุ่มนวล
+        val meadowBack = Path().apply {
+            moveTo(0f, h * 0.83f)
+            cubicTo(w * 0.25f, h * 0.78f, w * 0.55f, h * 0.88f, w, h * 0.80f)
             lineTo(w, h)
             lineTo(0f, h)
             close()
         }
-        drawPath(cloudPath, color = Color.White.copy(alpha = 0.55f))
+        drawPath(meadowBack, color = Color(0xFFD6F9E4).copy(alpha = 0.55f))
+
+        val cloudPath = Path().apply {
+            moveTo(0f, h * 0.89f)
+            cubicTo(w * 0.18f, h * 0.85f, w * 0.38f, h * 0.92f, w * 0.58f, h * 0.88f)
+            cubicTo(w * 0.76f, h * 0.85f, w * 0.88f, h * 0.91f, w, h * 0.87f)
+            lineTo(w, h)
+            lineTo(0f, h)
+            close()
+        }
+        drawPath(cloudPath, color = Color.White.copy(alpha = 0.78f))
 
         for (bubble in bubbles) {
             val progress = (floatTick + bubble.phaseOffset) % 1f
             val rawY = bubble.yFrac - progress * bubble.speedFrac
             val yNorm = ((rawY % 1f) + 1f) % 1f
-            val swayX = sin(swayTick + bubble.phaseOffset * 6.28f) * 0.02f
-            val cx = (bubble.xFrac + swayX).coerceIn(0.04f, 0.96f) * w
+            val swayX = sin(swayTick + bubble.phaseOffset * 6.28f) * 0.025f
+            val cx = (bubble.xFrac + swayX).coerceIn(0.05f, 0.95f) * w
             val cy = yNorm * h
             val fadeAlpha = if (yNorm < 0.08f) (yNorm / 0.08f) else 1f
+            val rad = bubble.radius * 1.45f * density
 
             drawCircle(
-                color = bubble.color.copy(alpha = bubble.color.alpha * fadeAlpha),
-                radius = bubble.radius * density,
+                color = bubble.color.copy(alpha = (bubble.color.alpha * 1.8f).coerceAtMost(0.35f) * fadeAlpha),
+                radius = rad,
                 center = Offset(cx, cy)
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.18f * fadeAlpha),
-                radius = bubble.radius * density,
+                color = Color.White.copy(alpha = 0.38f * fadeAlpha),
+                radius = rad,
                 center = Offset(cx, cy),
-                style = Stroke(width = 1f * density)
+                style = Stroke(width = 1.2f * density)
+            )
+            // แสงสะท้อนฟองสบู่
+            drawCircle(
+                color = Color.White.copy(alpha = 0.55f * fadeAlpha),
+                radius = rad * 0.26f,
+                center = Offset(cx - rad * 0.32f, cy - rad * 0.32f)
             )
         }
 
