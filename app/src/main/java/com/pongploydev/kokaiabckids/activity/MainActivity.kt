@@ -1004,6 +1004,13 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         findViewById<BottomNavigationView>(R.id.navigation)?.selectedItemId = R.id.navigation_news
     }
 
+    fun openVideoTab() {
+        selectedBottomTabIndex.intValue = 2
+        findViewById<ViewPager>(R.id.viewpager)?.currentItem = 2
+        findViewById<RtlViewPager>(R.id.viewpager_rtl)?.currentItem = 2
+        findViewById<BottomNavigationView>(R.id.navigation)?.selectedItemId = R.id.navigation_video
+    }
+
     fun openDrawer() {
         val user = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this).getStoredUser()
         if (user == null) {

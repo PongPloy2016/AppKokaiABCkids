@@ -1856,6 +1856,17 @@ fun ExploreCategoriesSection(
                     onClick = { onCategoryClick(7) }
                 )
             }
+            item {
+                CategoryCard(
+                    title = "วิดีโอเด็ก",
+                    subtitle = "การ์ตูน เพลง และนิทาน\nสร้างเสริมการเรียนรู้ 🎬",
+                    imageRes = R.drawable.kids_tv_3d,
+                    backgroundColor = Color(0xFFFCE7F3),
+                    accentColor = Color(0xFFEC4899),
+                    lessonCount = 20,
+                    onClick = { onCategoryClick(8) }
+                )
+            }
         }
     }
 }
@@ -2674,6 +2685,9 @@ fun MainComposeScreen(navController: NavController? = null) {
                                         7 -> context.startActivity(
                                             Intent(context, GameHubActivity::class.java)
                                         )
+                                        8 -> {
+                                            (context as? com.pongploydev.kokaiabckids.activity.MainActivity)?.openVideoTab()
+                                        }
                                         else -> context.startActivity(
                                             Intent(context, LeaningActvity::class.java)
                                         )
