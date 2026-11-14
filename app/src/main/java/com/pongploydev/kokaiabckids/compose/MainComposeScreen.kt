@@ -64,6 +64,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MusicOff
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Quiz
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.VolumeUp
@@ -136,7 +137,17 @@ import com.pongploydev.kokaiabckids.activity.learning.LeaningActvity
 import com.pongploydev.kokaiabckids.activity.learning.SubActivity
 import com.pongploydev.kokaiabckids.activity.learning.showKids.ColoringGameActivity
 import com.pongploydev.kokaiabckids.activity.thailetters.MenuThaiLettersActivity
+import com.pongploydev.videowatchfeaturesupabase.Constant
+import com.pongploydev.videowatchfeaturesupabase.activity.ActivityVideoAutoDetail
+import com.pongploydev.videowatchfeaturesupabase.activity.ActivityVideoDetail
+import com.pongploydev.videowatchfeaturesupabase.activity.RssFeedDetailActivity
+import com.pongploydev.videowatchfeaturesupabase.data.repository.VideoFeedRepository
+import com.pongploydev.videowatchfeaturesupabase.model.KidsVideoFeedItem
+import com.pongploydev.videowatchfeaturesupabase.model.Video
 import com.pongploydev.videowatchfeaturesupabase.utils.ads.InterstitialAdManager
+import com.pongploydev.videowatchfeaturesupabase.viewmodel.VideoListViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlin.math.sin
 
@@ -1871,6 +1882,527 @@ fun ExploreCategoriesSection(
     }
 }
 
+// ==================== HOME VIDEO SLIDE SECTION ====================
+
+private data class VideoFilterChip(
+    val id: String,
+    val label: String,
+    val feed: KidsVideoFeedItem? = null
+)
+
+private fun resolveVideoThumbnail(video: Video): String? {
+    if (video.video_thumbnail.isNotBlank()) return video.video_thumbnail
+    if (video.video_id.isNotBlank()) return "https://img.youtube.com/vi/${video.video_id}/hqdefault.jpg"
+    return null
+}
+
+private fun formatVideoViews(views: Long): String = when {
+    views >= 1_000_000L -> String.format("%.1fM", views / 1_000_000.0)
+    views >= 1_000L -> String.format("%.0fK", views / 1_000.0)
+    views > 0L -> views.toString()
+    else -> ""
+}
+
+private fun openHomeVideo(context: Context, video: Video) {
+    val url = video.video_url
+    val type = video.video_type
+    val cat = video.category_name
+    val isFeed = type.equals("rss", ignoreCase = true) ||
+        cat.contains("Thai PBS", ignoreCase = true) ||
+        cat.contains("คุยกับลูก", ignoreCase = true) ||
+        url.contains("news.google", ignoreCase = true) ||
+        url.contains(".xml", ignoreCase = true) ||
+        url.contains("rss", ignoreCase = true)
+
+    val targetClass = when {
+        isFeed -> RssFeedDetailActivity::class.java
+        type.equals("youtube", ignoreCase = true) -> ActivityVideoAutoDetail::class.java
+        else -> ActivityVideoDetail::class.java
+    }
+
+    context.startActivity(
+        Intent(context, targetClass).apply {
+            putExtra(Constant.KEY_VID, video.vid)
+            putExtra(Constant.EXTRA_OBJC, video)
+        }
+    )
+}
+
+@Composable
+fun HomeVideoSlideSection(
+    videos: List<Video>,
+    feeds: List<KidsVideoFeedItem>,
+    feedVideos: Map<String, List<Video>>,
+    selectedChipId: String,
+    isLoadingFeed: Boolean,
+    onSelectChip: (id: String, feed: KidsVideoFeedItem?) -> Unit,
+    onViewAllClick: () -> Unit,
+    onVideoClick: (Video) -> Unit
+) {
+    val context = LocalContext.current
+    val videoAccent = Color(0xFFEC4899)
+
+    val filterChips = remember(videos, feeds) {
+        val list = mutableListOf(VideoFilterChip(id = "all", label = "ทั้งหมด"))
+        val distinctCategories = videos
+            .map { it.category_name.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .take(5)
+        distinctCategories.forEach { cat ->
+            list.add(VideoFilterChip(id = "cat:$cat", label = cat))
+        }
+        feeds.take(4).forEach { feed ->
+            val label = if (!feed.icon.isNullOrBlank()) "${feed.icon} ${feed.name}" else feed.name
+            if (list.none { it.label == label }) {
+                list.add(VideoFilterChip(id = "feed:${feed.id}", label = label, feed = feed))
+            }
+        }
+        list
+    }
+
+    val filteredVideos = remember(videos, feedVideos, selectedChipId) {
+        when {
+            selectedChipId == "all" -> videos
+            selectedChipId.startsWith("feed:") -> {
+                val feedId = selectedChipId.removePrefix("feed:")
+                feedVideos[feedId].orEmpty()
+            }
+            selectedChipId.startsWith("cat:") -> {
+                val cat = selectedChipId.removePrefix("cat:")
+                videos.filter { it.category_name.equals(cat, ignoreCase = true) }
+                    .ifEmpty { videos }
+            }
+            else -> videos
+        }
+    }
+
+    val featuredVideos = remember(filteredVideos) { filteredVideos.take(5) }
+    val miniCards = remember(filteredVideos) {
+        if (filteredVideos.size > 3) filteredVideos.drop(1).take(10) else filteredVideos
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // หัวข้อหลัก + ปุ่มดูทั้งหมด
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(videoAccent)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "🎬", fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "วิดีโอแนะนำเด็ก",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = videoAccent.copy(alpha = 0.12f),
+                modifier = Modifier.clickableNoRipple {
+                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                    onViewAllClick()
+                }
+            ) {
+                Text(
+                    text = "ดูทั้งหมด ›",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = videoAccent,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // แถบหมวดวิดีโอ (Filter Chips)
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(filterChips, key = { it.id }) { chip ->
+                val isSelected = chip.id == selectedChipId
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = if (isSelected) videoAccent else Color.White,
+                    shadowElevation = if (isSelected) 3.dp else 1.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        if (isSelected) videoAccent else Color(0xFFE5E9F4)
+                    ),
+                    modifier = Modifier.clickableNoRipple {
+                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        onSelectChip(chip.id, chip.feed)
+                    }
+                ) {
+                    Text(
+                        text = chip.label,
+                        color = if (isSelected) Color.White else KidTheme.TextDark,
+                        fontSize = 12.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isLoadingFeed && filteredVideos.isEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(180.dp),
+                shape = RoundedCornerShape(22.dp),
+                color = Color.White,
+                shadowElevation = 3.dp
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = videoAccent, modifier = Modifier.size(30.dp))
+                }
+            }
+        } else if (featuredVideos.isNotEmpty()) {
+            val pagerState = rememberPagerState(pageCount = { featuredVideos.size })
+
+            LaunchedEffect(pagerState, featuredVideos.size) {
+                if (featuredVideos.size < 2) return@LaunchedEffect
+                while (true) {
+                    delay(5000L)
+                    if (!pagerState.isScrollInProgress && featuredVideos.isNotEmpty()) {
+                        pagerState.animateScrollToPage((pagerState.currentPage + 1) % featuredVideos.size)
+                    }
+                }
+            }
+
+            // หัวข้อย่อย Featured + จุดบอกหน้า (ขวา) คล้ายตัวอย่าง UI
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "วิดีโอยอดนิยม 🔥",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+                if (featuredVideos.size > 1) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        repeat(featuredVideos.size) { idx ->
+                            val active = pagerState.currentPage == idx
+                            val dashW by animateFloatAsState(
+                                targetValue = if (active) 18f else 6f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                                label = "vidDashW"
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .height(5.dp)
+                                    .width(dashW.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (active) videoAccent else videoAccent.copy(alpha = 0.25f)
+                                    )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // สไลด์วิดีโอแบบแง้มการ์ดถัดไป
+            HorizontalPager(
+                state = pagerState,
+                contentPadding = PaddingValues(start = 16.dp, end = 44.dp),
+                pageSpacing = 12.dp
+            ) { page ->
+                val video = featuredVideos[page]
+                val thumbUrl = resolveVideoThumbnail(video)
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(184.dp)
+                        .clickableNoRipple {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            onVideoClick(video)
+                        },
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (thumbUrl != null) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(thumbUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = video.video_title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.kids_tv_3d),
+                                contentDescription = video.video_title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        0.15f to Color(0x280B1026),
+                                        0.55f to Color(0x800B1026),
+                                        1f to Color(0xEB0B1026)
+                                    )
+                                )
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = videoAccent.copy(alpha = 0.92f)
+                            ) {
+                                Text(
+                                    text = video.category_name.ifBlank { "วิดีโอเด็ก" },
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                )
+                            }
+
+                            if (video.video_duration.isNotBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0x99000000)
+                                ) {
+                                    Text(
+                                        text = "🕒 ${video.video_duration}",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // ปุ่ม Play ตรงกลางขวาดูชัดเจนสำหรับเด็ก
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 14.dp)
+                                .size(44.dp),
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.94f),
+                            shadowElevation = 6.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PlayArrow,
+                                    contentDescription = "เล่นวิดีโอ",
+                                    tint = videoAccent,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = 14.dp, end = 64.dp, bottom = 12.dp)
+                        ) {
+                            Text(
+                                text = video.video_title,
+                                color = Color.White,
+                                fontSize = 15.5.sp,
+                                lineHeight = 21.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            val ratingText = video.age_rating.ifBlank { "สำหรับเด็ก" }
+                            Text(
+                                text = "$ratingText · แตะเพื่อรับชม ▶",
+                                color = Color(0xFFE2E8F0),
+                                fontSize = 11.5.sp,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (miniCards.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // แถวการ์ดวิดีโอขนาดเล็กเลื่อนข้าง (2 การ์ดต่อหน้าจอคล้ายแถวล่างในตัวอย่าง UI)
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(miniCards, key = { "${it.id}_${it.vid}_${it.video_title}" }) { video ->
+                        val thumbUrl = resolveVideoThumbnail(video)
+                        val viewsText = formatVideoViews(video.total_views)
+
+                        Surface(
+                            modifier = Modifier
+                                .width(168.dp)
+                                .clickableNoRipple {
+                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                    onVideoClick(video)
+                                },
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color.White,
+                            shadowElevation = 3.dp,
+                            border = BorderStroke(1.dp, Color(0xFFEDF0FA))
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(94.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(Color(0xFFF3E8FF))
+                                ) {
+                                    if (thumbUrl != null) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(thumbUrl)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = video.video_title,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.kids_tv_3d),
+                                            contentDescription = video.video_title,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+
+                                    if (video.video_duration.isNotBlank()) {
+                                        Text(
+                                            text = video.video_duration,
+                                            color = Color.White,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .padding(6.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color(0xAA000000))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+
+                                    Surface(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(6.dp)
+                                            .size(28.dp),
+                                        shape = CircleShape,
+                                        color = videoAccent,
+                                        shadowElevation = 3.dp
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.PlayArrow,
+                                                contentDescription = "เล่น",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = video.category_name.ifBlank { "วิดีโอเด็ก" },
+                                        color = videoAccent,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (viewsText.isNotEmpty()) {
+                                        Text(
+                                            text = "👁 $viewsText",
+                                            color = KidTheme.TextMuted,
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = video.video_title,
+                                    color = KidTheme.TextDark,
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.height(34.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ==================== LEARNING CARD ====================
 
 @Composable
@@ -2216,6 +2748,29 @@ fun MainComposeScreen(navController: NavController? = null) {
     val newsViewModel: NewsViewModel? = if (!isPreview) viewModel() else null
     val featuredNewsSlides = newsViewModel?.featuredSlides.orEmpty()
     val featuredNewsLoading = newsViewModel?.featuredLoading == true
+
+    var baseHomeVideos by remember { mutableStateOf(VideoListViewModel.getCuratedKidVideos()) }
+    var homeVideoFeeds by remember { mutableStateOf<List<KidsVideoFeedItem>>(emptyList()) }
+    var feedVideosMap by remember { mutableStateOf<Map<String, List<Video>>>(emptyMap()) }
+    var selectedVideoChipId by remember { mutableStateOf("all") }
+    var isLoadingVideoFeed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isPreview) {
+        if (isPreview) return@LaunchedEffect
+        try {
+            val feeds = VideoFeedRepository.getFeeds()
+            if (feeds.isNotEmpty()) {
+                homeVideoFeeds = feeds
+            }
+        } catch (_: Exception) {
+        }
+        val remote = VideoFeedRepository.getSupabaseVideos(limit = 20, offset = 0)
+        if (remote.isNotEmpty()) {
+            val curated = VideoListViewModel.getCuratedKidVideos()
+            val existingVids = remote.map { it.vid }.toSet()
+            baseHomeVideos = remote + curated.filter { it.vid !in existingVids }
+        }
+    }
 
     var isMusicEnabled by remember {
         mutableStateOf(
@@ -2704,7 +3259,42 @@ fun MainComposeScreen(navController: NavController? = null) {
                         )
                     }
 
-                    item { Spacer(modifier = Modifier.height(10.dp)) }
+                    item { Spacer(modifier = Modifier.height(18.dp)) }
+
+                    item {
+                        HomeVideoSlideSection(
+                            videos = baseHomeVideos,
+                            feeds = homeVideoFeeds,
+                            feedVideos = feedVideosMap,
+                            selectedChipId = selectedVideoChipId,
+                            isLoadingFeed = isLoadingVideoFeed,
+                            onSelectChip = { chipId, feed ->
+                                selectedVideoChipId = chipId
+                                if (feed != null && !feedVideosMap.containsKey(feed.id)) {
+                                    isLoadingVideoFeed = true
+                                    scope.launch {
+                                        val loaded = try {
+                                            VideoFeedRepository.loadFeedVideos(feed)
+                                        } catch (_: Exception) {
+                                            emptyList()
+                                        }
+                                        feedVideosMap = feedVideosMap + (feed.id to loaded)
+                                        isLoadingVideoFeed = false
+                                    }
+                                }
+                            },
+                            onViewAllClick = {
+                                (context as? com.pongploydev.kokaiabckids.activity.MainActivity)?.openVideoTab()
+                            },
+                            onVideoClick = { video ->
+                                navigateWithAd {
+                                    openHomeVideo(context, video)
+                                }
+                            }
+                        )
+                    }
+
+                    item { Spacer(modifier = Modifier.height(18.dp)) }
 
                     item {
                         ContinueLearningSection(

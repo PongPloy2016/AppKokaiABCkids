@@ -90,6 +90,25 @@ object VideoFeedRepository {
         }
     }
 
+    /**
+     * ดึงรายการวิดีโอเด็กจาก Supabase โดยตรง (คืนค่า emptyList หากไม่สำเร็จ)
+     */
+    suspend fun getSupabaseVideos(limit: Int = 20, offset: Int = 0): List<Video> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = SupabaseClient.getService().getVideos(limit = limit, offset = offset)
+                if (response.isSuccessful) {
+                    response.body().orEmpty()
+                } else {
+                    emptyList()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading Supabase videos: ${e.message}")
+                emptyList()
+            }
+        }
+    }
+
     private fun sanitizeFeedUrl(rawUrl: String): String {
         val url = rawUrl.trim()
         if (url.isEmpty()) return ""
