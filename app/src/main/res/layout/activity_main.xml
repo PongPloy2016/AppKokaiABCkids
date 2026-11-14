@@ -80,7 +80,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:visibility="visible"
-            app:layout_constraintBottom_toTopOf="@+id/lyt_bottom"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbarLayout" />
@@ -90,7 +90,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:visibility="visible"
-            app:layout_constraintBottom_toTopOf="@+id/lyt_bottom"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbarLayout" />
@@ -105,6 +105,9 @@
             android:id="@+id/lyt_bottom"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -118,17 +121,16 @@
                 app:adSize="BANNER"
                 app:adUnitId="@string/banner_ad_unit_id" />
 
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/floating_bottom_nav"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
             <com.google.android.material.bottomnavigation.BottomNavigationView
                 android:id="@+id/navigation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_bottom_nav_card"
-                android:elevation="16dp"
-                app:elevation="16dp"
-                app:itemIconSize="22dp"
-                app:itemIconTint="@color/bottom_nav_icon_color_kids"
-                app:itemTextColor="@color/bottom_nav_text_color_kids"
-                app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator.Kids"
+                android:visibility="gone"
                 app:labelVisibilityMode="labeled"
                 app:menu="@menu/bottom_nav_menu" />
 

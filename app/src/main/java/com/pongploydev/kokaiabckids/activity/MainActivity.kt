@@ -15,6 +15,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -44,6 +47,7 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.pongploydev.kokaiabckids.R
+import com.pongploydev.kokaiabckids.compose.FloatingKidsBottomNavBar
 import com.pongploydev.kokaiabckids.log.AnalyticsLogger
 import com.pongploydev.kokaiabckids.utils.AppUpdateCustomsManager
 import com.pongploydev.kokaiabckids.utils.RtlViewPager
@@ -82,6 +86,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
     private var isChildDirectedApp = true // ✅ ตั้งค่าเป็น true สำหรับแอปเด็ก
     private var isGdprApplicable = true
     private var isAdLoading = false
+    private val selectedBottomTabIndex = mutableIntStateOf(0)
 
     // สำหรับติดตามสถานะการอัพเดต
     private var isUpdateInProgress = false
@@ -972,10 +977,21 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
             menu.clear()
             inflateMenu(R.menu.bottom_nav_menu)
             labelVisibilityMode = BottomNavigationView.LABEL_VISIBILITY_LABELED
-            setBackgroundColor(ContextCompat.getColor(
-                this@MainActivity,
-                R.color.color_light_bottom_navigation
-            ))
+        }
+
+        findViewById<ComposeView>(R.id.floating_bottom_nav)?.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                FloatingKidsBottomNavBar(
+                    selectedIndex = selectedBottomTabIndex.intValue,
+                    onTabSelected = { index, menuId ->
+                        selectedBottomTabIndex.intValue = index
+                        findViewById<ViewPager>(R.id.viewpager)?.currentItem = index
+                        findViewById<RtlViewPager>(R.id.viewpager_rtl)?.currentItem = index
+                        nav.selectedItemId = menuId
+                    }
+                )
+            }
         }
 
         updateSubscriptionMenuVisibility()
@@ -1200,12 +1216,14 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
 
 
         // ตั้งค่าเริ่มต้นตามหน้าแรก
+        selectedBottomTabIndex.intValue = vp.currentItem
         updateToolbarVisibility(vp.currentItem)
         AnalyticsLogger.logScreenView(this, "หน้าแรก (Home)", "MainGridFragment")
 
         // ซ่อน Toolbar เมื่อเปลี่ยนหน้า และส่ง Analytics Screen View
         vp.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
+                selectedBottomTabIndex.intValue = position
                 updateToolbarVisibility(position)
                 val (screenName, screenClass) = when (position) {
                     0 -> Pair("หน้าแรก (Home)", "MainGridFragment")
@@ -1223,6 +1241,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         // สำหรับ RTL ViewPager
         vpRTL.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
+                selectedBottomTabIndex.intValue = position
                 updateToolbarVisibility(position)
                 val (screenName, screenClass) = when (position) {
                     0 -> Pair("หน้าแรก (Home)", "MainGridFragment")
@@ -1236,6 +1255,17 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 AnalyticsLogger.logScreenView(this@MainActivity, screenName, screenClass)
             }
         })
+
+        adView?.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+            val extraBottom = if (view.visibility == View.VISIBLE) view.height else 0
+            listOf(vp, vpRTL).forEach { pager ->
+                val lp = pager.layoutParams as? androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+                if (lp != null && lp.bottomMargin != extraBottom) {
+                    lp.bottomMargin = extraBottom
+                    pager.layoutParams = lp
+                }
+            }
+        }
 
         vp.currentItem = 0
     }

@@ -2042,7 +2042,7 @@ fun MainComposeScreen(navController: NavController? = null) {
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp)
+                    contentPadding = PaddingValues(bottom = 96.dp)
                 ) {
                     item {
                         val starsInLevel = starCount % 50

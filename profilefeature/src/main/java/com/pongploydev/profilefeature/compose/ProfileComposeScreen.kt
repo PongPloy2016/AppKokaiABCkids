@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -475,6 +476,7 @@ fun AuthLoginViewDual(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(20.dp),
+            contentPadding = PaddingValues(bottom = 96.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -1337,9 +1339,8 @@ fun ProfileDetailsViewDual(
         )
     } else {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 20.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 96.dp)
         ) {
             item {
                 Box(

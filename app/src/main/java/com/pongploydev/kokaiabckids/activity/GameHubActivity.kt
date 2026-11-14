@@ -374,7 +374,7 @@ fun GameHubMenuScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 32.dp)
+        contentPadding = PaddingValues(bottom = 96.dp)
     ) {
         item {
             // Header
