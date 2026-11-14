@@ -41,8 +41,9 @@ local.properties
 *.p12
 keystore.properties
 
-# External native build folder
+# External native build & Kotlin caches
 .cxx/
+.kotlin/
 
 # OS-specific files
 ~*
