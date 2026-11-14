@@ -997,6 +997,13 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         updateSubscriptionMenuVisibility()
     }
 
+    fun openNewsTab() {
+        selectedBottomTabIndex.intValue = 1
+        findViewById<ViewPager>(R.id.viewpager)?.currentItem = 1
+        findViewById<RtlViewPager>(R.id.viewpager_rtl)?.currentItem = 1
+        findViewById<BottomNavigationView>(R.id.navigation)?.selectedItemId = R.id.navigation_news
+    }
+
     fun openDrawer() {
         val user = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this).getStoredUser()
         if (user == null) {
