@@ -82,7 +82,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,11 +89,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pongploydev.newsfeature.NewsDetailActivity
-import com.pongploydev.newsfeature.data.FeedState
 import com.pongploydev.newsfeature.data.NewsArticle
-import com.pongploydev.newsfeature.data.NewsFeedItem
 import com.pongploydev.newsfeature.ui.AudioBadge
-import com.pongploydev.newsfeature.ui.CategoryBadge
+import com.pongploydev.newsfeature.ui.FeaturedFeedArticle
 import com.pongploydev.newsfeature.ui.NewsImage
 import com.pongploydev.newsfeature.ui.NewsViewModel
 import com.pongploydev.newsfeature.ui.VideoBadge
@@ -1356,20 +1353,17 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
     }
 }
 
-// ==================== HOME NEWS SLIDE BY CATEGORY ====================
+// ==================== HOME FEATURED NEWS SLIDE (1 PER TAB) ====================
 
 @Composable
 fun HomeNewsSlideSection(
-    feeds: List<NewsFeedItem>,
-    selectedFeed: NewsFeedItem,
-    feedState: FeedState,
-    onSelectFeed: (NewsFeedItem) -> Unit,
+    slides: List<FeaturedFeedArticle>,
+    loading: Boolean,
     onRefresh: () -> Unit,
     onViewAllClick: () -> Unit,
     onArticleClick: (NewsArticle) -> Unit
 ) {
     val context = LocalContext.current
-    val slideItems = remember(feedState.items) { feedState.items.take(6) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -1380,10 +1374,10 @@ fun HomeNewsSlideSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "📰", fontSize = 19.sp)
+                Text(text = "🌟", fontSize = 19.sp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "สไลด์ข่าวสารน่ารู้",
+                    text = "เรื่องเด่นประจำหมวด",
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = KidTheme.TextDark
@@ -1408,49 +1402,15 @@ fun HomeNewsSlideSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // แถบเลือกหมวดข่าวสาร
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(feeds, key = { it.id }) { feed ->
-                val isSelected = feed.id == selectedFeed.id
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = if (isSelected) KidTheme.Primary else Color.White,
-                    shadowElevation = if (isSelected) 3.dp else 1.dp,
-                    border = BorderStroke(
-                        1.dp,
-                        if (isSelected) KidTheme.Primary else Color(0xFFE3E8F4)
-                    ),
-                    modifier = Modifier.clickableNoRipple {
-                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                        onSelectFeed(feed)
-                    }
-                ) {
-                    Text(
-                        text = feed.displayLabel,
-                        color = if (isSelected) Color.White else KidTheme.TextDark,
-                        fontSize = 12.5.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
-                    )
-                }
-            }
-        }
-
         Spacer(modifier = Modifier.height(12.dp))
 
         when {
-            slideItems.isEmpty() && feedState.loading -> {
+            slides.isEmpty() && loading -> {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .height(176.dp),
+                        .height(180.dp),
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
                     shadowElevation = 4.dp,
@@ -1468,7 +1428,7 @@ fun HomeNewsSlideSection(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "กำลังโหลด ${selectedFeed.displayLabel}...",
+                            text = "กำลังรวมเรื่องเด่นจากทุกหมวด...",
                             color = KidTheme.TextMuted,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
@@ -1477,12 +1437,12 @@ fun HomeNewsSlideSection(
                 }
             }
 
-            slideItems.isEmpty() -> {
+            slides.isEmpty() -> {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .height(150.dp),
+                        .height(148.dp),
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
                     shadowElevation = 3.dp,
@@ -1494,7 +1454,7 @@ fun HomeNewsSlideSection(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "กำลังเตรียมเรื่องน่ารู้ในหมวดนี้ 🎈",
+                            text = "กำลังเตรียมเรื่องเด่นประจำวัน 🎈",
                             color = KidTheme.TextDark,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
@@ -1521,136 +1481,152 @@ fun HomeNewsSlideSection(
             }
 
             else -> {
-                key(selectedFeed.id, slideItems.map { it.id }) {
-                    val pagerState = rememberPagerState { slideItems.size }
+                val pagerState = rememberPagerState(pageCount = { slides.size })
 
-                    LaunchedEffect(pagerState, slideItems.size) {
-                        if (slideItems.size < 2) return@LaunchedEffect
-                        while (true) {
-                            delay(4500L)
-                            if (!pagerState.isScrollInProgress) {
-                                pagerState.animateScrollToPage((pagerState.currentPage + 1) % slideItems.size)
-                            }
+                LaunchedEffect(pagerState, slides.size) {
+                    if (slides.size < 2) return@LaunchedEffect
+                    while (true) {
+                        delay(4500L)
+                        if (!pagerState.isScrollInProgress && slides.isNotEmpty()) {
+                            pagerState.animateScrollToPage((pagerState.currentPage + 1) % slides.size)
                         }
                     }
+                }
 
-                    HorizontalPager(
-                        state = pagerState,
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        pageSpacing = 12.dp
-                    ) { page ->
-                        val article = slideItems[page]
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(182.dp)
-                                .clickableNoRipple {
-                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                                    onArticleClick(article)
-                                },
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                NewsImage(
-                                    url = article.imageUrl,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.verticalGradient(
-                                                0.18f to Color(0x330B1026),
-                                                0.55f to Color(0x880B1026),
-                                                1f to Color(0xEB0B1026)
-                                            )
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    pageSpacing = 12.dp
+                ) { page ->
+                    val featured = slides[page]
+                    val feed = featured.feed
+                    val article = featured.article
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(186.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onArticleClick(article)
+                            },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            NewsImage(
+                                url = article.imageUrl,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            0.18f to Color(0x330B1026),
+                                            0.55f to Color(0x880B1026),
+                                            1f to Color(0xEE0B1026)
                                         )
-                                )
-                                Row(
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    if (article.category.isNotBlank()) {
-                                        CategoryBadge(category = article.category, small = true)
-                                    }
-                                    if (article.audioUrl != null) {
-                                        AudioBadge(small = true)
-                                    }
-                                    if (article.videoUrl != null) {
-                                        VideoBadge(small = true)
-                                    }
-                                }
-
-                                Text(
-                                    text = "${page + 1}/${slideItems.size}",
-                                    color = Color.White,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(12.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0x99000000))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-
-                                Column(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomStart)
-                                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                                    )
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(start = 12.dp, top = 12.dp, end = 64.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = KidTheme.Primary.copy(alpha = 0.92f)
                                 ) {
                                     Text(
-                                        text = article.title,
+                                        text = feed.displayLabel,
                                         color = Color.White,
-                                        fontSize = 15.5.sp,
-                                        lineHeight = 21.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${selectedFeed.displayLabel} · แตะเพื่ออ่าน",
-                                        color = Color(0xFFE2E8F0),
-                                        fontSize = 11.5.sp,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
                                     )
                                 }
+                                if (article.audioUrl != null) {
+                                    AudioBadge(small = true)
+                                }
+                                if (article.videoUrl != null) {
+                                    VideoBadge(small = true)
+                                }
+                            }
+
+                            Text(
+                                text = "${page + 1}/${slides.size}",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(12.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0x99000000))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = article.title,
+                                    color = Color.White,
+                                    fontSize = 15.5.sp,
+                                    lineHeight = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "เรื่องเด่นหมวด ${feed.name} · แตะเพื่ออ่าน ›",
+                                    color = Color(0xFFFFE58F),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
                     }
+                }
 
-                    if (slideItems.size > 1) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            repeat(slideItems.size) { index ->
-                                val isSelected = pagerState.currentPage == index
-                                val dotWidth by animateFloatAsState(
-                                    targetValue = if (isSelected) 20f else 7f,
-                                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                                    label = "newsSlideDot"
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 3.dp)
-                                        .height(6.dp)
-                                        .width(dotWidth.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (isSelected) KidTheme.Primary
-                                            else KidTheme.Primary.copy(alpha = 0.25f)
-                                        )
-                                )
-                            }
+                if (slides.size > 1) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        repeat(slides.size) { index ->
+                            val isSelected = pagerState.currentPage == index
+                            val dotWidth by animateFloatAsState(
+                                targetValue = if (isSelected) 16f else 5f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                                label = "newsSlideDot"
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 2.dp)
+                                    .height(5.dp)
+                                    .width(dotWidth.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isSelected) KidTheme.Primary
+                                        else KidTheme.Primary.copy(alpha = 0.25f)
+                                    )
+                            )
                         }
                     }
                 }
@@ -2227,9 +2203,8 @@ fun MainComposeScreen(navController: NavController? = null) {
     val context = LocalContext.current
     val isPreview = LocalInspectionMode.current
     val newsViewModel: NewsViewModel? = if (!isPreview) viewModel() else null
-    val newsFeeds = newsViewModel?.feeds ?: NewsFeedItem.DEFAULT_FEEDS
-    val selectedNewsFeed = newsViewModel?.selectedFeed ?: newsFeeds.first()
-    val selectedNewsState = newsViewModel?.stateOf(selectedNewsFeed) ?: FeedState()
+    val featuredNewsSlides = newsViewModel?.featuredSlides.orEmpty()
+    val featuredNewsLoading = newsViewModel?.featuredLoading == true
 
     var isMusicEnabled by remember {
         mutableStateOf(
@@ -2462,11 +2437,9 @@ fun MainComposeScreen(navController: NavController? = null) {
 
                     item {
                         HomeNewsSlideSection(
-                            feeds = newsFeeds,
-                            selectedFeed = selectedNewsFeed,
-                            feedState = selectedNewsState,
-                            onSelectFeed = { feed -> newsViewModel?.select(feed) },
-                            onRefresh = { newsViewModel?.refresh() },
+                            slides = featuredNewsSlides,
+                            loading = featuredNewsLoading,
+                            onRefresh = { newsViewModel?.loadFeaturedPerTab(force = true) },
                             onViewAllClick = {
                                 (context as? com.pongploydev.kokaiabckids.activity.MainActivity)?.openNewsTab()
                             },
