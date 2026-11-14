@@ -75,7 +75,7 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
-        <com.pongploydev.priyankvex.paintapp.utils.RtlViewPager
+        <com.pongploydev.kokaiabckids.utils.RtlViewPager
             android:id="@+id/viewpager_rtl"
             android:layout_width="0dp"
             android:layout_height="0dp"

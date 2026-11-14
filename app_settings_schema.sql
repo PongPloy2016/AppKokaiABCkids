@@ -1,6 +1,6 @@
 -- ====================================================================
 -- SUPABASE POSTGRESQL SCHEMA FOR APP SETTINGS (app_settings)
--- แอป: ฝึกเขียน อ่าน ก ไก่-ABC ระบายสี (Kids Learn & Play)
+-- แอป: ก ไก่ ABC หรรษา - ฝึกเขียนอ่านระบายสี
 -- ====================================================================
 
 -- 1. สร้างตาราง app_settings
@@ -10,13 +10,13 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
     -- ---------------------------------------------------------------
     -- [1] การควบคุมเวอร์ชันและการอัปเดต (Version & Update Control)
     -- ---------------------------------------------------------------
-    app_version_name TEXT NOT NULL DEFAULT '3.0.3',
-    app_version_code INT NOT NULL DEFAULT 47,
-    min_supported_version_code INT NOT NULL DEFAULT 45,
+    app_version_name TEXT NOT NULL DEFAULT '1.0.0',
+    app_version_code INT NOT NULL DEFAULT 1,
+    min_supported_version_code INT NOT NULL DEFAULT 1,
     force_update BOOLEAN NOT NULL DEFAULT false,
     update_title TEXT DEFAULT 'มีเวอร์ชันใหม่พร้อมใช้งาน 🎉',
     update_message TEXT DEFAULT 'กรุณาอัปเดตแอปเพื่อรับบทเรียนและเกมใหม่ๆ พร้อมประสิทธิภาพที่ดียิ่งขึ้น',
-    play_store_url TEXT DEFAULT 'https://play.google.com/store/apps/details?id=com.pongploydev.priyankvex.paintapp',
+    play_store_url TEXT DEFAULT 'https://play.google.com/store/apps/details?id=com.pongploydev.kokaiabckids',
 
     -- ---------------------------------------------------------------
     -- [2] ระบบสนับสนุนและสมัครสมาชิก VIP (Monetization & Subscriptions)
@@ -155,13 +155,13 @@ INSERT INTO public.app_settings (
     terms_of_service_url
 ) VALUES (
     1,
-    '3.0.3',
-    47,
-    45,
+    '1.0.0',
+    1,
+    1,
     false,
     'มีเวอร์ชันใหม่พร้อมใช้งาน 🎉',
     'กรุณาอัปเดตแอปเพื่อรับบทเรียนและเกมใหม่ๆ พร้อมประสิทธิภาพที่ดียิ่งขึ้น',
-    'https://play.google.com/store/apps/details?id=com.pongploydev.priyankvex.paintapp',
+    'https://play.google.com/store/apps/details?id=com.pongploydev.kokaiabckids',
     true,
     'sub_monthly',
     29.00,

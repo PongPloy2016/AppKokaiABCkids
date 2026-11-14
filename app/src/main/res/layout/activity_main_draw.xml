@@ -48,7 +48,7 @@
 
     </LinearLayout>
 
-    <com.pongploydev.priyankvex.paintapp.drawingView.DrawingView
+    <com.pongploydev.kokaiabckids.drawingView.DrawingView
         android:id="@+id/drawing"
         android:layout_width="match_parent"
         android:layout_height="0dp"

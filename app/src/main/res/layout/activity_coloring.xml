@@ -411,7 +411,7 @@
         android:padding="12dp"
         android:layout_marginStart="8dp">
 
-        <com.pongploydev.priyankvex.paintapp.drawingView.DrawingView
+        <com.pongploydev.kokaiabckids.drawingView.DrawingView
             android:id="@+id/drawing"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

@@ -106,7 +106,7 @@
             android:layout_weight="1.2"
             android:layout_marginTop="4dp">
 
-            <com.pongploydev.priyankvex.paintapp.utils.NonSwipeAbleViewPager
+            <com.pongploydev.kokaiabckids.utils.NonSwipeAbleViewPager
                 android:id="@+id/viewPager"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />

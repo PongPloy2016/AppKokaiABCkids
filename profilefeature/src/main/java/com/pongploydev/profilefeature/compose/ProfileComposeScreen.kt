@@ -1161,7 +1161,7 @@ fun AuthLoginViewDual(
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "วิธีแก้:\n1. ไปที่ Firebase Console > Project Settings > General > Your apps (com.pongploydev.priyankvex.paintapp)\n2. กดปุ่ม 'Add fingerprint' แล้ววาง SHA-1 นี้\n3. เปิดใช้งาน Google ในเมนู Authentication > Sign-in method",
+                            text = "วิธีแก้:\n1. ไปที่ Firebase Console > Project Settings > General > Your apps (${context.packageName})\n2. กดปุ่ม 'Add fingerprint' แล้ววาง SHA-1 นี้\n3. เปิดใช้งาน Google ในเมนู Authentication > Sign-in method",
                             fontSize = 12.sp,
                             color = KidTheme.TextMuted,
                             lineHeight = 17.sp
@@ -1906,22 +1906,40 @@ fun ProfileDetailsViewDual(
                             if (supabaseUser != null) {
                                 ProfileOptionItem(Icons.Default.Security, "⚡ Supabase User ID", supabaseUser.id.take(16) + "...") {}
                             }
-                            ProfileOptionItem(Icons.Default.Share, "แชร์แอปฝึกเขียน ก ไก่", "บอกต่อเพื่อนๆ ให้มาเรียนรู้ด้วยกัน") {
+                            ProfileOptionItem(Icons.Default.Share, "แชร์แอป ก ไก่ ABC หรรษา", "บอกต่อเพื่อนๆ ให้มาเรียนรู้ด้วยกัน") {
                                 try {
                                     val appPackageName = context.packageName
                                     val playStoreUrl = "https://play.google.com/store/apps/details?id=$appPackageName"
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "แชร์แอปฝึกเขียน ก ไก่")
+                                        putExtra(Intent.EXTRA_SUBJECT, "ก ไก่ ABC หรรษา - ฝึกเขียนอ่านระบายสี")
                                         putExtra(
                                             Intent.EXTRA_TEXT,
-                                            "มาเรียนรู้และฝึกเขียน ก ไก่ / A-Z กับแอป Paint App for Kids กันเถอะ! 🎨\nดาวน์โหลดได้ที่: $playStoreUrl"
+                                            "มาเรียนรู้และฝึกเขียน ก ไก่ / A-Z กับแอป ก ไก่ ABC หรรษา - ฝึกเขียนอ่านระบายสี กันเถอะ! 🎨\nดาวน์โหลดได้ที่: $playStoreUrl"
                                         )
                                     }
                                     val chooserIntent = Intent.createChooser(shareIntent, "แชร์แอปไปที่")
                                     context.startActivity(chooserIntent)
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "ไม่สามารถเปิดเมนูแชร์ได้", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            ProfileOptionItem(Icons.Default.Security, "นโยบายความเป็นส่วนตัว", "อ่าน Privacy Policy ของแอป") {
+                                val url = appSettings?.privacyPolicyUrl?.takeIf { it.isNotBlank() }
+                                    ?: "https://pongploydev.github.io/privacy-policy/"
+                                try {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "ไม่สามารถเปิดลิงก์ได้", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            ProfileOptionItem(Icons.Default.List, "เงื่อนไขการใช้งาน", "อ่าน Terms of Service") {
+                                val url = appSettings?.termsOfServiceUrl?.takeIf { it.isNotBlank() }
+                                    ?: "https://pongploydev.github.io/terms/"
+                                try {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "ไม่สามารถเปิดลิงก์ได้", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }

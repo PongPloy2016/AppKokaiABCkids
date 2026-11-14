@@ -32,7 +32,7 @@
 -keep class kotlin.coroutines.jvm.internal.ContinuationImpl { *; }
 
 # Keep Data Models & API Services (Firebase, Supabase, Profile, Video)
--keep class com.pongploydev.priyankvex.paintapp.model.** { *; }
+-keep class com.pongploydev.kokaiabckids.model.** { *; }
 -keep class com.pongploydev.profilefeature.auth.** { *; }
 -keep class com.pongploydev.profilefeature.data.** { *; }
 -keep class com.pongploydev.videowatchfeaturesupabase.** { *; }
@@ -47,7 +47,7 @@
 # Keep Glide Modules
 -keep public class * extends com.bumptech.glide.module.AppGlideModule
 -keep class com.bumptech.glide.generated.GeneratedAppGlideModule
--keep class com.pongploydev.priyankvex.paintapp.MyAppGlideModule { *; }
+-keep class com.pongploydev.kokaiabckids.MyAppGlideModule { *; }
 
 # Keep WebView JavaScript Interfaces
 -keepclassmembers class * {

@@ -1,9 +1,8 @@
 // Top-level build.gradle.kts
 buildscript {
     extra.apply {
-        set("kotlin_version", "1.9.23")
-        set("agp_version", "8.2.2")
-        set("compose_compiler_version", "1.5.11")
+        set("kotlin_version", "2.1.21")
+        set("agp_version", "8.10.1")
     }
 
     repositories {
@@ -14,10 +13,11 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.2.2") // ✅ Reverted to stable version
-        classpath("com.google.gms:google-services:4.4.0")
-        classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+        classpath("com.android.tools.build:gradle:8.10.1")
+        classpath("com.google.gms:google-services:4.4.4")
+        classpath("com.google.firebase:firebase-crashlytics-gradle:3.0.6")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.21")
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.21")
     }
 }
 

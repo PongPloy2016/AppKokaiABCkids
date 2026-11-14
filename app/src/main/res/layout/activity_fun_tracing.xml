@@ -166,7 +166,7 @@
             app:cardElevation="6dp"
             app:cardUseCompatPadding="false">
 
-            <com.pongploydev.priyankvex.paintapp.drawingView.KidTracingCanvasView
+            <com.pongploydev.kokaiabckids.drawingView.KidTracingCanvasView
                 android:id="@+id/tracingCanvasView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
