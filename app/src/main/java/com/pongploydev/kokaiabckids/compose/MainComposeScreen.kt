@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -127,8 +128,8 @@ import kotlin.math.sin
 // ==================== DESIGN TOKENS ====================
 
 object KidTheme {
-    val Primary = Color(0xFF7F67FF)
-    val PrimaryDeep = Color(0xFF6A4FF0)
+    val Primary = Color(0xFF7B61FF)
+    val PrimaryDeep = Color(0xFF6246EA)
     val PrimaryLight = Color(0xFFB4A5FF)
     val Accent = Color(0xFFFFD166)
     val Success = Color(0xFF00C853)
@@ -138,11 +139,23 @@ object KidTheme {
     val SurfaceSoft = Color(0xFFF7F8FC)
 
     val HeaderGradient = Brush.linearGradient(
-        colors = listOf(Color(0xFF7F67FF), Color(0xFF9C7BFF), Color(0xFFB4A5FF))
+        colors = listOf(Color(0xFF6A4EFF), Color(0xFF866BFF), Color(0xFF68B6FF))
     )
     val GoldGradient = Brush.horizontalGradient(
-        colors = listOf(Color(0xFFFFD166), Color(0xFFFF9E6D))
+        colors = listOf(Color(0xFFFFD166), Color(0xFFFF9A62))
     )
+}
+
+private fun formatKidDisplayName(rawName: String): String {
+    val trimmed = rawName.trim()
+    if (trimmed.isEmpty() ||
+        trimmed.equals("guest", ignoreCase = true) ||
+        trimmed.startsWith("guest", ignoreCase = true) ||
+        (trimmed.length > 14 && trimmed.any { it.isDigit() } && !trimmed.contains(" "))
+    ) {
+        return "น้องคนเก่ง"
+    }
+    return trimmed
 }
 
 val KidsColorPalette = listOf(
@@ -745,36 +758,46 @@ fun HomeHeader(
         }
     }
 
+    val displayKidName = remember(userName) { formatKidDisplayName(userName) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
+            .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
             .background(KidTheme.HeaderGradient)
     ) {
-        // วงกลมตกแต่งพื้นหลัง header
+        // วงกลมตกแต่งพื้นหลัง header สไตล์น่ารักสำหรับเด็ก
         Box(
             modifier = Modifier
                 .size(180.dp)
                 .align(Alignment.TopEnd)
-                .graphicsLayer { translationX = 60f; translationY = -70f }
+                .graphicsLayer { translationX = 56f; translationY = -64f }
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.08f))
+                .background(Color.White.copy(alpha = 0.12f))
         )
         Box(
             modifier = Modifier
                 .size(120.dp)
                 .align(Alignment.BottomStart)
-                .graphicsLayer { translationX = -40f; translationY = 40f }
+                .graphicsLayer { translationX = -38f; translationY = 38f }
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.07f))
+                .background(Color.White.copy(alpha = 0.10f))
+        )
+        Text(
+            text = "✨",
+            fontSize = 16.sp,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 66.dp, end = 24.dp)
+                .graphicsLayer { alpha = 0.65f }
         )
 
         Column(
             modifier = Modifier
-                .padding(top = 20.dp, bottom = 24.dp)
-                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp, bottom = 22.dp)
+                .padding(horizontal = 18.dp)
         ) {
-            // แถวบน: เมนู + ดาว + ปุ่มลัด
+            // แถวบน: เมนู + ดาว + ปุ่มลัดแบบไอคอนกะทัดรัด (พอดีจอไม่ล้นขอบขวา)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -782,48 +805,47 @@ fun HomeHeader(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.White.copy(alpha = 0.22f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
-                        modifier = Modifier.clickableNoRipple {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            onMenuClick()
-                        }
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.24f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.42f)),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onMenuClick()
+                            }
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
                                 contentDescription = "เปิดเมนู",
                                 tint = Color.White,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.White.copy(alpha = 0.22f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color.White.copy(alpha = 0.24f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.42f)),
                         modifier = Modifier.clickableNoRipple {
                             playSoundEffect(context, R.raw.is_sound_buttonswitch)
                             onStarClick()
                         }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "⭐ $starCount",
                                 color = KidTheme.Accent,
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.ExtraBold,
                                 modifier = Modifier.graphicsLayer { translationY = starOffsetY }
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -831,15 +853,15 @@ fun HomeHeader(
                                 text = "ดาว",
                                 color = Color.White,
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
                     if (isSubscriptionEnabled) {
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(18.dp),
                             color = Color(0xFFFFD166).copy(alpha = 0.30f),
-                            border = BorderStroke(1.dp, Color(0xFFFFD166).copy(alpha = 0.85f)),
+                            border = BorderStroke(1.dp, Color(0xFFFFD166).copy(alpha = 0.9f)),
                             modifier = Modifier.clickableNoRipple {
                                 playSoundEffect(context, R.raw.is_sound_buttonswitch)
                                 onSubscriptionClick()
@@ -849,16 +871,13 @@ fun HomeHeader(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "💎",
-                                    fontSize = 12.sp
-                                )
+                                Text(text = "👑", fontSize = 12.sp)
                                 Spacer(modifier = Modifier.width(3.dp))
                                 Text(
-                                    text = "สนับสนุน",
+                                    text = "VIP",
                                     color = Color.White,
                                     fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.ExtraBold
                                 )
                             }
                         }
@@ -866,96 +885,79 @@ fun HomeHeader(
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = CircleShape,
                         color = if (isSearchVisible) KidTheme.Accent
-                        else Color.White.copy(alpha = 0.22f),
+                        else Color.White.copy(alpha = 0.24f),
                         border = BorderStroke(
                             1.dp,
-                            if (isSearchVisible) KidTheme.Accent.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.35f)
+                            if (isSearchVisible) KidTheme.Accent.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.42f)
                         ),
-                        modifier = Modifier.clickableNoRipple {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            isSearchVisible = !isSearchVisible
-                            if (!isSearchVisible) {
-                                searchQuery = ""
-                                onSearchChange("")
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                isSearchVisible = !isSearchVisible
+                                if (!isSearchVisible) {
+                                    searchQuery = ""
+                                    onSearchChange("")
+                                }
                             }
-                        }
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (isSearchVisible) Icons.Default.Close
                                 else Icons.Default.Search,
                                 contentDescription = if (isSearchVisible) "ปิดค้นหา" else "ค้นหา",
                                 tint = if (isSearchVisible) KidTheme.TextDark else Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (isSearchVisible) "ปิด" else "ค้นหา",
-                                color = if (isSearchVisible) KidTheme.TextDark else Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isMusicEnabled) KidTheme.Success.copy(alpha = 0.85f)
-                        else Color.White.copy(alpha = 0.22f),
-                        border = BorderStroke(
-                            1.dp,
-                            if (isMusicEnabled) KidTheme.Success else Color.White.copy(alpha = 0.35f)
-                        ),
-                        modifier = Modifier.clickableNoRipple {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            onMusicToggle()
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (isMusicEnabled) "🎵" else "🔇",
-                                fontSize = 12.sp
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text(
-                                text = if (isMusicEnabled) "เพลง" else "ปิด",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
 
                     Surface(
                         shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.22f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
-                        modifier = Modifier.clickableNoRipple {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            onSettingsClick()
-                        }
+                        color = if (isMusicEnabled) KidTheme.Success.copy(alpha = 0.88f)
+                        else Color.White.copy(alpha = 0.24f),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isMusicEnabled) Color.White.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.42f)
+                        ),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onMusicToggle()
+                            }
                     ) {
-                        Box(
-                            modifier = Modifier.size(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = if (isMusicEnabled) "🎵" else "🔇",
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.24f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.42f)),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onSettingsClick()
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = "ตั้งค่า",
                                 tint = Color.White,
-                                modifier = Modifier.size(17.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -964,7 +966,7 @@ fun HomeHeader(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ทักทาย + อวตาร
+            // ทักทาย + อวตารมาสคอตเด็กน้อยถือพู่กัน
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -972,16 +974,20 @@ fun HomeHeader(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "สวัสดี $userName! ✨",
+                        text = "สวัสดี $displayKidName! 👋",
                         color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        text = "พร้อมสนุกและเรียนรู้ไปด้วยกันหรือยัง? 🚀",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 14.sp
+                        text = "พร้อมสนุกและเรียนรู้กันหรือยัง? 🚀",
+                        color = Color.White.copy(alpha = 0.94f),
+                        fontSize = 13.5.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -989,7 +995,7 @@ fun HomeHeader(
 
                 Surface(
                     modifier = Modifier
-                        .size(62.dp)
+                        .size(68.dp)
                         .graphicsLayer {
                             scaleX = avatarScale
                             scaleY = avatarScale
@@ -1002,14 +1008,14 @@ fun HomeHeader(
                             showSpeechBubble = true
                         },
                     shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.3f),
-                    border = BorderStroke(2.5.dp, KidTheme.Accent),
-                    shadowElevation = 6.dp
+                    color = Color(0xFFFFF8E7),
+                    border = BorderStroke(3.dp, KidTheme.Accent),
+                    shadowElevation = 8.dp
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.leraning_kid),
+                        painter = painterResource(id = R.drawable.app),
                         contentDescription = "แตะเพื่อคุยกับฉัน",
-                        modifier = Modifier.fillMaxSize().padding(4.dp).clip(CircleShape),
+                        modifier = Modifier.fillMaxSize().padding(3.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -1053,9 +1059,9 @@ fun HomeHeader(
             Spacer(modifier = Modifier.height(16.dp))
 
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White.copy(alpha = 0.18f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.28f)),
+                shape = RoundedCornerShape(22.dp),
+                color = Color.White.copy(alpha = 0.22f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.34f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -1064,38 +1070,50 @@ fun HomeHeader(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Text(text = "🏅", fontSize = 15.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "ระดับ $level · $levelTitle",
                                 color = Color.White,
                                 fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Text(
-                            text = "🔥 ต่อเนื่อง $streakDays วัน",
-                            color = KidTheme.Accent,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White.copy(alpha = 0.22f)
+                        ) {
+                            Text(
+                                text = "🔥 $streakDays วัน",
+                                color = Color(0xFFFFE58F),
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(9.dp))
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(10.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color.White.copy(alpha = 0.25f))
+                            .height(11.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = 0.28f))
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(animatedLevelProgress)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(KidTheme.GoldGradient)
                         )
                     }
@@ -1104,8 +1122,9 @@ fun HomeHeader(
 
                     Text(
                         text = "อีก $starsRemaining ดาว จะขึ้นระดับ ${level + 1}! 🚀",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 11.sp
+                        color = Color.White.copy(alpha = 0.92f),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -2036,6 +2055,7 @@ fun MainComposeScreen(navController: NavController? = null) {
 
     Scaffold(
         containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0.dp),
         content = { paddingValues ->
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 KidBackground(modifier = Modifier.fillMaxSize())
@@ -2146,19 +2166,19 @@ fun MainComposeScreen(navController: NavController? = null) {
                                         playSoundEffect(context, R.raw.is_sound_buttonswitch)
                                         showSubscriptionDialog = true
                                     },
-                                shape = RoundedCornerShape(20.dp),
+                                shape = RoundedCornerShape(24.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(
                                             Brush.horizontalGradient(
-                                                listOf(Color(0xFF6C5CE7), Color(0xFF8E44AD), Color(0xFFFF9F43))
+                                                listOf(Color(0xFF7B61FF), Color(0xFF9B6BFF), Color(0xFFFF8E72))
                                             )
                                         )
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                        .padding(horizontal = 16.dp, vertical = 14.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -2171,38 +2191,44 @@ fun MainComposeScreen(navController: NavController? = null) {
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(40.dp)
-                                                    .background(Color.White.copy(alpha = 0.22f), CircleShape),
+                                                    .size(44.dp)
+                                                    .background(Color.White.copy(alpha = 0.25f), CircleShape),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text(text = "👑", fontSize = 20.sp)
+                                                Text(text = "👑", fontSize = 22.sp)
                                             }
-                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Spacer(modifier = Modifier.width(12.dp))
                                             Column {
                                                 Text(
-                                                    text = "สนับสนุน สมาชิก VIP (Subscriptions)",
+                                                    text = "ปลดล็อก VIP สนุกไร้โฆษณา ✨",
                                                     color = Color.White,
                                                     fontWeight = FontWeight.ExtraBold,
-                                                    fontSize = 13.sp
+                                                    fontSize = 14.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
+                                                Spacer(modifier = Modifier.height(2.dp))
                                                 Text(
-                                                    text = "ปลดล็อกไร้โฆษณา • รับดาวโบนัส x2 • ทุกด่าน & เกม",
-                                                    color = Color.White.copy(alpha = 0.9f),
-                                                    fontSize = 10.5.sp
+                                                    text = "รับดาวโบนัส x2 • เล่นได้ทุกด่าน & เกม",
+                                                    color = Color.White.copy(alpha = 0.94f),
+                                                    fontSize = 11.5.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
                                         }
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Surface(
-                                            shape = RoundedCornerShape(14.dp),
-                                            color = Color(0xFFFFD166)
+                                            shape = RoundedCornerShape(18.dp),
+                                            color = Color(0xFFFFD166),
+                                            shadowElevation = 2.dp
                                         ) {
                                             Text(
-                                                text = "สมัครสมาชิก 💎",
-                                                color = Color(0xFF2D3436),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.5.sp,
-                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                                text = "เปิด VIP ✨",
+                                                color = Color(0xFF2D3047),
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
                                             )
                                         }
                                     }
