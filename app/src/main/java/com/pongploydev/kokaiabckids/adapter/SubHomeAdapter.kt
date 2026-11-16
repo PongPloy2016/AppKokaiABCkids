@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.pongploydev.kokaiabckids.R
+import com.pongploydev.kokaiabckids.confixdata.ThaiLearningDictionary
 import com.pongploydev.kokaiabckids.model.LearningDataModel
 
 /**
@@ -309,86 +310,7 @@ class SubHomeAdapter(
      * ดึงคำแปลภาษาไทยสำหรับรายการ
      */
     private fun getThaiTranslation(learningData: LearningDataModel): String {
-        val showTitle = learningData.showTitle ?: ""
-        val speakTitle = learningData.speakTitle ?: ""
-
-        // หาก showTitle เป็นภาษาไทยอยู่แล้ว
-        if (showTitle.any { it in '\u0E01'..'\u0E5B' }) {
-            return showTitle
-        }
-
-        // ดึงภาษาไทยจาก speakTitle (เช่น "A for Apple ลูกแอปเปิล")
-        val thaiPart = speakTitle.filter { it in '\u0E01'..'\u0E5B' || it == ' ' }.trim()
-        if (thaiPart.isNotEmpty()) {
-            return thaiPart
-        }
-
-        return when (showTitle.trim().lowercase()) {
-            "apple" -> "แอปเปิ้ล"
-            "bird" -> "นก"
-            "ball" -> "ลูกบอล"
-            "cat" -> "แมว"
-            "dog" -> "สุนัข"
-            "egg" -> "ไข่"
-            "elephant" -> "ช้าง"
-            "fish" -> "ปลา"
-            "goat" -> "แพะ"
-            "giraffe" -> "ยีราฟ"
-            "hat" -> "หมวก"
-            "horse" -> "ม้า"
-            "ice cream" -> "ไอศกรีม"
-            "joker" -> "ตัวตลก"
-            "jam" -> "แยม"
-            "kite" -> "ว่าว"
-            "key" -> "กุญแจ"
-            "lion" -> "สิงโต"
-            "leaf" -> "ใบไม้"
-            "monkey" -> "ลิง"
-            "mushroom" -> "เห็ด"
-            "nest", "nestling" -> "รังนก"
-            "orange" -> "ส้ม"
-            "owl" -> "นกฮูก"
-            "parrot" -> "นกแก้ว"
-            "pencil" -> "ดินสอ"
-            "queen" -> "พระราชินี"
-            "rabbit" -> "กระต่าย"
-            "ring" -> "แหวน"
-            "sun" -> "ดวงอาทิตย์"
-            "train" -> "รถไฟ"
-            "turtle" -> "เต่า"
-            "umbrella" -> "ร่ม"
-            "violin" -> "ไวโอลิน"
-            "vase" -> "แจกัน"
-            "watch" -> "นาฬิกา"
-            "whale" -> "วาฬ"
-            "xylophone" -> "ระนาดฝรั่ง"
-            "yak" -> "จามรี"
-            "yo yo", "yo-yo" -> "โยโย่"
-            "zebra" -> "ม้าลาย"
-            // ตัวเลข
-            "zero" -> "ศูนย์"
-            "one" -> "หนึ่ง"
-            "two" -> "สอง"
-            "three" -> "สาม"
-            "four" -> "สี่"
-            "five" -> "ห้า"
-            "six" -> "หก"
-            "seven" -> "เจ็ด"
-            "eight" -> "แปด"
-            "nine" -> "เก้า"
-            "ten" -> "สิบ"
-            "eleven" -> "สิบเอ็ด"
-            "twelve" -> "สิบสอง"
-            "thirteen" -> "สิบสาม"
-            "fourteen" -> "สิบสี่"
-            "fifteen" -> "สิบห้า"
-            "sixteen" -> "สิบหก"
-            "seventeen" -> "สิบเจ็ด"
-            "eighteen" -> "สิบแปด"
-            "nineteen" -> "สิบเก้า"
-            "twenty" -> "ยี่สิบ"
-            else -> showTitle
-        }
+        return ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
     }
 
     /**

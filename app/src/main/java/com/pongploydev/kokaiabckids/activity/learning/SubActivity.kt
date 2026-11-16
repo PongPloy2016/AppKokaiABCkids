@@ -41,6 +41,7 @@ import com.pongploydev.kokaiabckids.BuildConfig
 import com.pongploydev.kokaiabckids.R
 import com.pongploydev.kokaiabckids.adapter.SubHomeAdapter
 import com.pongploydev.kokaiabckids.confixdata.DataManager
+import com.pongploydev.kokaiabckids.confixdata.ThaiLearningDictionary
 import com.pongploydev.kokaiabckids.model.LearningDataModel
 import com.pongploydev.videowatchfeaturesupabase.Constant
 import com.pongploydev.videowatchfeaturesupabase.activity.ActivityVideoAutoDetail
@@ -432,10 +433,11 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         try {
             textToSpeech.stop()
 
-            val textToSpeak = learningData.showTitle ?: "Item"
+            val thaiLabel = ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
+            val textToSpeak = thaiLabel.ifBlank { learningData.showTitle ?: "คำศัพท์" }
             val fullText =
-                    if (index == 0) {
-                        "Let's learn together! $textToSpeak"
+                    if (index == 0 && isAutoReading) {
+                        "มาเรียนรู้ด้วยกันเถอะ! $textToSpeak"
                     } else {
                         textToSpeak
                     }
@@ -561,7 +563,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             autoReadHandler.postDelayed(
                     {
                         textToSpeech.speak(
-                                "Excellent! You've completed all letters!",
+                                "เก่งมากเลย อ่านครบทั้งหมดแล้ว!",
                                 TextToSpeech.QUEUE_FLUSH,
                                 null,
                                 "complete"
@@ -657,7 +659,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 .setNeutralButton("ทดสอบเสียง") { _, _ ->
                     if (isTtsInitialized) {
                         textToSpeech.speak(
-                                "This is a test sound",
+                                "นี่คือเสียงทดสอบภาษาไทย",
                                 TextToSpeech.QUEUE_FLUSH,
                                 null,
                                 "test"
@@ -672,7 +674,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     // ============================================
     private fun initializeAds() {
         if (!isNetworkAvailable()) {
-            showToast("No internet connection")
+            showToast("ไม่มีการเชื่อมต่ออินเทอร์เน็ต")
             return
         }
 
@@ -915,9 +917,10 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // Track learning progress & add star in Supabase
-        val supabaseUser = SupabaseAuthManager.getInstance(this).getStoredUser()
+        val supabaseAuthManager = SupabaseAuthManager.getInstance(this)
+        val supabaseUser = supabaseAuthManager.getStoredUser()
         val firebaseUser = FirebaseAuth.getInstance().currentUser
-        val userId = supabaseUser?.id ?: firebaseUser?.uid ?: "guest_user"
+        val userId = supabaseUser?.id ?: firebaseUser?.uid ?: supabaseAuthManager.getGuestUserId()
         if (!userId.isNullOrEmpty()) {
             lifecycleScope.launch(Dispatchers.IO) {
                 val dataManager = SupabaseDataManager.getInstance(this@SubActivity)
@@ -974,9 +977,10 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     // UTILITY METHODS
     // ============================================
     private fun showOptionsMenu(learningData: LearningDataModel) {
+        val thaiLabel = ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
         val options =
                 arrayOf(
-                        "🎬 ดูวิดีโอ (Watch Video)",
+                        "🎬 ดูวิดีโอ",
                         "🔊 อ่านรายการนี้",
                         "⭐ เพิ่มรายการโปรด",
                         "↗️ แชร์",
@@ -985,7 +989,7 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 )
 
         AlertDialog.Builder(this)
-                .setTitle("ตัวเลือก: ${learningData.showTitle}")
+                .setTitle("ตัวเลือก: $thaiLabel")
                 .setItems(options) { _, which ->
                     when (which) {
                         0 -> {
@@ -1030,25 +1034,29 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun handleFavoriteClick(position: Int, learningData: LearningDataModel) {
+        val thaiLabel = ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
         subHomeAdapter?.toggleFavorite(position)
         showToast(
-                "${learningData.showTitle} ${if (isFavorite(position)) "ลบออกจาก" else "เพิ่มเข้า"}รายการโปรด"
+                "$thaiLabel ${if (isFavorite(position)) "ลบออกจาก" else "เพิ่มเข้า"}รายการโปรด"
         )
     }
 
     private fun isFavorite(position: Int): Boolean = false
 
     private fun addToFavorite(learningData: LearningDataModel) {
-        showToast("เพิ่มในรายการโปรด: ${learningData.showTitle}")
+        val thaiLabel = ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
+        showToast("เพิ่มในรายการโปรด: $thaiLabel")
     }
 
     private fun shareItem(learningData: LearningDataModel) {
+        val thaiLabel = ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
+        val engLabel = learningData.showTitle ?: ""
         val shareIntent =
                 Intent().apply {
                     action = Intent.ACTION_SEND
                     putExtra(
                             Intent.EXTRA_TEXT,
-                            "เรียนรู้น่ารักกับ: ${learningData.showTitle}\nจากแอปเรียนรู้ของเรา!"
+                            "เรียนรู้น่ารักกับ: $thaiLabel ($engLabel)\nจากแอป ก ไก่ ABC หรรษา!"
                     )
                     type = "text/plain"
                 }
@@ -1056,10 +1064,12 @@ class SubActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun showInfo(learningData: LearningDataModel) {
+        val thaiLabel = ThaiLearningDictionary.toThai(learningData.showTitle, learningData.speakTitle)
+        val engLabel = learningData.showTitle ?: ""
         AlertDialog.Builder(this)
-                .setTitle(learningData.showTitle)
+                .setTitle(thaiLabel)
                 .setMessage(
-                        "รายละเอียด: ${learningData.toString() ?: "ไม่มีรายละเอียดเพิ่มเติม"}\n\nคลิกปุ่ม 🔊 เพื่อฟังการออกเสียง"
+                        "คำศัพท์ภาษาไทย: $thaiLabel\nคำศัพท์ภาษาอังกฤษ: $engLabel\n\nคลิกปุ่ม 🔊 เพื่อฟังการออกเสียง"
                 )
                 .setPositiveButton("ตกลง", null)
                 .setNeutralButton("🔊 อ่าน") { _, _ ->

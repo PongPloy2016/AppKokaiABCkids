@@ -21,6 +21,7 @@ import com.pongploydev.kokaiabckids.adapter.LearningPagerAdapter
 import com.pongploydev.kokaiabckids.confixdata.*
 import com.pongploydev.kokaiabckids.model.LearningDataModel
 import com.pongploydev.kokaiabckids.utils.AppControl
+import com.pongploydev.kokaiabckids.utils.CategoryDataHelper
 import com.pongploydev.kokaiabckids.utils.Constant
 import com.pongploydev.kokaiabckids.utils.NonSwipeAbleViewPager
 import com.pongploydev.kokaiabckids.utils.Utils
@@ -131,6 +132,7 @@ class FullScreenActivity : AppCompatActivity() {
             categoryPosition = it.getIntExtra("categoryPosition", 0)
             selectedPosition = it.getIntExtra("selectedPosition", 0)
         }
+        tvCategoryTitle?.text = CategoryDataHelper.getCategoryTitle(categoryPosition)
         loadCategoryData(categoryPosition)
     }
 
@@ -255,23 +257,13 @@ class FullScreenActivity : AppCompatActivity() {
             // Category 0: Alphabet A-Z
             0 -> {
                 val letter = ('A' + index).toString()
-                val thaiMap = arrayOf(
-                    "แอปเปิ้ล", "นก", "แมว", "สุนัข", "ไข่", "ปลา", "ยีราฟ", "หมวก", "ไอศกรีม",
-                    "แยม", "กุญแจ", "ใบไม้", "เห็ด", "รังนก", "นกฮูก", "ดินสอ", "พระราชินี",
-                    "แหวน", "ดวงอาทิตย์", "เต่า", "ร่ม", "แจกัน", "วาฬ", "ระนาด", "โยโย่", "ม้าลาย"
-                )
-                val engMap = arrayOf(
-                    "Apple", "Bird", "Cat", "Dog", "Egg", "Fish", "Giraffe", "Hat", "Ice cream",
-                    "Jam", "Key", "Leaf", "Mushroom", "Nestling", "Owl", "Pencil", "Queen",
-                    "Ring", "Sun", "Turtle", "Umbrella", "Vase", "Whale", "Xylophone", "Yo-yo", "Zebra"
-                )
-                val thaiWord = if (index in thaiMap.indices) thaiMap[index] else showTitle
-                val engWord = if (index in engMap.indices) engMap[index] else showTitle
+                val engWord = speakTitle.ifBlank { showTitle }
+                val thaiWord = ThaiLearningDictionary.toThai(engWord, speakTitle)
                 LearningDisplayInfo(
                     symbol = letter,
                     thaiName = thaiWord,
                     englishName = engWord,
-                    ttsSpeakText = "$letter for $engWord $thaiWord",
+                    ttsSpeakText = "$letter $thaiWord $engWord",
                     traceSymbol = letter
                 )
             }
@@ -279,16 +271,8 @@ class FullScreenActivity : AppCompatActivity() {
             // Category 1: Numbers 0-20
             1 -> {
                 val numSymbol = index.toString()
-                val thaiNumMap = arrayOf(
-                    "ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า", "สิบ",
-                    "สิบเอ็ด", "สิบสอง", "สิบสาม", "สิบสี่", "สิบห้า", "สิบหก", "สิบเจ็ด", "สิบแปด", "สิบเก้า", "ยี่สิบ"
-                )
-                val engNumMap = arrayOf(
-                    "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-                    "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"
-                )
-                val thaiNum = if (index in thaiNumMap.indices) thaiNumMap[index] else showTitle
-                val engNum = if (index in engNumMap.indices) engNumMap[index] else showTitle
+                val thaiNum = ThaiLearningDictionary.toThai(showTitle, speakTitle)
+                val engNum = showTitle.ifBlank { speakTitle }
                 LearningDisplayInfo(
                     symbol = numSymbol,
                     thaiName = thaiNum,
@@ -298,48 +282,42 @@ class FullScreenActivity : AppCompatActivity() {
                 )
             }
 
-            // Category 2: Colors
-            2 -> {
-                val thaiColors = arrayOf(
-                    "สีเขียว", "สีชมพู", "สีแดง", "สีดำ", "สีฟ้า", "สีน้ำตาล", "สีม่วง", "สีส้ม", "สีขาว", "สีเหลือง"
-                )
-                val engColors = arrayOf(
-                    "Green", "Pink", "Red", "Black", "Aqua", "Brown", "Purple", "Orange", "White", "Yellow"
-                )
-                val thai = if (index in thaiColors.indices) thaiColors[index] else showTitle
-                val eng = if (index in engColors.indices) engColors[index] else showTitle
+            // Categories 2..19: ใช้พจนานุกรมภาษาไทยกลางครบทั้ง 20 หมวด
+            else -> {
+                val thai = ThaiLearningDictionary.toThai(showTitle, speakTitle)
+                val eng = showTitle.ifBlank { speakTitle }
+                val ttsText = if (thai.equals(eng, ignoreCase = true)) thai else "$thai $eng"
                 LearningDisplayInfo(
-                    symbol = "🎨",
+                    symbol = getCategoryEmoji(categoryPos),
                     thaiName = thai,
                     englishName = eng,
-                    ttsSpeakText = "$thai $eng",
+                    ttsSpeakText = ttsText,
                     traceSymbol = (index + 1).toString()
                 )
             }
-
-            // Category 3: Shapes
-            3 -> {
-                val thaiShapes = arrayOf("วงกลม", "โคน", "ครึ่งวงกลม", "หัวใจ", "หกเหลี่ยม", "แปดเหลี่ยม", "วงรี", "สี่เหลี่ยมผืนผ้า", "สี่เหลี่ยมจัตุรัส", "ดาว", "สามเหลี่ยม")
-                val engShapes = arrayOf("Circle", "Cone", "Crescent", "Heart", "Hexagon", "Octagon", "Oval", "Rectangle", "Square", "Star", "Triangle")
-                val thai = if (index in thaiShapes.indices) thaiShapes[index] else showTitle
-                val eng = if (index in engShapes.indices) engShapes[index] else showTitle
-                LearningDisplayInfo("🔷", thai, eng, "$thai $eng", (index + 1).toString())
-            }
-
-            // Default for other categories
-            else -> {
-                val symbol = "${index + 1}"
-                val thai = if (showTitle.any { it in '\u0E01'..'\u0E5B' }) showTitle else getThaiWordFallback(showTitle)
-                val eng = if (!showTitle.any { it in '\u0E01'..'\u0E5B' }) showTitle else speakTitle
-                LearningDisplayInfo(
-                    symbol = symbol,
-                    thaiName = thai,
-                    englishName = eng,
-                    ttsSpeakText = "$thai $eng",
-                    traceSymbol = symbol
-                )
-            }
         }
+    }
+
+    private fun getCategoryEmoji(categoryPos: Int): String = when (categoryPos) {
+        2 -> "🎨"
+        3 -> "🔷"
+        4 -> "🐾"
+        5 -> "🐦"
+        6 -> "🌸"
+        7 -> "🍎"
+        8 -> "📅"
+        9 -> "🥦"
+        10 -> "🧍"
+        11 -> "👕"
+        12 -> "🌍"
+        13 -> "🍽️"
+        14 -> "📐"
+        15 -> "🏠"
+        16 -> "👩‍🏫"
+        17 -> "🏫"
+        18 -> "⚽"
+        19 -> "🚗"
+        else -> "🌟"
     }
 
     private fun getArrowForSymbol(symbol: String): String {
@@ -354,22 +332,6 @@ class FullScreenActivity : AppCompatActivity() {
             "B" -> "⇣↷↷"
             "C" -> "↺"
             else -> "✏️"
-        }
-    }
-
-    private fun getThaiWordFallback(word: String): String {
-        return when (word.trim().lowercase()) {
-            "dog" -> "สุนัข"
-            "cat" -> "แมว"
-            "bird" -> "นก"
-            "fish" -> "ปลา"
-            "lion" -> "สิงโต"
-            "tiger" -> "เสือ"
-            "elephant" -> "ช้าง"
-            "apple" -> "แอปเปิ้ล"
-            "banana" -> "กล้วย"
-            "orange" -> "ส้ม"
-            else -> word
         }
     }
 

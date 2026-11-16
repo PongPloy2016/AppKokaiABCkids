@@ -157,7 +157,7 @@ object DataManager {
             LearningDataModel(R.drawable.elephant, "Elephant", "Elephant"),
             LearningDataModel(R.drawable.fox, "Fox", "Fox"),
             LearningDataModel(R.drawable.giraffe, "Giraffe", "Giraffe"),
-            LearningDataModel(R.drawable.gorilla, "Giraffe", "Gorilla"),
+            LearningDataModel(R.drawable.gorilla, "Gorilla", "Gorilla"),
             LearningDataModel(R.drawable.hedgehog, "Hedgehog", "Hedgehog"),
             LearningDataModel(R.drawable.hippopotamus, "Hippopotamus", "Hippopotamus"),
             LearningDataModel(R.drawable.hyena, "Hyena", "Hyena"),

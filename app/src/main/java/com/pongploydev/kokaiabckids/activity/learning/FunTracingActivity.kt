@@ -192,7 +192,8 @@ class FunTracingActivity : AppCompatActivity() {
                     if (data.isNotEmpty()) {
                         data.forEachIndexed { idx, model ->
                             val sym = if (categoryPosition == 0) ('A' + idx).toString() else if (categoryPosition == 1) idx.toString() else (idx + 1).toString()
-                            itemList.add(TracingItem(sym, model.showTitle ?: sym, model.showTitle ?: "", model.speakTitle ?: ""))
+                            val thaiLabel = com.pongploydev.kokaiabckids.confixdata.ThaiLearningDictionary.toThai(model.showTitle, model.speakTitle)
+                            itemList.add(TracingItem(sym, thaiLabel.ifBlank { model.showTitle ?: sym }, model.showTitle ?: "", model.speakTitle ?: ""))
                         }
                     } else {
                         ThaiAlphabetRepository.getThaiAlphabetList().forEach {
@@ -242,7 +243,7 @@ class FunTracingActivity : AppCompatActivity() {
         btnResetCanvas = findViewById(R.id.btnResetCanvas)
         btnDoneTracing = findViewById(R.id.btnDoneTracing)
 
-        tvStarScore.text = "$starScore Stars"
+        tvStarScore.text = "$starScore ดาว"
 
         tvTracingTitle.setOnClickListener {
             YoYo.with(Techniques.Bounce).duration(400).playOn(tvTracingTitle)
@@ -343,9 +344,9 @@ class FunTracingActivity : AppCompatActivity() {
         } else if (hasThai) {
             "ฝึกเขียน $currentName ✏️"
         } else if (categoryPosition == 0 || categoryMode == "ENGLISH") {
-            "Fun Letter Tracing! 🔤"
+            "ฝึกเขียนตัวอักษรแสนสนุก! 🔤"
         } else {
-            "Fun Number Tracing! 🔢"
+            "ฝึกเขียนตัวเลขแสนสนุก! 🔢"
         }
         tvCurrentLetterIndicator.text = if (currentSymbol.length > 3) currentSymbol.take(3) else currentSymbol
         YoYo.with(Techniques.BounceIn).duration(400).playOn(tvTracingTitle)
@@ -539,7 +540,7 @@ class FunTracingActivity : AppCompatActivity() {
         playSuccessSound()
 
         starScore += 10
-        tvStarScore.text = "$starScore Stars"
+        tvStarScore.text = "$starScore ดาว"
 
         // Light up all 3 stars
         starProgress1.setImageResource(R.drawable.star)

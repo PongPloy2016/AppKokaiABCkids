@@ -29,12 +29,20 @@ public class CategoryDataHelper {
 
     public static String getTitleForType(int type) {
         if (type == 1) {
-            return "Preschool Kids Learning";
+            return "เรียนรู้คำศัพท์เด็กปฐมวัย";
         } else if (type == 2) {
-            return "Look and Choose Quiz";
+            return "แบบทดสอบดูแล้วเลือก";
         } else if (type == 3) {
-            return "Listen and Guess";
+            return "ฟังเสียงแล้วทายคำ";
         }
-        return "Learning Activities";
+        return "กิจกรรมการเรียนรู้";
+    }
+
+    public static String getCategoryTitle(int categoryPosition) {
+        List<LearningCategory> list = getAllCategories();
+        if (categoryPosition >= 0 && categoryPosition < list.size()) {
+            return list.get(categoryPosition).getTitle();
+        }
+        return "คำศัพท์น่ารู้";
     }
 }

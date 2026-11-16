@@ -5,10 +5,14 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -143,9 +147,36 @@ public class LeaningActvity extends AppCompatActivity {
 
     private void initViews() {
         // Find Views
+        View topHeaderContainer = findViewById(R.id.topHeaderContainer);
         txtExamTitle = findViewById(R.id.txtTitleSubHome);
         rvHomeCategories = findViewById(R.id.rvHomeCategories);
         fabRandom = findViewById(R.id.fabRandom);
+
+        // ปรับสี Status Bar ให้ตรงกับแถบด้านบน และกัน Title/FAB ชนแถบระบบ
+        getWindow().setStatusBarColor(android.graphics.Color.parseColor("#FFC107"));
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
+                .setAppearanceLightStatusBars(true);
+
+        if (topHeaderContainer != null) {
+            final int baseBottomPad = rvHomeCategories.getPaddingBottom();
+            final int baseFabMargin = ((ViewGroup.MarginLayoutParams) fabRandom.getLayoutParams()).bottomMargin;
+            ViewCompat.setOnApplyWindowInsetsListener(topHeaderContainer, (v, insets) -> {
+                int topInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).top;
+                int bottomInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+                v.setPadding(v.getPaddingLeft(), topInset, v.getPaddingRight(), v.getPaddingBottom());
+                rvHomeCategories.setPadding(
+                        rvHomeCategories.getPaddingLeft(),
+                        rvHomeCategories.getPaddingTop(),
+                        rvHomeCategories.getPaddingRight(),
+                        baseBottomPad + bottomInset
+                );
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) fabRandom.getLayoutParams();
+                lp.bottomMargin = baseFabMargin + bottomInset;
+                fabRandom.setLayoutParams(lp);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(topHeaderContainer);
+        }
 
         // Set Title based on Type
         txtExamTitle.setText(CategoryDataHelper.getTitleForType(activityType));

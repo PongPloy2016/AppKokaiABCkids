@@ -45,7 +45,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
-                android:text="Back"
+                android:text="ย้อนกลับ"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -75,7 +75,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
-                android:text="120 Stars"
+                android:text="120 ดาว"
                 android:textColor="#F57F17"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -98,7 +98,7 @@
             android:id="@+id/tvTracingTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Fun Number Tracing! 🔢"
+            android:text="ฝึกเขียนตัวเลขแสนสนุก! 🔢"
             android:textColor="#0288D1"
             android:textSize="22sp"
             android:textStyle="bold" />

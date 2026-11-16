@@ -40,14 +40,26 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.StateListDrawable
 import android.view.MenuItem
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.pongploydev.kokaiabckids.R
 import com.pongploydev.kokaiabckids.compose.FloatingKidsBottomNavBar
+import com.pongploydev.kokaiabckids.compose.dailyHeaderThemeForDay
+import com.pongploydev.kokaiabckids.compose.formatKidDisplayName
 import com.pongploydev.kokaiabckids.log.AnalyticsLogger
 import com.pongploydev.kokaiabckids.utils.AppUpdateCustomsManager
 import com.pongploydev.kokaiabckids.utils.RtlViewPager
@@ -503,6 +515,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         }
 
         updateSubscriptionMenuVisibility()
+        applyDailyDrawerThemeAndUser()
     }
 
     override fun onDestroy() {
@@ -944,32 +957,51 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         )
         drawerLayout.addDrawerListener(drawerToggle)
         drawerToggle.syncState()
+        drawerLayout.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerOpened(drawerView: View) {
+                applyDailyDrawerThemeAndUser()
+            }
+        })
+
+        // กันเมนูแถวล่างของ Drawer ถูกแถบนำทางของระบบทับ และเว้นระยะขอบบนใน Header ให้พอดี
+        navigationView.setWillNotDraw(true)
+        val headerViewForInsets = navigationView.getHeaderView(0)
+        val baseHeaderTopPadding = headerViewForInsets.paddingTop
+        val extraBottomPaddingPx = (16 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(navigationView) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            headerViewForInsets.setPadding(
+                headerViewForInsets.paddingLeft,
+                baseHeaderTopPadding + systemBars.top,
+                headerViewForInsets.paddingRight,
+                headerViewForInsets.paddingBottom
+            )
+            for (i in 0 until navigationView.childCount) {
+                val child = navigationView.getChildAt(i)
+                if (child is RecyclerView) {
+                    child.clipToPadding = false
+                    child.setPadding(
+                        child.paddingLeft,
+                        child.paddingTop,
+                        child.paddingRight,
+                        systemBars.bottom + extraBottomPaddingPx
+                    )
+                }
+            }
+            insets
+        }
+        ViewCompat.requestApplyInsets(navigationView)
 
         // Override การคลิกที่ปุ่มแฮมเบอร์เกอร์ (เช็คว่าเป็นสมาชิก/เข้าสู่ระบบแล้วหรือยัง)
         toolbar.setNavigationOnClickListener {
             val user = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this@MainActivity).getStoredUser()
             if (user != null) {
+                applyDailyDrawerThemeAndUser()
                 drawerLayout.openDrawer(GravityCompat.START)
             } else {
                 Toast.makeText(this@MainActivity, "กรุณาเข้าสู่ระบบเพื่อใช้งานเมนูนี้", Toast.LENGTH_SHORT).show()
                 // สามารถใส่โค้ดให้เปิดหน้าต่างล็อกอินที่นี่ได้หากต้องการ
             }
-        }
-
-        // กำหนดข้อมูลผู้ใช้ใน Nav Header (ถ้ามีการล็อกอิน)
-        try {
-            val headerView = navigationView.getHeaderView(0)
-            val headerTitle = headerView.findViewById<TextView>(R.id.nav_header_title)
-            val headerSubtitle = headerView.findViewById<TextView>(R.id.nav_header_subtitle)
-            val supabaseAuthManager = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this)
-            val user = supabaseAuthManager.getStoredUser()
-            if (user != null) {
-                val displayName = user.userMetadata?.displayName
-                headerTitle.text = if (!displayName.isNullOrBlank()) displayName else "คนเก่ง"
-                headerSubtitle.text = if (!user.email.isNullOrBlank()) user.email else "เรียนรู้สนุก ทุกวัน ⭐"
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error configuring nav header user info", e)
         }
 
         val nav = findViewById<BottomNavigationView>(R.id.navigation)
@@ -995,6 +1027,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
         }
 
         updateSubscriptionMenuVisibility()
+        applyDailyDrawerThemeAndUser()
     }
 
     fun openNewsTab() {
@@ -1017,6 +1050,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
             Toast.makeText(this, "กรุณาเข้าสู่ระบบเพื่อใช้งานเมนูนี้", Toast.LENGTH_SHORT).show()
             return
         }
+        applyDailyDrawerThemeAndUser()
         if (::drawerLayout.isInitialized) {
             drawerLayout.openDrawer(GravityCompat.START)
         }
@@ -1025,6 +1059,98 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
     fun closeDrawer() {
         if (::drawerLayout.isInitialized && drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START)
+        }
+    }
+
+    /** ซิงค์ธีมสี 7 วัน, ชื่อผู้ใช้งานที่อ่านง่าย, และไฮไลท์เมนูให้ตรงกับหน้าปัจจุบันของ Drawer */
+    private fun applyDailyDrawerThemeAndUser() {
+        if (!::navigationView.isInitialized) return
+        try {
+            val dayTheme = dailyHeaderThemeForDay()
+            val accentArgb = dayTheme.statusBarColor.toArgb()
+
+            val headerView = navigationView.getHeaderView(0)
+            headerView.background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                dayTheme.gradientColors.map { it.toArgb() }.toIntArray()
+            )
+
+            val headerTitle = headerView.findViewById<TextView>(R.id.nav_header_title)
+            val headerSubtitle = headerView.findViewById<TextView>(R.id.nav_header_subtitle)
+            val authManager = com.pongploydev.profilefeature.auth.SupabaseAuthManager.getInstance(this)
+            val dataManager = com.pongploydev.profilefeature.data.SupabaseDataManager.getInstance(this)
+            val user = authManager.getStoredUser()
+
+            val rawName = user?.userMetadata?.displayName
+                ?.takeIf { it.isNotBlank() }
+                ?: dataManager.getLocalDisplayName()
+                ?: ""
+            headerTitle.text = formatKidDisplayName(rawName)
+
+            val email = user?.email?.trim().orEmpty()
+            val isSyntheticGuestEmail = email.isEmpty() ||
+                email.startsWith("guest", ignoreCase = true) ||
+                email.endsWith("@guest.local", ignoreCase = true)
+            headerSubtitle.text = if (!isSyntheticGuestEmail) {
+                email
+            } else {
+                "${dayTheme.dayEmoji} ${dayTheme.dayNameThai} · เรียนรู้สนุก ทุกวัน ⭐"
+            }
+
+            val states = arrayOf(
+                intArrayOf(android.R.attr.state_checked),
+                intArrayOf(android.R.attr.state_pressed),
+                intArrayOf()
+            )
+            val colors = intArrayOf(
+                accentArgb,
+                accentArgb,
+                Color.parseColor("#4A5568")
+            )
+            val tintList = ColorStateList(states, colors)
+            navigationView.itemIconTintList = tintList
+            navigationView.itemTextColor = tintList
+            navigationView.itemBackground = buildDrawerItemBackground(accentArgb)
+
+            val activeNavId = when (selectedBottomTabIndex.intValue) {
+                0 -> R.id.nav_home
+                1 -> R.id.nav_news
+                2 -> R.id.nav_video
+                3 -> R.id.nav_quiz
+                4 -> R.id.nav_game_hub
+                5 -> R.id.nav_profile
+                else -> R.id.nav_home
+            }
+            navigationView.setCheckedItem(activeNavId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error applying daily drawer theme", e)
+        }
+    }
+
+    private fun buildDrawerItemBackground(accentArgb: Int): StateListDrawable {
+        val density = resources.displayMetrics.density
+        val hInset = (12 * density).toInt()
+        val vInset = (2 * density).toInt()
+        val radius = 28 * density
+
+        val activePill = InsetDrawable(
+            GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = radius
+                setColor(ColorUtils.setAlphaComponent(accentArgb, 34))
+            },
+            hInset,
+            vInset,
+            hInset,
+            vInset
+        )
+        val transparent = GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
+        }
+        return StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_checked), activePill)
+            addState(intArrayOf(android.R.attr.state_pressed), activePill)
+            addState(intArrayOf(), transparent)
         }
     }
 

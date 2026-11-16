@@ -51,11 +51,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
@@ -83,6 +86,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -91,11 +95,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pongploydev.newsfeature.NewsDetailActivity
 import com.pongploydev.newsfeature.data.NewsArticle
+import com.pongploydev.newsfeature.data.NewsFeedItem
 import com.pongploydev.newsfeature.ui.AudioBadge
 import com.pongploydev.newsfeature.ui.FeaturedFeedArticle
 import com.pongploydev.newsfeature.ui.NewsImage
 import com.pongploydev.newsfeature.ui.NewsViewModel
 import com.pongploydev.newsfeature.ui.VideoBadge
+import com.pongploydev.newsfeature.ui.formatRelativeTime
 import kotlinx.coroutines.launch
 import com.pongploydev.profilefeature.auth.SupabaseAuthManager
 import com.pongploydev.profilefeature.data.SupabaseDataManager
@@ -110,11 +116,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -124,9 +132,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import java.util.Calendar
 import com.pongploydev.kidswebviewfeature.KidsWebViewActivity
 import com.pongploydev.livefeature.LiveListActivity
 import com.pongploydev.kokaiabckids.R
@@ -172,7 +182,65 @@ object KidTheme {
     )
 }
 
-private fun formatKidDisplayName(rawName: String): String {
+/** ธีมสี Header ประจำ 7 วัน (แยกตามสีประจำวันไทย พร้อมสี Status Bar ที่เข้าชุดกัน) */
+data class DailyHeaderTheme(
+    val dayNameThai: String,
+    val dayEmoji: String,
+    val statusBarColor: Color,
+    val gradientColors: List<Color>
+) {
+    val headerGradient: Brush
+        get() = Brush.linearGradient(colors = gradientColors)
+}
+
+fun dailyHeaderThemeForDay(
+    dayOfWeek: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+): DailyHeaderTheme = when (dayOfWeek) {
+    Calendar.SUNDAY -> DailyHeaderTheme(
+        dayNameThai = "วันอาทิตย์",
+        dayEmoji = "❤️",
+        statusBarColor = Color(0xFFE53E51),
+        gradientColors = listOf(Color(0xFFE53E51), Color(0xFFFF6B78), Color(0xFFFF9E7D))
+    )
+    Calendar.MONDAY -> DailyHeaderTheme(
+        dayNameThai = "วันจันทร์",
+        dayEmoji = "💛",
+        statusBarColor = Color(0xFFD98A00),
+        gradientColors = listOf(Color(0xFFD98A00), Color(0xFFF2AA1F), Color(0xFFFFCA58))
+    )
+    Calendar.TUESDAY -> DailyHeaderTheme(
+        dayNameThai = "วันอังคาร",
+        dayEmoji = "🩷",
+        statusBarColor = Color(0xFFE0428B),
+        gradientColors = listOf(Color(0xFFE0428B), Color(0xFFFF6BA9), Color(0xFFFF9ECE))
+    )
+    Calendar.WEDNESDAY -> DailyHeaderTheme(
+        dayNameThai = "วันพุธ",
+        dayEmoji = "💚",
+        statusBarColor = Color(0xFF159D6B),
+        gradientColors = listOf(Color(0xFF159D6B), Color(0xFF2CC88B), Color(0xFF6AE2AE))
+    )
+    Calendar.THURSDAY -> DailyHeaderTheme(
+        dayNameThai = "วันพฤหัสบดี",
+        dayEmoji = "🧡",
+        statusBarColor = Color(0xFFEB6B1E),
+        gradientColors = listOf(Color(0xFFEB6B1E), Color(0xFFFF8C3B), Color(0xFFFFBA68))
+    )
+    Calendar.FRIDAY -> DailyHeaderTheme(
+        dayNameThai = "วันศุกร์",
+        dayEmoji = "💙",
+        statusBarColor = Color(0xFF1B86E6),
+        gradientColors = listOf(Color(0xFF1B86E6), Color(0xFF42A5FF), Color(0xFF7CD1FF))
+    )
+    else -> DailyHeaderTheme(
+        dayNameThai = "วันเสาร์",
+        dayEmoji = "💜",
+        statusBarColor = Color(0xFF6A4EFF),
+        gradientColors = listOf(Color(0xFF6A4EFF), Color(0xFF866BFF), Color(0xFF68B6FF))
+    )
+}
+
+fun formatKidDisplayName(rawName: String): String {
     val trimmed = rawName.trim()
     if (trimmed.isEmpty() ||
         trimmed.equals("guest", ignoreCase = true) ||
@@ -720,6 +788,7 @@ fun HomeHeader(
     starsRemaining: Int = 30,
     streakDays: Int = 5,
     isSubscriptionEnabled: Boolean = true,
+    headerTheme: DailyHeaderTheme = dailyHeaderThemeForDay(),
     onMenuClick: () -> Unit = {},
     onStarClick: () -> Unit = {},
     onSubscriptionClick: () -> Unit = {},
@@ -790,7 +859,7 @@ fun HomeHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
-            .background(KidTheme.HeaderGradient)
+            .background(headerTheme.headerGradient)
     ) {
         // วงกลมตกแต่งพื้นหลัง header สไตล์น่ารักสำหรับเด็ก
         Box(
@@ -1011,9 +1080,9 @@ fun HomeHeader(
                     )
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        text = "พร้อมสนุกและเรียนรู้กันหรือยัง? 🚀",
+                        text = "${headerTheme.dayEmoji} ${headerTheme.dayNameThai} · พร้อมเรียนรู้กันหรือยัง? 🚀",
                         color = Color.White.copy(alpha = 0.94f),
-                        fontSize = 13.5.sp,
+                        fontSize = 13.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1364,6 +1433,82 @@ fun QuickActionRow(onActionClick: (Int) -> Unit) {
     }
 }
 
+// ==================== SHARED LOOPING SLIDE HELPERS ====================
+
+@Composable
+private fun rememberLoopingPagerState(
+    itemCount: Int,
+    intervalMs: Long = 5000L
+): PagerState {
+    val loopCount = if (itemCount > 1) itemCount * 400 else 1
+    val startPage = if (itemCount > 1) itemCount * 200 else 0
+    val pagerState = rememberPagerState(
+        initialPage = startPage,
+        pageCount = { loopCount }
+    )
+
+    // กันการ์ดค้างกลางหน้าหากอนิเมชันถูกยกเลิกระหว่างเลื่อนหน้าจอขึ้นลง
+    LaunchedEffect(pagerState) {
+        if (!pagerState.isScrollInProgress && pagerState.currentPageOffsetFraction != 0f) {
+            pagerState.scrollToPage(pagerState.currentPage)
+        }
+    }
+
+    // สไลด์ไปข้างหน้าอย่างต่อเนื่อง ไม่เด้งย้อนกลับเมื่อวนจากใบสุดท้ายมาใบแรก
+    LaunchedEffect(pagerState, itemCount, intervalMs) {
+        if (itemCount < 2) return@LaunchedEffect
+        while (true) {
+            delay(intervalMs)
+            if (!pagerState.isScrollInProgress) {
+                val nextPage = pagerState.currentPage + 1
+                if (nextPage < loopCount) {
+                    pagerState.animateScrollToPage(nextPage)
+                } else {
+                    pagerState.scrollToPage(startPage)
+                }
+            }
+        }
+    }
+
+    return pagerState
+}
+
+@Composable
+private fun SlideIndicatorDots(
+    count: Int,
+    activeIndex: Int,
+    accentColor: Color,
+    modifier: Modifier = Modifier,
+    activeWidthDp: Float = 18f,
+    inactiveWidthDp: Float = 6f,
+    spacingDp: Int = 4
+) {
+    if (count <= 1) return
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(spacingDp.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(count) { idx ->
+            val active = activeIndex == idx
+            val dashW by animateFloatAsState(
+                targetValue = if (active) activeWidthDp else inactiveWidthDp,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                label = "slideDotW"
+            )
+            Box(
+                modifier = Modifier
+                    .height(5.dp)
+                    .width(dashW.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (active) accentColor else accentColor.copy(alpha = 0.25f)
+                    )
+            )
+        }
+    }
+}
+
 // ==================== HOME FEATURED NEWS SLIDE (1 PER TAB) ====================
 
 @Composable
@@ -1492,151 +1637,135 @@ fun HomeNewsSlideSection(
             }
 
             else -> {
-                val pagerState = rememberPagerState(pageCount = { slides.size })
+                key(slides.size) {
+                    val pagerState = rememberLoopingPagerState(
+                        itemCount = slides.size,
+                        intervalMs = 4500L
+                    )
+                    val activeIndex = pagerState.currentPage % slides.size
 
-                LaunchedEffect(pagerState, slides.size) {
-                    if (slides.size < 2) return@LaunchedEffect
-                    while (true) {
-                        delay(4500L)
-                        if (!pagerState.isScrollInProgress && slides.isNotEmpty()) {
-                            pagerState.animateScrollToPage((pagerState.currentPage + 1) % slides.size)
-                        }
-                    }
-                }
+                    HorizontalPager(
+                        state = pagerState,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        pageSpacing = 12.dp
+                    ) { page ->
+                        val realPage = page % slides.size
+                        val featured = slides[realPage]
+                        val feed = featured.feed
+                        val article = featured.article
 
-                HorizontalPager(
-                    state = pagerState,
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    pageSpacing = 12.dp
-                ) { page ->
-                    val featured = slides[page]
-                    val feed = featured.feed
-                    val article = featured.article
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(186.dp)
-                            .clickableNoRipple {
-                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                                onArticleClick(article)
-                            },
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            NewsImage(
-                                url = article.imageUrl,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            0.18f to Color(0x330B1026),
-                                            0.55f to Color(0x880B1026),
-                                            1f to Color(0xEE0B1026)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(186.dp)
+                                .clickableNoRipple {
+                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                    onArticleClick(article)
+                                },
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                NewsImage(
+                                    url = article.imageUrl,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                0.18f to Color(0x330B1026),
+                                                0.55f to Color(0x880B1026),
+                                                1f to Color(0xEE0B1026)
+                                            )
                                         )
-                                    )
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(start = 12.dp, top = 12.dp, end = 64.dp),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = KidTheme.Primary.copy(alpha = 0.92f)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(start = 12.dp, top = 12.dp, end = 64.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = KidTheme.Primary.copy(alpha = 0.92f)
+                                    ) {
+                                        Text(
+                                            text = feed.displayLabel,
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    if (article.audioUrl != null) {
+                                        AudioBadge(small = true)
+                                    }
+                                    if (article.videoUrl != null) {
+                                        VideoBadge(small = true)
+                                    }
+                                }
+
+                                Text(
+                                    text = "${realPage + 1}/${slides.size}",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(12.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color(0x99000000))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(horizontal = 14.dp, vertical = 12.dp)
                                 ) {
                                     Text(
-                                        text = feed.displayLabel,
+                                        text = article.title,
                                         color = Color.White,
-                                        fontSize = 11.sp,
+                                        fontSize = 15.5.sp,
+                                        lineHeight = 21.sp,
                                         fontWeight = FontWeight.Bold,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "เรื่องเด่นหมวด ${feed.name} · แตะเพื่ออ่าน ›",
+                                        color = Color(0xFFFFE58F),
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
-                                if (article.audioUrl != null) {
-                                    AudioBadge(small = true)
-                                }
-                                if (article.videoUrl != null) {
-                                    VideoBadge(small = true)
-                                }
-                            }
-
-                            Text(
-                                text = "${page + 1}/${slides.size}",
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(12.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0x99000000))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-
-                            Column(
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(horizontal = 14.dp, vertical = 12.dp)
-                            ) {
-                                Text(
-                                    text = article.title,
-                                    color = Color.White,
-                                    fontSize = 15.5.sp,
-                                    lineHeight = 21.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "เรื่องเด่นหมวด ${feed.name} · แตะเพื่ออ่าน ›",
-                                    color = Color(0xFFFFE58F),
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
                             }
                         }
                     }
-                }
 
-                if (slides.size > 1) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        repeat(slides.size) { index ->
-                            val isSelected = pagerState.currentPage == index
-                            val dotWidth by animateFloatAsState(
-                                targetValue = if (isSelected) 16f else 5f,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                                label = "newsSlideDot"
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 2.dp)
-                                    .height(5.dp)
-                                    .width(dotWidth.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isSelected) KidTheme.Primary
-                                        else KidTheme.Primary.copy(alpha = 0.25f)
-                                    )
+                    if (slides.size > 1) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            SlideIndicatorDots(
+                                count = slides.size,
+                                activeIndex = activeIndex,
+                                accentColor = KidTheme.Primary,
+                                activeWidthDp = 16f,
+                                inactiveWidthDp = 5f
                             )
                         }
                     }
@@ -1978,8 +2107,14 @@ fun HomeVideoSlideSection(
     }
 
     val featuredVideos = remember(filteredVideos) { filteredVideos.take(5) }
-    val miniCards = remember(filteredVideos) {
-        if (filteredVideos.size > 3) filteredVideos.drop(1).take(10) else filteredVideos
+    val miniCards = remember(filteredVideos, featuredVideos) {
+        val remaining = filteredVideos.drop(featuredVideos.size)
+        when {
+            remaining.size >= 2 -> remaining.take(10)
+            filteredVideos.size > featuredVideos.size -> remaining
+            filteredVideos.size > 1 -> filteredVideos.drop(1).take(10)
+            else -> emptyList()
+        }
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -2070,202 +2205,212 @@ fun HomeVideoSlideSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .height(180.dp),
-                shape = RoundedCornerShape(22.dp),
+                    .height(186.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = Color.White,
-                shadowElevation = 3.dp
+                shadowElevation = 3.dp,
+                border = BorderStroke(1.dp, Color(0xFFE8EDFA))
             ) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = videoAccent, modifier = Modifier.size(30.dp))
                 }
             }
-        } else if (featuredVideos.isNotEmpty()) {
-            val pagerState = rememberPagerState(pageCount = { featuredVideos.size })
-
-            LaunchedEffect(pagerState, featuredVideos.size) {
-                if (featuredVideos.size < 2) return@LaunchedEffect
-                while (true) {
-                    delay(5000L)
-                    if (!pagerState.isScrollInProgress && featuredVideos.isNotEmpty()) {
-                        pagerState.animateScrollToPage((pagerState.currentPage + 1) % featuredVideos.size)
-                    }
-                }
-            }
-
-            // หัวข้อย่อย Featured + จุดบอกหน้า (ขวา) คล้ายตัวอย่าง UI
-            Row(
+        } else if (featuredVideos.isEmpty()) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp)
+                    .height(132.dp),
+                shape = RoundedCornerShape(22.dp),
+                color = Color.White,
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, Color(0xFFEDF0FA))
             ) {
-                Text(
-                    text = "วิดีโอยอดนิยม 🔥",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = KidTheme.TextDark
-                )
-                if (featuredVideos.size > 1) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        repeat(featuredVideos.size) { idx ->
-                            val active = pagerState.currentPage == idx
-                            val dashW by animateFloatAsState(
-                                targetValue = if (active) 18f else 6f,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                                label = "vidDashW"
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .height(5.dp)
-                                    .width(dashW.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (active) videoAccent else videoAccent.copy(alpha = 0.25f)
-                                    )
-                            )
-                        }
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ยังไม่มีวิดีโอในหมวดนี้ ลองเลือกหมวดอื่นดูนะ 🎬",
+                        color = KidTheme.TextMuted,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
+        } else {
+            key(selectedChipId, featuredVideos.size) {
+                val pagerState = rememberLoopingPagerState(
+                    itemCount = featuredVideos.size,
+                    intervalMs = 5000L
+                )
+                val activeIndex = pagerState.currentPage % featuredVideos.size
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // สไลด์วิดีโอแบบแง้มการ์ดถัดไป
-            HorizontalPager(
-                state = pagerState,
-                contentPadding = PaddingValues(start = 16.dp, end = 44.dp),
-                pageSpacing = 12.dp
-            ) { page ->
-                val video = featuredVideos[page]
-                val thumbUrl = resolveVideoThumbnail(video)
-
-                Card(
+                // หัวข้อย่อย Featured + จุดบอกหน้า (ขวา)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(184.dp)
-                        .clickableNoRipple {
-                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
-                            onVideoClick(video)
-                        },
-                    shape = RoundedCornerShape(22.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        if (thumbUrl != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(thumbUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = video.video_title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.kids_tv_3d),
-                                contentDescription = video.video_title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                    Text(
+                        text = "วิดีโอยอดนิยม 🔥",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KidTheme.TextDark
+                    )
+                    SlideIndicatorDots(
+                        count = featuredVideos.size,
+                        activeIndex = activeIndex,
+                        accentColor = videoAccent
+                    )
+                }
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        0.15f to Color(0x280B1026),
-                                        0.55f to Color(0x800B1026),
-                                        1f to Color(0xEB0B1026)
-                                    )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // สไลด์วิดีโอเด่นแบบเต็มการ์ดสมมาตร (ขอบซ้ายขวา 16dp เท่ากับการ์ดอื่นในหน้าแรก)
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    pageSpacing = 12.dp
+                ) { page ->
+                    val video = featuredVideos[page % featuredVideos.size]
+                    val thumbUrl = resolveVideoThumbnail(video)
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(188.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onVideoClick(video)
+                            },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            if (thumbUrl != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(thumbUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = video.video_title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
                                 )
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = videoAccent.copy(alpha = 0.92f)
-                            ) {
-                                Text(
-                                    text = video.category_name.ifBlank { "วิดีโอเด็ก" },
-                                    color = Color.White,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.kids_tv_3d),
+                                    contentDescription = video.video_title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
 
-                            if (video.video_duration.isNotBlank()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            0.0f to Color(0x140B1026),
+                                            0.45f to Color(0x4D0B1026),
+                                            0.78f to Color(0xBA0B1026),
+                                            1.0f to Color(0xF00B1026)
+                                        )
+                                    )
+                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = Color(0x99000000)
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = videoAccent.copy(alpha = 0.92f)
                                 ) {
                                     Text(
-                                        text = "🕒 ${video.video_duration}",
+                                        text = video.category_name.ifBlank { "วิดีโอเด็ก" },
                                         color = Color.White,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                if (video.video_duration.isNotBlank()) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = Color(0x99000000)
+                                    ) {
+                                        Text(
+                                            text = "🕒 ${video.video_duration}",
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // ปุ่ม Play ด้านล่างขวา ไม่บังภาพการ์ตูนตรงกลางและไม่ชนป้ายเวลา
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(end = 14.dp, bottom = 14.dp)
+                                    .size(44.dp),
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.95f),
+                                shadowElevation = 6.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.PlayArrow,
+                                        contentDescription = "เล่นวิดีโอ",
+                                        tint = videoAccent,
+                                        modifier = Modifier.size(28.dp)
                                     )
                                 }
                             }
-                        }
 
-                        // ปุ่ม Play ตรงกลางขวาดูชัดเจนสำหรับเด็ก
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(end = 14.dp)
-                                .size(44.dp),
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.94f),
-                            shadowElevation = 6.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Rounded.PlayArrow,
-                                    contentDescription = "เล่นวิดีโอ",
-                                    tint = videoAccent,
-                                    modifier = Modifier.size(28.dp)
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(start = 14.dp, end = 68.dp, bottom = 12.dp)
+                            ) {
+                                Text(
+                                    text = video.video_title,
+                                    color = Color.White,
+                                    fontSize = 15.5.sp,
+                                    lineHeight = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                val ratingText = video.age_rating.ifBlank { "สำหรับเด็ก" }
+                                Text(
+                                    text = "$ratingText · แตะเพื่อรับชม ▶",
+                                    color = Color(0xFFE2E8F0),
+                                    fontSize = 11.5.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(start = 14.dp, end = 64.dp, bottom = 12.dp)
-                        ) {
-                            Text(
-                                text = video.video_title,
-                                color = Color.White,
-                                fontSize = 15.5.sp,
-                                lineHeight = 21.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(3.dp))
-                            val ratingText = video.age_rating.ifBlank { "สำหรับเด็ก" }
-                            Text(
-                                text = "$ratingText · แตะเพื่อรับชม ▶",
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 11.5.sp,
-                                maxLines = 1
-                            )
                         }
                     }
                 }
@@ -2274,12 +2419,15 @@ fun HomeVideoSlideSection(
             if (miniCards.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // แถวการ์ดวิดีโอขนาดเล็กเลื่อนข้าง (2 การ์ดต่อหน้าจอคล้ายแถวล่างในตัวอย่าง UI)
+                // แถวการ์ดวิดีโอขนาดเล็กเลื่อนข้าง (ไม่ซ้ำกับการ์ดเด่นด้านบน)
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(miniCards, key = { "${it.id}_${it.vid}_${it.video_title}" }) { video ->
+                    itemsIndexed(
+                        items = miniCards,
+                        key = { idx, item -> "${idx}_${item.vid}_${item.id}" }
+                    ) { _, video ->
                         val thumbUrl = resolveVideoThumbnail(video)
                         val viewsText = formatVideoViews(video.total_views)
 
@@ -2374,10 +2522,12 @@ fun HomeVideoSlideSection(
                                         modifier = Modifier.weight(1f)
                                     )
                                     if (viewsText.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "👁 $viewsText",
                                             color = KidTheme.TextMuted,
-                                            fontSize = 10.sp
+                                            fontSize = 10.sp,
+                                            maxLines = 1
                                         )
                                     }
                                 }
@@ -2386,6 +2536,523 @@ fun HomeVideoSlideSection(
 
                                 Text(
                                     text = video.video_title,
+                                    color = KidTheme.TextDark,
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.height(34.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== HOME NEWS EXPLORE SECTION (AFTER VIDEO) ====================
+
+@Composable
+fun HomeNewsExploreSection(
+    feeds: List<NewsFeedItem>,
+    featuredSlides: List<FeaturedFeedArticle>,
+    newsViewModel: NewsViewModel?,
+    isLoadingFeatured: Boolean,
+    onRefresh: () -> Unit,
+    onViewAllClick: () -> Unit,
+    onArticleClick: (NewsArticle) -> Unit
+) {
+    val context = LocalContext.current
+    val newsAccent = Color(0xFF4F46E5)
+    val availableFeeds = remember(feeds) { feeds.ifEmpty { NewsFeedItem.DEFAULT_FEEDS } }
+    var selectedChipId by remember { mutableStateOf("all") }
+
+    val selectedFeed = remember(availableFeeds, selectedChipId) {
+        availableFeeds.find { "feed:${it.id}" == selectedChipId }
+    }
+
+    // รวมข่าว/นิทานตามหมวดที่เลือก (สำหรับสไลด์เด่น + การ์ดเล็กด้านล่าง)
+    val (resolvedArticles, isLoading) = if (selectedFeed == null) {
+        val seenKeys = HashSet<String>()
+        val combined = mutableListOf<FeaturedFeedArticle>()
+        fun addUnique(item: FeaturedFeedArticle) {
+            val k = item.article.id.ifBlank { item.article.link }
+            if (seenKeys.add(k)) combined.add(item)
+        }
+        featuredSlides.forEach(::addUnique)
+        availableFeeds.forEach { feed ->
+            newsViewModel?.stateOf(feed)?.items.orEmpty().take(3).forEach { article ->
+                addUnique(FeaturedFeedArticle(feed, article))
+            }
+        }
+        combined to (isLoadingFeatured && combined.isEmpty())
+    } else {
+        val state = newsViewModel?.stateOf(selectedFeed)
+        val list = state?.items.orEmpty().map { FeaturedFeedArticle(selectedFeed, it) }
+        list to (state?.loading == true && list.isEmpty())
+    }
+
+    val featuredArticles = remember(resolvedArticles) { resolvedArticles.take(5) }
+    val miniArticles = remember(resolvedArticles, featuredArticles) {
+        val remaining = resolvedArticles.drop(featuredArticles.size)
+        when {
+            remaining.size >= 2 -> remaining.take(10)
+            resolvedArticles.size > featuredArticles.size -> remaining
+            resolvedArticles.size > 1 -> resolvedArticles.drop(1).take(10)
+            else -> emptyList()
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // หัวข้อหลัก + ปุ่มดูทั้งหมด
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(newsAccent)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "📰", fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "ข่าวสารน่ารู้เด็ก",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = KidTheme.TextDark
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = newsAccent.copy(alpha = 0.12f),
+                modifier = Modifier.clickableNoRipple {
+                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                    onViewAllClick()
+                }
+            ) {
+                Text(
+                    text = "ดูทั้งหมด ›",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = newsAccent,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // แถบหมวดข่าว/นิทาน (Filter Chips)
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item(key = "all") {
+                val isSelected = selectedChipId == "all"
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = if (isSelected) newsAccent else Color.White,
+                    shadowElevation = if (isSelected) 3.dp else 1.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        if (isSelected) newsAccent else Color(0xFFE5E9F4)
+                    ),
+                    modifier = Modifier.clickableNoRipple {
+                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        selectedChipId = "all"
+                    }
+                ) {
+                    Text(
+                        text = "ทั้งหมด",
+                        color = if (isSelected) Color.White else KidTheme.TextDark,
+                        fontSize = 12.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    )
+                }
+            }
+
+            items(availableFeeds.take(8), key = { it.id }) { feed ->
+                val chipId = "feed:${feed.id}"
+                val isSelected = selectedChipId == chipId
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = if (isSelected) newsAccent else Color.White,
+                    shadowElevation = if (isSelected) 3.dp else 1.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        if (isSelected) newsAccent else Color(0xFFE5E9F4)
+                    ),
+                    modifier = Modifier.clickableNoRipple {
+                        playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                        selectedChipId = chipId
+                        newsViewModel?.select(feed)
+                    }
+                ) {
+                    Text(
+                        text = feed.displayLabel,
+                        color = if (isSelected) Color.White else KidTheme.TextDark,
+                        fontSize = 12.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isLoading) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(186.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 3.dp,
+                border = BorderStroke(1.dp, Color(0xFFE8EDFA))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(color = newsAccent, modifier = Modifier.size(30.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "กำลังโหลดข่าวสารและนิทาน...",
+                        color = KidTheme.TextMuted,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        } else if (featuredArticles.isEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(136.dp),
+                shape = RoundedCornerShape(22.dp),
+                color = Color.White,
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, Color(0xFFEDF0FA))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "ยังไม่มีข่าวสารในหมวดนี้",
+                        color = KidTheme.TextMuted,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = newsAccent,
+                        modifier = Modifier.clickableNoRipple {
+                            playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                            if (selectedFeed != null) {
+                                newsViewModel?.select(selectedFeed)
+                            } else {
+                                onRefresh()
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "โหลดใหม่ 🔄",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+        } else {
+            key(selectedChipId, featuredArticles.size) {
+                val pagerState = rememberLoopingPagerState(
+                    itemCount = featuredArticles.size,
+                    intervalMs = 5000L
+                )
+                val activeIndex = pagerState.currentPage % featuredArticles.size
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ข่าวเด่นน่าอ่าน ✨",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KidTheme.TextDark
+                    )
+                    SlideIndicatorDots(
+                        count = featuredArticles.size,
+                        activeIndex = activeIndex,
+                        accentColor = newsAccent
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    pageSpacing = 12.dp
+                ) { page ->
+                    val featured = featuredArticles[page % featuredArticles.size]
+                    val feed = featured.feed
+                    val article = featured.article
+                    val timeLabel = formatRelativeTime(article.publishedAtMillis)
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(188.dp)
+                            .clickableNoRipple {
+                                playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                onArticleClick(article)
+                            },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1F2544)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            NewsImage(
+                                url = article.imageUrl,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            0.0f to Color(0x140B1026),
+                                            0.45f to Color(0x4D0B1026),
+                                            0.78f to Color(0xBA0B1026),
+                                            1.0f to Color(0xF00B1026)
+                                        )
+                                    )
+                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = newsAccent.copy(alpha = 0.92f)
+                                    ) {
+                                        Text(
+                                            text = feed.displayLabel,
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    if (article.audioUrl != null) {
+                                        AudioBadge(small = true)
+                                    }
+                                    if (article.videoUrl != null) {
+                                        VideoBadge(small = true)
+                                    }
+                                }
+
+                                if (timeLabel.isNotBlank()) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = Color(0x99000000)
+                                    ) {
+                                        Text(
+                                            text = "🕒 $timeLabel",
+                                            color = Color.White,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(end = 14.dp, bottom = 14.dp)
+                                    .size(44.dp),
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.95f),
+                                shadowElevation = 6.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = if (article.audioUrl != null || article.videoUrl != null) {
+                                            Icons.Rounded.PlayArrow
+                                        } else {
+                                            Icons.AutoMirrored.Rounded.MenuBook
+                                        },
+                                        contentDescription = "อ่านข่าว",
+                                        tint = newsAccent,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(start = 14.dp, end = 68.dp, bottom = 12.dp)
+                            ) {
+                                Text(
+                                    text = article.title,
+                                    color = Color.White,
+                                    fontSize = 15.5.sp,
+                                    lineHeight = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                val subSource = article.category.ifBlank { feed.name }
+                                Text(
+                                    text = "$subSource · แตะเพื่ออ่าน ▶",
+                                    color = Color(0xFFE2E8F0),
+                                    fontSize = 11.5.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (miniArticles.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    itemsIndexed(
+                        items = miniArticles,
+                        key = { idx, item -> "${idx}_${item.feed.id}_${item.article.id.ifBlank { item.article.link }}" }
+                    ) { _, featured ->
+                        val feed = featured.feed
+                        val article = featured.article
+                        val timeLabel = formatRelativeTime(article.publishedAtMillis)
+
+                        Surface(
+                            modifier = Modifier
+                                .width(168.dp)
+                                .clickableNoRipple {
+                                    playSoundEffect(context, R.raw.is_sound_buttonswitch)
+                                    onArticleClick(article)
+                                },
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color.White,
+                            shadowElevation = 3.dp,
+                            border = BorderStroke(1.dp, Color(0xFFEDF0FA))
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(94.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(Color(0xFFEEF2FF))
+                                ) {
+                                    NewsImage(
+                                        url = article.imageUrl,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .padding(6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        if (article.audioUrl != null) {
+                                            AudioBadge(small = true)
+                                        }
+                                        if (article.videoUrl != null) {
+                                            VideoBadge(small = true)
+                                        }
+                                    }
+
+                                    if (timeLabel.isNotBlank()) {
+                                        Text(
+                                            text = timeLabel,
+                                            color = Color.White,
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(6.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color(0xAA000000))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = article.category.ifBlank { feed.name },
+                                    color = newsAccent,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = article.title,
                                     color = KidTheme.TextDark,
                                     fontSize = 12.5.sp,
                                     lineHeight = 17.sp,
@@ -2782,16 +3449,49 @@ fun MainComposeScreen(navController: NavController? = null) {
     var showRewardDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
+
+    var currentDayOfWeek by remember {
+        mutableIntStateOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))
+    }
+    val dailyHeaderTheme = remember(currentDayOfWeek) {
+        dailyHeaderThemeForDay(currentDayOfWeek)
+    }
+    val view = LocalView.current
+    if (!isPreview) {
+        DisposableEffect(dailyHeaderTheme.statusBarColor, view) {
+            val window = (context as? Activity)?.window
+            @Suppress("DEPRECATION")
+            val previousColor = window?.statusBarColor
+            if (window != null) {
+                @Suppress("DEPRECATION")
+                window.statusBarColor = dailyHeaderTheme.statusBarColor.toArgb()
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            }
+            onDispose {
+                if (window != null && previousColor != null) {
+                    @Suppress("DEPRECATION")
+                    window.statusBarColor = previousColor
+                }
+            }
+        }
+    }
     
     val scope = rememberCoroutineScope()
     val supabaseAuthManager = remember { SupabaseAuthManager.getInstance(context) }
     val dataManager = remember { SupabaseDataManager.getInstance(context) }
     val firebaseAuth = remember { FirebaseAuth.getInstance() }
-    val userId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
+    var userId by remember {
+        mutableStateOf(
+            supabaseAuthManager.getStoredUser()?.id
+                ?: firebaseAuth.currentUser?.uid
+                ?: supabaseAuthManager.getGuestUserId()
+        )
+    }
 
     var starCount by remember { mutableIntStateOf(dataManager.getUserTotalStars()) }
     var currentLevel by remember { mutableIntStateOf(dataManager.getUserCurrentLevel()) }
-    var userDisplayName by remember { mutableStateOf(dataManager.getLocalDisplayName() ?: "คนเก่ง") }
+    var streakDays by remember { mutableIntStateOf(dataManager.getUserStreakDays()) }
+    var userDisplayName by remember { mutableStateOf(dataManager.getLocalDisplayName() ?: "น้องคนเก่ง") }
     var isSubscriptionEnabled by remember {
         mutableStateOf(dataManager.getCachedAppSettings()?.isSubscriptionEnabled ?: false)
     }
@@ -2806,24 +3506,31 @@ fun MainComposeScreen(navController: NavController? = null) {
 
     // Sync live stars and level from local persistent cache & Supabase
     fun loadSupabaseStars() {
-        val currentUserId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
+        val currentUserId = supabaseAuthManager.getStoredUser()?.id
+            ?: firebaseAuth.currentUser?.uid
+            ?: supabaseAuthManager.getGuestUserId()
+        userId = currentUserId
         val localStars = dataManager.getUserTotalStars()
         val localLvl = dataManager.getUserCurrentLevel()
-        if (localStars > starCount) {
-            starCount = localStars
-            currentLevel = localLvl
-        } else if (starCount > localStars) {
-            dataManager.saveUserProgress(starCount, currentLevel)
-        }
+        starCount = localStars
+        currentLevel = localLvl
+        streakDays = dataManager.getUserStreakDays()
+        userDisplayName = dataManager.getLocalDisplayName() ?: "น้องคนเก่ง"
 
         if (currentUserId.isNotEmpty()) {
             scope.launch {
                 dataManager.fetchUserProfile(currentUserId).onSuccess { prof ->
-                    starCount = prof.totalStars
-                    currentLevel = prof.currentLevel
-                    val name = prof.displayName
-                    if (!name.isNullOrBlank()) {
-                        userDisplayName = name
+                    val latestUserId = supabaseAuthManager.getStoredUser()?.id
+                        ?: firebaseAuth.currentUser?.uid
+                        ?: supabaseAuthManager.getGuestUserId()
+                    if (latestUserId == currentUserId) {
+                        starCount = prof.totalStars
+                        currentLevel = prof.currentLevel
+                        streakDays = prof.streakDays
+                        val name = prof.displayName
+                        if (!name.isNullOrBlank()) {
+                            userDisplayName = name
+                        }
                     }
                 }
             }
@@ -2834,6 +3541,7 @@ fun MainComposeScreen(navController: NavController? = null) {
     DisposableEffect(homeLifecycleOwner, userId) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
+                currentDayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
                 loadSupabaseStars()
                 syncAppSettings()
                 newsViewModel?.refreshIfStale()
@@ -2975,8 +3683,9 @@ fun MainComposeScreen(navController: NavController? = null) {
                             levelTitle = levelTitle,
                             levelProgress = levelProgress,
                             starsRemaining = starsNeeded,
-                            streakDays = dataManager.getUserStreakDays(),
+                            streakDays = streakDays,
                             isSubscriptionEnabled = isSubscriptionEnabled,
+                            headerTheme = dailyHeaderTheme,
                             onMenuClick = {
                                 (context as? com.pongploydev.kokaiabckids.activity.MainActivity)?.openDrawer()
                             },
@@ -3279,8 +3988,12 @@ fun MainComposeScreen(navController: NavController? = null) {
                                             emptyList()
                                         }
                                         feedVideosMap = feedVideosMap + (feed.id to loaded)
-                                        isLoadingVideoFeed = false
+                                        if (selectedVideoChipId == chipId) {
+                                            isLoadingVideoFeed = false
+                                        }
                                     }
+                                } else {
+                                    isLoadingVideoFeed = false
                                 }
                             },
                             onViewAllClick = {
@@ -3289,6 +4002,26 @@ fun MainComposeScreen(navController: NavController? = null) {
                             onVideoClick = { video ->
                                 navigateWithAd {
                                     openHomeVideo(context, video)
+                                }
+                            }
+                        )
+                    }
+
+                    item { Spacer(modifier = Modifier.height(18.dp)) }
+
+                    item {
+                        HomeNewsExploreSection(
+                            feeds = newsViewModel?.feeds?.toList().orEmpty(),
+                            featuredSlides = featuredNewsSlides,
+                            newsViewModel = newsViewModel,
+                            isLoadingFeatured = featuredNewsLoading,
+                            onRefresh = { newsViewModel?.loadFeaturedPerTab(force = true) },
+                            onViewAllClick = {
+                                (context as? com.pongploydev.kokaiabckids.activity.MainActivity)?.openNewsTab()
+                            },
+                            onArticleClick = { article ->
+                                navigateWithAd {
+                                    context.startActivity(NewsDetailActivity.createIntent(context, article))
                                 }
                             }
                         )
