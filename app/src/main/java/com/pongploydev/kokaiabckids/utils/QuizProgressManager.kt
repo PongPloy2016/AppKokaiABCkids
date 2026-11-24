@@ -10,6 +10,7 @@ object QuizProgressManager {
 
     const val TOTAL_SEQUENTIAL_LESSONS = 18
     const val TOPIC_MIXED_CHALLENGE = 99
+    const val TOPIC_SPEED_BLITZ = 301
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -66,12 +67,12 @@ object QuizProgressManager {
     /**
      * Returns whether a specific topicId (1-based) is unlocked.
      * Rules:
-     * - Mixed Challenge (99) is always unlocked.
+     * - Mixed Challenge (99) and all extra mode topics (>= 99) are always unlocked.
      * - Topic 1 and 2 are always unlocked by default.
      * - Topic N (N >= 3) is unlocked if Topic (N-1) is passed OR if stored maxUnlockedLesson >= N.
      */
     fun isTopicUnlocked(context: Context, topicId: Int): Boolean {
-        if (topicId == TOPIC_MIXED_CHALLENGE) return true
+        if (topicId >= TOPIC_MIXED_CHALLENGE) return true
         if (topicId <= 2) return true
         if (topicId <= getMaxUnlockedLesson(context)) return true
         return isTopicPassed(context, topicId - 1)

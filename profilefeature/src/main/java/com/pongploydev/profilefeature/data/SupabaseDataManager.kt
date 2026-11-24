@@ -168,6 +168,33 @@ class SupabaseDataManager private constructor(context: Context) {
         return Pair(newStars, newLevel)
     }
 
+    /**
+     * หักดาวจริงจากยอดสะสม (เช่น ใช้ตัวช่วยในแบบทดสอบ) โดยไม่ลดเลเวลของผู้เล่น
+     * คืนค่า Pair(สำเร็จหรือไม่, ยอดดาวคงเหลือ)
+     */
+    suspend fun spendStars(userId: String, starsToSpend: Int): Pair<Boolean, Int> {
+        val currentLocalStars = getUserTotalStars()
+        val currentLocalLevel = getUserCurrentLevel()
+        if (starsToSpend <= 0) return Pair(true, currentLocalStars)
+        if (currentLocalStars < starsToSpend) return Pair(false, currentLocalStars)
+
+        val newStars = (currentLocalStars - starsToSpend).coerceAtLeast(0)
+        saveUserProgress(stars = newStars, level = currentLocalLevel)
+
+        if (userId.isNotBlank()) {
+            try {
+                val validId = ensureValidUuid(userId)
+                updateUserProfile(
+                    validId,
+                    UserProfileUpdate(totalStars = newStars, currentLevel = currentLocalLevel)
+                )
+            } catch (e: Exception) {
+                Log.w("SupabaseDataManager", "Background spendStars cloud sync: ${e.message}")
+            }
+        }
+        return Pair(true, newStars)
+    }
+
     private val dataApiService: SupabaseDataApiService by lazy {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY

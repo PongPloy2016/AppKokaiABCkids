@@ -542,6 +542,45 @@ object ThaiLearningDictionary {
         "truck" to "รถบรรทุก"
     )
 
+    private val reverseEnglishMap: Map<String, String> by lazy {
+        val map = mutableMapOf<String, String>()
+        thaiMap.forEach { (eng, thai) ->
+            // Prefer standalone English words over "a for apple"
+            if (!eng.contains(" for ")) {
+                val titleCase = eng.split(" ").joinToString(" ") { word ->
+                    word.replaceFirstChar { ch -> if (ch.isLowerCase()) ch.titlecase() else ch.toString() }
+                }
+                map.putIfAbsent(thai.trim(), titleCase)
+            }
+        }
+        // Extra aliases used in SportData / VehicleData / Numbers
+        map["เซิร์ฟ"] = "Surfing"
+        map["สเก็ตบอร์ด"] = "Skateboarding"
+        map["เรือเดินสมุทร"] = "Ship"
+        map["ศูนย์"] = "Zero"
+        map["หนึ่ง"] = "One"
+        map["สอง"] = "Two"
+        map["สาม"] = "Three"
+        map["สี่"] = "Four"
+        map["ห้า"] = "Five"
+        map["หก"] = "Six"
+        map["เจ็ด"] = "Seven"
+        map["แปด"] = "Eight"
+        map["เก้า"] = "Nine"
+        map["สิบ"] = "Ten"
+        map
+    }
+
+    private val digitToThai = mapOf(
+        "0" to "ศูนย์", "1" to "หนึ่ง", "2" to "สอง", "3" to "สาม", "4" to "สี่",
+        "5" to "ห้า", "6" to "หก", "7" to "เจ็ด", "8" to "แปด", "9" to "เก้า"
+    )
+
+    private val digitToEnglish = mapOf(
+        "0" to "Zero", "1" to "One", "2" to "Two", "3" to "Three", "4" to "Four",
+        "5" to "Five", "6" to "Six", "7" to "Seven", "8" to "Eight", "9" to "Nine"
+    )
+
     fun toThai(showTitle: String?, speakTitle: String? = null): String {
         val rawShow = showTitle?.trim().orEmpty()
         val rawSpeak = speakTitle?.trim().orEmpty()
@@ -549,6 +588,8 @@ object ThaiLearningDictionary {
         if (rawShow.any { it in '\u0E01'..'\u0E5B' }) {
             return rawShow
         }
+
+        digitToThai[rawShow]?.let { return it }
 
         val thaiFromSpeak = rawSpeak.filter { it in '\u0E01'..'\u0E5B' || it == ' ' }.trim()
         if (thaiFromSpeak.isNotEmpty()) {
@@ -562,6 +603,16 @@ object ThaiLearningDictionary {
         thaiMap[normalizedSpeak]?.let { return it }
 
         return rawShow.ifEmpty { rawSpeak }
+    }
+
+    fun toEnglish(text: String?): String {
+        val raw = text?.trim().orEmpty()
+        if (raw.isEmpty()) return ""
+        digitToEnglish[raw]?.let { return it }
+        if (!raw.any { it in '\u0E01'..'\u0E5B' }) {
+            return raw
+        }
+        return reverseEnglishMap[raw] ?: raw
     }
 }
 
