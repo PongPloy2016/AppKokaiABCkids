@@ -55,7 +55,7 @@ class SupabaseDataManager private constructor(context: Context) {
     }
 
     fun getUserStreakDays(): Int {
-        return statsPrefs.getInt("streak_days", 5)
+        return statsPrefs.getInt("streak_days", 0)
     }
 
     fun getLocalDisplayName(): String? {
@@ -74,7 +74,7 @@ class SupabaseDataManager private constructor(context: Context) {
     fun saveUserProgress(
         stars: Int,
         level: Int = 1 + (stars / 50),
-        streakDays: Int = 5,
+        streakDays: Int = getUserStreakDays(),
         displayName: String? = null,
         avatarUrl: String? = null
     ) {
@@ -97,6 +97,30 @@ class SupabaseDataManager private constructor(context: Context) {
                 .putInt("user_stars", stars)
                 .putInt("user_level", maxOf(level, 1 + (stars / 50)))
                 .apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * ล้างข้อมูลสถิติ ดาว เลเวล ชื่อ รูปโปรไฟล์ สิทธิ์ VIP และคะแนนเกม/ควิซที่แคชไว้ในเครื่องทั้งหมด
+     * (ใช้เมื่อผู้ใช้กดออกจากระบบเพื่อเริ่มต้นใหม่แบบสะอาด)
+     */
+    fun clearLocalUserData() {
+        statsPrefs.edit().clear().commit()
+        try {
+            appContext.getSharedPreferences("game_hub_scores", Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .commit()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        try {
+            appContext.getSharedPreferences("quiz_progress_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .commit()
         } catch (e: Exception) {
             e.printStackTrace()
         }

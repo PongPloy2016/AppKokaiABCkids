@@ -1171,9 +1171,7 @@ class MainActivity : AppCompatActivity(), DefaultLifecycleObserver, NavigationVi
                 nav.selectedItemId = R.id.navigation_home
             }
             R.id.nav_learn_write -> {
-                startActivity(Intent(this, com.pongploydev.kokaiabckids.activity.thailetters.MenuThaiLettersActivity::class.java).apply {
-                    putExtra(com.pongploydev.kokaiabckids.activity.thailetters.MenuThaiLettersActivity.EXTRA_MODE, "THAI")
-                })
+                startActivity(Intent(this, com.pongploydev.kokaiabckids.activity.learning.TracingMenuActivity::class.java))
             }
             R.id.nav_learn_english -> {
                 startActivity(Intent(this, com.pongploydev.kokaiabckids.activity.thailetters.MenuThaiLettersActivity::class.java).apply {

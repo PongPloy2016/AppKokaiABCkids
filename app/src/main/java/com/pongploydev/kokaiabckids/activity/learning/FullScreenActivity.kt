@@ -20,6 +20,7 @@ import com.pongploydev.kokaiabckids.activity.thailetters.ThaiLettersActivity
 import com.pongploydev.kokaiabckids.adapter.LearningPagerAdapter
 import com.pongploydev.kokaiabckids.confixdata.*
 import com.pongploydev.kokaiabckids.model.LearningDataModel
+import com.pongploydev.kokaiabckids.model.ThaiAlphabetRepository
 import com.pongploydev.kokaiabckids.utils.AppControl
 import com.pongploydev.kokaiabckids.utils.CategoryDataHelper
 import com.pongploydev.kokaiabckids.utils.Constant
@@ -279,6 +280,64 @@ class FullScreenActivity : AppCompatActivity() {
                     englishName = engNum,
                     ttsSpeakText = "$thaiNum $engNum",
                     traceSymbol = numSymbol
+                )
+            }
+
+            // Category 20: พยัญชนะไทย ก-ฮ
+            20 -> {
+                val item = ThaiAlphabetRepository.getThaiAlphabetList().getOrNull(index)
+                val letter = item?.letter ?: showTitle.firstOrNull()?.toString() ?: "ก"
+                val name = item?.name ?: showTitle
+                val rhyme = item?.rhyme ?: speakTitle
+                LearningDisplayInfo(
+                    symbol = letter,
+                    thaiName = name,
+                    englishName = rhyme,
+                    ttsSpeakText = "$name $rhyme",
+                    traceSymbol = letter
+                )
+            }
+
+            // Category 21: สระภาษาไทย
+            21 -> {
+                val item = ThaiAlphabetRepository.getThaiVowelList().getOrNull(index)
+                val sym = item?.letter ?: showTitle
+                val name = item?.name ?: showTitle
+                val rhyme = item?.rhyme ?: speakTitle
+                LearningDisplayInfo(
+                    symbol = sym,
+                    thaiName = name,
+                    englishName = rhyme,
+                    ttsSpeakText = rhyme.ifBlank { name },
+                    traceSymbol = sym
+                )
+            }
+
+            // Category 22: วันทั้ง 7 (7 วัน 7 สี)
+            22 -> {
+                val emojis = arrayOf("❤️", "💛", "🩷", "💚", "🧡", "💙", "💜")
+                val dayEmoji = emojis.getOrElse(index) { "📅" }
+                LearningDisplayInfo(
+                    symbol = dayEmoji,
+                    thaiName = showTitle,
+                    englishName = speakTitle,
+                    ttsSpeakText = speakTitle.ifBlank { showTitle },
+                    traceSymbol = (index + 1).toString()
+                )
+            }
+
+            // Category 23: ฝึกสะกดคำ
+            23 -> {
+                val item = ThaiAlphabetRepository.getSpellingList().getOrNull(index)
+                val word = item?.letter ?: showTitle
+                val formula = item?.name ?: showTitle
+                val rhyme = item?.rhyme ?: speakTitle
+                LearningDisplayInfo(
+                    symbol = word,
+                    thaiName = formula,
+                    englishName = rhyme,
+                    ttsSpeakText = "$word $rhyme",
+                    traceSymbol = word
                 )
             }
 

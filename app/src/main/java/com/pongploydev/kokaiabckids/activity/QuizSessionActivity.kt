@@ -322,6 +322,54 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
                         }
                     }
+                    13 -> { // Shapes
+                        LearningCategory.SHAPES.data.map { item: LearningDataModel ->
+                            QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
+                        }
+                    }
+                    14 -> { // Foods
+                        LearningCategory.FOODS.data.map { item: LearningDataModel ->
+                            QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
+                        }
+                    }
+                    15 -> { // Body Parts
+                        LearningCategory.BODY_PARTS.data.map { item: LearningDataModel ->
+                            QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
+                        }
+                    }
+                    16 -> { // Flowers
+                        LearningCategory.FLOWERS.data.map { item: LearningDataModel ->
+                            QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
+                        }
+                    }
+                    17 -> { // Birds
+                        LearningCategory.BIRDS.data.map { item: LearningDataModel ->
+                            QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
+                        }
+                    }
+                    18 -> { // Professions
+                        LearningCategory.PROFESSIONS.data.map { item: LearningDataModel ->
+                            QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image)
+                        }
+                    }
+                    99 -> { // Mixed Challenge
+                        val mixed = mutableListOf<QuizItem>()
+                        val categoriesToMix = listOf(
+                            LearningCategory.ANIMALS.data,
+                            LearningCategory.FRUITS.data,
+                            LearningCategory.COLORS.data,
+                            LearningCategory.VEHICLES.data,
+                            LearningCategory.SHAPES.data,
+                            LearningCategory.FOODS.data,
+                            LearningCategory.SPORTS.data
+                        )
+                        categoriesToMix.forEach { catData ->
+                            catData.shuffled().take(5).forEach { item ->
+                                mixed.add(QuizItem(item.showTitle, item.showTitle, item.showTitle, item.image))
+                            }
+                        }
+                        mixed.shuffled()
+                    }
                     else -> listOf()
                 }
     }
@@ -330,13 +378,13 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             val result =
                     tts?.setLanguage(
-                            if (topicId in listOf(2, 4, 6, 7, 8, 9, 10, 11, 12)) Locale.US
+                            if (topicId in listOf(2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 99)) Locale.US
                             else Locale("th")
                     )
             if (result == TextToSpeech.LANG_MISSING_DATA ||
                             result == TextToSpeech.LANG_NOT_SUPPORTED
             ) {
-                // Toast.makeText(this, "TTS language not supported", Toast.LENGTH_SHORT).show()
+                // Ignore unsupported TTS gracefully
             } else {
                 speakCurrentItem()
             }
@@ -345,11 +393,10 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun speakCurrentItem() {
         if (::currentItem.isInitialized && tts?.isSpeaking == false) {
-            if (topicId == 1) { // Thai
-                tts?.speak(currentItem.thaiName, TextToSpeech.QUEUE_FLUSH, null, null)
-            } else {
-                tts?.speak(currentItem.displayValue, TextToSpeech.QUEUE_FLUSH, null, null)
-            }
+            val textToSpeak = if (topicId == 1) currentItem.thaiName else currentItem.displayValue
+            val hasThai = textToSpeak.any { it in '\u0E00'..'\u0E7F' }
+            tts?.language = if (hasThai) Locale("th") else Locale.US
+            tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, null)
         }
     }
 
@@ -420,6 +467,13 @@ class QuizSessionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     10 -> "❓ นี่คือผักอะไร?"
                     11 -> "❓ นี่คือกีฬาอะไร?"
                     12 -> "❓ นี่คือยานพาหนะอะไร?"
+                    13 -> "❓ นี่คือรูปทรงอะไร?"
+                    14 -> "❓ นี่คืออาหารอะไร?"
+                    15 -> "❓ นี่คืออวัยวะส่วนใด?"
+                    16 -> "❓ นี่คือดอกไม้อะไร?"
+                    17 -> "❓ นี่คือนกอะไร?"
+                    18 -> "❓ นี่คืออาชีพอะไร?"
+                    99 -> "❓ ท้าทายรวม: รูปนี้คืออะไร?"
                     else -> "❓ ทายสิคืออะไร?"
                 }
 

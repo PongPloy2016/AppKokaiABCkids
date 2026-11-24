@@ -41,7 +41,7 @@ class QuizHistoryActivity : ComponentActivity() {
             val dataManager = remember { SupabaseDataManager.getInstance(this@QuizHistoryActivity) }
 
             var quizResults by remember { mutableStateOf<List<UserQuizResult>>(emptyList()) }
-            val userId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
+            val userId = supabaseAuthManager.getStoredUser()?.id ?: firebaseAuth.currentUser?.uid ?: supabaseAuthManager.getGuestUserId()
 
             LaunchedEffect(userId) {
                 if (userId.isNotBlank()) {

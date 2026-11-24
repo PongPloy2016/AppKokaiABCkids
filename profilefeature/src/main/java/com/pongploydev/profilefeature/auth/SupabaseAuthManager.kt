@@ -2,7 +2,6 @@ package com.pongploydev.profilefeature.auth
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.provider.Settings
 import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +25,7 @@ class SupabaseAuthManager private constructor(context: Context) {
         private const val KEY_USER = "key_user"
         private const val KEY_ACCESS_TOKEN = "key_access_token"
         private const val KEY_GUEST_DISPLAY_NAME = "key_guest_display_name"
+        private const val KEY_GUEST_USER_ID = "key_guest_user_id"
 
         @Volatile
         private var instance: SupabaseAuthManager? = null
@@ -65,28 +65,20 @@ class SupabaseAuthManager private constructor(context: Context) {
             return existing
         }
         val datePart = SimpleDateFormat("ddyyyyMM", Locale.US).format(Date())
-        val rawDeviceId = try {
-            Settings.Secure.getString(appContext.contentResolver, Settings.Secure.ANDROID_ID)
-        } catch (e: Exception) {
-            null
-        }
-        val cleanDevice = rawDeviceId
-            ?.filter { it.isLetterOrDigit() }
-            ?.takeLast(6)
-            ?.ifBlank { null }
-            ?: (100000..999999).random().toString()
-        val generated = "guest${datePart}${cleanDevice}"
+        val randomSuffix = (100000..999999).random().toString()
+        val generated = "guest${datePart}${randomSuffix}"
         prefs.edit().putString(KEY_GUEST_DISPLAY_NAME, generated).apply()
         return generated
     }
 
     fun getGuestUserId(): String {
-        val rawDeviceId = try {
-            Settings.Secure.getString(appContext.contentResolver, Settings.Secure.ANDROID_ID)
-        } catch (e: Exception) {
-            null
-        }?.takeIf { it.isNotBlank() } ?: getOrCreateGuestDisplayName()
-        return UUID.nameUUIDFromBytes("sp_guest_$rawDeviceId".toByteArray()).toString()
+        val existing = prefs.getString(KEY_GUEST_USER_ID, null)
+        if (!existing.isNullOrBlank()) {
+            return existing
+        }
+        val generated = UUID.randomUUID().toString()
+        prefs.edit().putString(KEY_GUEST_USER_ID, generated).apply()
+        return generated
     }
 
     fun getStoredUser(): SupabaseUser? {
@@ -304,11 +296,16 @@ class SupabaseAuthManager private constructor(context: Context) {
         }
     }
 
-    fun signOut() {
-        prefs.edit()
-            .remove(KEY_USER)
-            .remove(KEY_ACCESS_TOKEN)
-            .apply()
+    fun signOut(resetGuestSession: Boolean = false) {
+        prefs.edit().apply {
+            remove(KEY_USER)
+            remove(KEY_ACCESS_TOKEN)
+            if (resetGuestSession) {
+                remove(KEY_GUEST_DISPLAY_NAME)
+                remove(KEY_GUEST_USER_ID)
+            }
+            commit()
+        }
     }
 }
 

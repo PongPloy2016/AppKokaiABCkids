@@ -3,6 +3,7 @@ package com.pongploydev.kokaiabckids.confixdata
 
 import com.pongploydev.kokaiabckids.R
 import com.pongploydev.kokaiabckids.model.LearningDataModel
+import com.pongploydev.kokaiabckids.model.ThaiAlphabetRepository
 
 /**
  * Data Manager สำหรับจัดการข้อมูลการเรียนรู้
@@ -34,6 +35,10 @@ object DataManager {
             17 -> getSchoolData()
             18 -> getSportData()
             19 -> getVehicleData()
+            20 -> getThaiAlphabetData()
+            21 -> getThaiVowelData()
+            22 -> getDaysOfWeekData()
+            23 -> getThaiSpellingData()
             else -> getDefaultAlphabetData()
         }
     }
@@ -678,6 +683,48 @@ object DataManager {
             LearningDataModel(R.drawable.train, "Train", "Train"),
             LearningDataModel(R.drawable.truck, "Truck", "Truck")
         )
+    }
+
+    /**
+     * ข้อมูลพยัญชนะไทย ก-ฮ (44 ตัว)
+     */
+    private fun getThaiAlphabetData(): List<LearningDataModel> {
+        return ThaiAlphabetRepository.getThaiAlphabetList().map { item ->
+            LearningDataModel(item.imageRes, item.rhyme, item.name)
+        }
+    }
+
+    /**
+     * ข้อมูลสระและวรรณยุกต์ภาษาไทย
+     */
+    private fun getThaiVowelData(): List<LearningDataModel> {
+        return ThaiAlphabetRepository.getThaiVowelList().map { item ->
+            LearningDataModel(item.imageRes, item.rhyme, item.name)
+        }
+    }
+
+    /**
+     * ข้อมูลวันทั้ง 7 และสีประจำวัน (อาทิตย์ - เสาร์)
+     */
+    private fun getDaysOfWeekData(): List<LearningDataModel> {
+        return listOf(
+            LearningDataModel(R.drawable.red, "วันอาทิตย์ สีแดง (Sunday)", "วันอาทิตย์"),
+            LearningDataModel(R.drawable.yellow, "วันจันทร์ สีเหลือง (Monday)", "วันจันทร์"),
+            LearningDataModel(R.drawable.pink, "วันอังคาร สีชมพู (Tuesday)", "วันอังคาร"),
+            LearningDataModel(R.drawable.green, "วันพุธ สีเขียว (Wednesday)", "วันพุธ"),
+            LearningDataModel(R.drawable.orange, "วันพฤหัสบดี สีส้ม (Thursday)", "วันพฤหัสบดี"),
+            LearningDataModel(R.drawable.blue, "วันศุกร์ สีฟ้า (Friday)", "วันศุกร์"),
+            LearningDataModel(R.drawable.violet, "วันเสาร์ สีม่วง (Saturday)", "วันเสาร์")
+        )
+    }
+
+    /**
+     * ข้อมูลฝึกสะกดคำพื้นฐาน
+     */
+    private fun getThaiSpellingData(): List<LearningDataModel> {
+        return ThaiAlphabetRepository.getSpellingList().map { item ->
+            LearningDataModel(item.imageRes, item.rhyme, item.letter)
+        }
     }
 
     /**

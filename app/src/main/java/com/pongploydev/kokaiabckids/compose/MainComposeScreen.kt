@@ -3731,7 +3731,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                     item {
                         QuickActionRow(onActionClick = { id ->
                             val actionName = when (id) {
-                                1 -> "ฝึกเขียน ก-ฮ"
+                                1 -> "ฝึกเขียน"
                                 2 -> "ฝึกอ่าน"
                                 3 -> "ระบายสี"
                                 4 -> "ทดสอบวัดความรู้"
@@ -3748,9 +3748,7 @@ fun MainComposeScreen(navController: NavController? = null) {
                             navigateWithAd {
                                 when (id) {
                                     1 -> context.startActivity(
-                                        Intent(context, MenuThaiLettersActivity::class.java).apply {
-                                            putExtra(MenuThaiLettersActivity.EXTRA_MODE, "THAI")
-                                        }
+                                        Intent(context, com.pongploydev.kokaiabckids.activity.learning.TracingMenuActivity::class.java)
                                     )
                                     2 -> context.startActivity(
                                         Intent(context, LeaningActvity::class.java)

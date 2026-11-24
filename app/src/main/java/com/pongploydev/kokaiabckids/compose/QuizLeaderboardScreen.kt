@@ -174,7 +174,7 @@ fun QuizLeaderboardScreen(onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         val dataManager = SupabaseDataManager.getInstance(context)
         val authManager = SupabaseAuthManager.getInstance(context)
-        val currentUserId = authManager.getStoredUser()?.id ?: "guest_user"
+        val currentUserId = authManager.getStoredUser()?.id ?: authManager.getGuestUserId()
 
         try {
             // 1. Fetch Supabase Profiles & Quiz Results

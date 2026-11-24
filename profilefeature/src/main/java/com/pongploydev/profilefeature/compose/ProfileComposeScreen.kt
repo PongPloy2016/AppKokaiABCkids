@@ -14,6 +14,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -47,42 +49,49 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.rounded.CloudUpload
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.MailOutline
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PlayCircleOutline
+import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.Quiz
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.SportsEsports
+import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -108,6 +117,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -121,22 +131,74 @@ import com.pongploydev.profilefeature.data.UserAchievement
 import com.pongploydev.profilefeature.data.UserProfile
 import com.pongploydev.profilefeature.data.UserQuizResult
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 
 object KidTheme {
     val Primary = Color(0xFF6C5CE7)
-    val SupabasePrimary = Color(0xFF3ECF8E)
-    val Secondary = Color(0xFFFF7675)
     val Accent = Color(0xFFFFD166)
-    val Success = Color(0xFF00B894)
-    val TextDark = Color(0xFF2D3436)
-    val TextMuted = Color(0xFF636E72)
-    val DualHeaderGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF6C5CE7), Color(0xFF3ECF8E))
-    )
+    val TextDark = Color(0xFF1F2430)
+    val TextMuted = Color(0xFF6B7280)
+    val Background = Color(0xFFF6F7FB)
+    val CardBorder = Color(0xFFE8ECF2)
+    val DividerColor = Color(0xFFF0F2F6)
     val GoldGradient = Brush.horizontalGradient(
-        listOf(Color(0xFFFFD166), Color(0xFFFF9F43))
+        listOf(Color(0xFFFFCA28), Color(0xFFFF9800))
     )
+}
+
+private data class ProfileDailyTheme(
+    val gradientColors: List<Color>,
+    val accentColor: Color
+) {
+    val headerGradient: Brush
+        get() = Brush.linearGradient(colors = gradientColors)
+}
+
+private fun profileDailyHeaderThemeForDay(
+    dayOfWeek: Int = Calendar.getInstance()[Calendar.DAY_OF_WEEK]
+): ProfileDailyTheme = when (dayOfWeek) {
+    Calendar.SUNDAY -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFFE53E51), Color(0xFFFF6B78)),
+        accentColor = Color(0xFFE53E51)
+    )
+    Calendar.MONDAY -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFFD98A00), Color(0xFFF2AA1F)),
+        accentColor = Color(0xFFD98A00)
+    )
+    Calendar.TUESDAY -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFFE0428B), Color(0xFFFF6BA9)),
+        accentColor = Color(0xFFE0428B)
+    )
+    Calendar.WEDNESDAY -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFF159D6B), Color(0xFF2CC88B)),
+        accentColor = Color(0xFF159D6B)
+    )
+    Calendar.THURSDAY -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFFEB6B1E), Color(0xFFFF8C3B)),
+        accentColor = Color(0xFFEB6B1E)
+    )
+    Calendar.FRIDAY -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFF1B86E6), Color(0xFF42A5FF)),
+        accentColor = Color(0xFF1B86E6)
+    )
+    else -> ProfileDailyTheme(
+        gradientColors = listOf(Color(0xFF6A4EFF), Color(0xFF866BFF)),
+        accentColor = Color(0xFF6A4EFF)
+    )
+}
+
+private fun formatProfileDisplayName(rawName: String?): String {
+    val trimmed = rawName?.trim().orEmpty()
+    if (trimmed.isEmpty() ||
+        trimmed.equals("guest", ignoreCase = true) ||
+        trimmed.startsWith("guest", ignoreCase = true) ||
+        trimmed.startsWith("ผู้ใช้ชั่วคราว") ||
+        (trimmed.length > 14 && trimmed.any { it.isDigit() } && !trimmed.contains(" "))
+    ) {
+        return "น้องคนเก่ง"
+    }
+    return trimmed
 }
 
 // Helper to navigate to tabs in MainActivity
@@ -233,7 +295,7 @@ fun ProfileComposeScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F9FC))
+            .background(KidTheme.Background)
     ) {
         if (!showAuthScreen && (firebaseUser != null || supabaseUser != null)) {
             ProfileDetailsViewDual(
@@ -246,13 +308,15 @@ fun ProfileComposeScreen() {
                 },
                 onSignOut = {
                     firebaseAuth.signOut()
-                    supabaseAuthManager.signOut()
+                    supabaseAuthManager.signOut(resetGuestSession = true)
+                    SupabaseDataManager.getInstance(context).clearLocalUserData()
                     try {
                         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
                         GoogleSignIn.getClient(context, gso).signOut()
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
+                    firebaseUser = null
                     supabaseUser = null
                     showAuthScreen = true
                 }
@@ -459,24 +523,18 @@ fun AuthLoginViewDual(
         }
     }
 
+    val dailyTheme = remember { profileDailyHeaderThemeForDay() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF7F4FF),
-                        Color(0xFFFFFBF2),
-                        Color(0xFFF2FBF6)
-                    )
-                )
-            )
+            .background(KidTheme.Background)
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp),
-            contentPadding = PaddingValues(bottom = 96.dp),
+                .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 112.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -485,20 +543,21 @@ fun AuthLoginViewDual(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
+                            .padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.Start
                     ) {
                         TextButton(onClick = onDismiss) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "ย้อนกลับ",
-                                tint = KidTheme.Primary
+                                tint = KidTheme.TextDark,
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "กลับไปหน้าหลัก",
-                                color = KidTheme.Primary,
-                                fontWeight = FontWeight.Bold,
+                                text = "ย้อนกลับ",
+                                color = KidTheme.TextDark,
+                                fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             )
                         }
@@ -507,51 +566,26 @@ fun AuthLoginViewDual(
             }
 
             item {
-                // Cute Kid Character Header Badge
-                Box(
-                    modifier = Modifier
-                        .size(96.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFFFF9F43).copy(alpha = 0.25f),
-                                    KidTheme.Primary.copy(alpha = 0.25f),
-                                    Color(0xFF00B894).copy(alpha = 0.25f)
-                                )
-                            )
-                        )
-                        .padding(6.dp),
-                    contentAlignment = Alignment.Center
+                // Clean app account icon
+                Surface(
+                    modifier = Modifier.size(64.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = dailyTheme.accentColor.copy(alpha = 0.12f)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = if (isSignUpMode) {
-                                        listOf(Color(0xFFFF9F43), Color(0xFFFF7675))
-                                    } else {
-                                        listOf(KidTheme.Primary, Color(0xFF818CF8))
-                                    }
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (isSignUpMode) "🎒" else "🎨",
-                            fontSize = 44.sp,
-                            textAlign = TextAlign.Center
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Person,
+                            contentDescription = null,
+                            tint = dailyTheme.accentColor,
+                            modifier = Modifier.size(34.dp)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Friendly Kid-Oriented Headlines
                 Text(
-                    text = if (isSignUpMode) "สมัครเป็นนักเรียนตัวน้อย 🎒✨" else "ยินดีต้อนรับเพื่อนตัวน้อย! 🎈",
+                    text = if (isSignUpMode) "สร้างบัญชีใหม่" else "เข้าสู่ระบบ",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = KidTheme.TextDark,
@@ -559,79 +593,35 @@ fun AuthLoginViewDual(
                 )
 
                 Text(
-                    text = if (isSignUpMode) "สมัครสมาชิกเพื่อสะสมดาวความดี ⭐ และเก็บรูปวาดสวยๆ ไว้อวดทุกคน"
-                           else "เข้าสู่ระบบเพื่อสะสมดาว ⭐ เก็บรูปวาดระบายสี 🎨 และเล่นเกม ก-ฮ แสนสนุก!",
+                    text = if (isSignUpMode) {
+                        "สมัครสมาชิกเพื่อสำรองดาวและประวัติการเรียนไว้บนคลาวด์"
+                    } else {
+                        "เข้าสู่ระบบเพื่อซิงค์ดาว คะแนน และเหรียญรางวัลของคุณ"
+                    },
                     fontSize = 13.sp,
                     color = KidTheme.TextMuted,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                 )
-
-                // Kid-Friendly Mini Feature Pills
-                Row(
-                    modifier = Modifier.padding(bottom = 18.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFFFF8E1),
-                        border = BorderStroke(1.dp, Color(0xFFFFE082))
-                    ) {
-                        Text(
-                            text = "⭐ สะสมดาว",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFB78103),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFE8F5E9),
-                        border = BorderStroke(1.dp, Color(0xFFA5D6A7))
-                    ) {
-                        Text(
-                            text = "🎨 บันทึกรูปวาด",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2E7D32),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFEDE7F6),
-                        border = BorderStroke(1.dp, Color(0xFFD1C4E9))
-                    ) {
-                        Text(
-                            text = "🏆 ชิงเหรียญรางวัล",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF5E35B1),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFFECEFF5)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    border = BorderStroke(1.dp, KidTheme.CardBorder),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(22.dp),
+                        modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Mode Switcher (Login vs Register)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(46.dp)
-                                .clip(RoundedCornerShape(23.dp))
-                                .background(Color(0xFFF1F4F9))
+                                .height(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFF1F3F7))
                                 .padding(3.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -643,16 +633,16 @@ fun AuthLoginViewDual(
                                         isSignUpMode = false
                                         errorMessage = null
                                     },
-                                shape = RoundedCornerShape(20.dp),
-                                color = if (!isSignUpMode) KidTheme.Primary else Color.Transparent,
-                                shadowElevation = if (!isSignUpMode) 3.dp else 0.dp
+                                shape = RoundedCornerShape(9.dp),
+                                color = if (!isSignUpMode) Color.White else Color.Transparent,
+                                shadowElevation = if (!isSignUpMode) 1.dp else 0.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        text = "เข้าสู่ระบบ 🎒",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = if (!isSignUpMode) Color.White else KidTheme.TextMuted
+                                        text = "เข้าสู่ระบบ",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.5.sp,
+                                        color = if (!isSignUpMode) KidTheme.TextDark else KidTheme.TextMuted
                                     )
                                 }
                             }
@@ -665,125 +655,134 @@ fun AuthLoginViewDual(
                                         isSignUpMode = true
                                         errorMessage = null
                                     },
-                                shape = RoundedCornerShape(20.dp),
-                                color = if (isSignUpMode) Color(0xFFFF7675) else Color.Transparent,
-                                shadowElevation = if (isSignUpMode) 3.dp else 0.dp
+                                shape = RoundedCornerShape(9.dp),
+                                color = if (isSignUpMode) Color.White else Color.Transparent,
+                                shadowElevation = if (isSignUpMode) 1.dp else 0.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        text = "สมัครสมาชิก 🌟",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = if (isSignUpMode) Color.White else KidTheme.TextMuted
+                                        text = "สมัครสมาชิก",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.5.sp,
+                                        color = if (isSignUpMode) KidTheme.TextDark else KidTheme.TextMuted
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         if (isSignUpMode) {
                             OutlinedTextField(
                                 value = displayName,
                                 onValueChange = { displayName = it },
-                                label = { Text("ชื่อเล่นของน้อง 👧👦") },
-                                placeholder = { Text("เช่น น้องพอใจ, น้องต้นกล้า", color = Color(0xFFAAAAAA)) },
-                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFFFF7675)) },
+                                label = { Text("ชื่อเล่น") },
+                                placeholder = { Text("เช่น น้องพอใจ", color = Color(0xFF9CA3AF)) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = KidTheme.TextMuted
+                                    )
+                                },
                                 singleLine = true,
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFFFF7675),
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedLabelColor = Color(0xFFFF7675)
+                                    focusedBorderColor = dailyTheme.accentColor,
+                                    unfocusedBorderColor = Color(0xFFDDE3EC),
+                                    focusedLabelColor = dailyTheme.accentColor
                                 )
                             )
-                            Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                         }
 
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it.trim() },
-                            label = { Text("อีเมล (ของผู้ปกครองหรือน้อง) 📧") },
-                            placeholder = { Text("เช่น parent@gmail.com", color = Color(0xFFAAAAAA)) },
-                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = KidTheme.Primary) },
+                            label = { Text("อีเมล") },
+                            placeholder = { Text("name@example.com", color = Color(0xFF9CA3AF)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Email,
+                                    contentDescription = null,
+                                    tint = KidTheme.TextMuted
+                                )
+                            },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = KidTheme.Primary,
-                                unfocusedBorderColor = Color(0xFFE2E8F0),
-                                focusedLabelColor = KidTheme.Primary
+                                focusedBorderColor = dailyTheme.accentColor,
+                                unfocusedBorderColor = Color(0xFFDDE3EC),
+                                focusedLabelColor = dailyTheme.accentColor
                             )
                         )
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("รหัสผ่านลับ 🔒") },
-                            placeholder = { Text("อย่างน้อย 6 ตัวอักษร", color = Color(0xFFAAAAAA)) },
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = KidTheme.Primary) },
+                            label = { Text("รหัสผ่าน") },
+                            placeholder = { Text("อย่างน้อย 6 ตัวอักษร", color = Color(0xFF9CA3AF)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = KidTheme.TextMuted
+                                )
+                            },
                             trailingIcon = {
                                 IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                                     Icon(
                                         imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                         contentDescription = if (isPasswordVisible) "ซ่อนรหัสผ่าน" else "แสดงรหัสผ่าน",
-                                        tint = if (isPasswordVisible) KidTheme.Primary else Color(0xFF9E9E9E)
+                                        tint = Color(0xFF9CA3AF)
                                     )
                                 }
                             },
                             singleLine = true,
                             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = KidTheme.Primary,
-                                unfocusedBorderColor = Color(0xFFE2E8F0),
-                                focusedLabelColor = KidTheme.Primary
+                                focusedBorderColor = dailyTheme.accentColor,
+                                unfocusedBorderColor = Color(0xFFDDE3EC),
+                                focusedLabelColor = dailyTheme.accentColor
                             )
                         )
 
                         if (errorMessage != null) {
-                            Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                             Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = Color(0xFFFFF0F1),
-                                border = BorderStroke(1.dp, Color(0xFFFFCCD1)),
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFFFFF1F2),
+                                border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "💡",
-                                        fontSize = 16.sp,
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                    Text(
-                                        text = errorMessage!!,
-                                        color = Color(0xFFD32F2F),
-                                        fontSize = 13.sp,
-                                        lineHeight = 18.sp
-                                    )
-                                }
+                                Text(
+                                    text = errorMessage!!,
+                                    color = Color(0xFFC62828),
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 18.sp,
+                                    modifier = Modifier.padding(12.dp)
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
 
                         Button(
                             onClick = {
                                 if (email.isBlank() || password.isBlank()) {
-                                    errorMessage = "อย่าลืมกรอกอีเมลและรหัสผ่านให้ครบถ้วนนะจ๊ะ 😊"
+                                    errorMessage = "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน"
                                     return@Button
                                 }
                                 if (password.length < 6) {
-                                    errorMessage = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรจ้ะ 🔑"
+                                    errorMessage = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
                                     return@Button
                                 }
 
@@ -804,7 +803,7 @@ fun AuthLoginViewDual(
                                         if (supabaseResult.isFailure) {
                                             val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "ลงทะเบียนไม่สำเร็จ"
                                             errorMessage = if (err.contains("already registered", ignoreCase = true) || err.contains("user_already_exists", ignoreCase = true)) {
-                                                "อีเมลนี้เคยลงทะเบียนไว้แล้วจ้ะ ลองกดเข้าสู่ระบบดูนะ 💡"
+                                                "อีเมลนี้ถูกลงทะเบียนไว้แล้ว กรุณาเข้าสู่ระบบ"
                                             } else {
                                                 err
                                             }
@@ -815,7 +814,6 @@ fun AuthLoginViewDual(
                                         val spUser = supabaseResult.getOrThrow()
                                         val dataMgr = SupabaseDataManager.getInstance(context)
 
-                                        // Save profile to Supabase
                                         val currentLocalStars = dataMgr.getUserTotalStars()
                                         val currentLocalLevel = dataMgr.getUserCurrentLevel()
                                         dataMgr.upsertUserProfile(
@@ -828,12 +826,11 @@ fun AuthLoginViewDual(
                                             )
                                         )
 
-                                        // Register user device in Supabase user_devices
                                         val androidId = try {
                                             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
                                         } catch (e: Exception) {
                                             null
-                                        } ?: java.util.UUID.randomUUID().toString()
+                                        } ?: UUID.randomUUID().toString()
 
                                         val appVersion = try {
                                             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
@@ -861,22 +858,20 @@ fun AuthLoginViewDual(
                                                 }
                                                 onSupabaseSuccess(spUser)
                                                 isLoading = false
-                                                Toast.makeText(context, "ยินดีต้อนรับเพื่อนตัวน้อย สมัครสมาชิกสำเร็จแล้วจ้า! 🎒🎉", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, "สมัครสมาชิกเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                                             }
-                                            .addOnFailureListener { e ->
-                                                // Fallback 1: try Firebase sign-in if account already exists
+                                            .addOnFailureListener {
                                                 firebaseAuth.signInWithEmailAndPassword(email, password)
                                                     .addOnSuccessListener {
                                                         onSupabaseSuccess(spUser)
                                                         isLoading = false
-                                                        Toast.makeText(context, "ยินดีต้อนรับเพื่อนตัวน้อย สมัครสมาชิกสำเร็จแล้วจ้า! 🎒🎉", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, "สมัครสมาชิกเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                                                     }
                                                     .addOnFailureListener {
-                                                        // Fallback 2: Keep Firebase Active via anonymous sign in
                                                         firebaseAuth.signInAnonymously().addOnCompleteListener {
                                                             onSupabaseSuccess(spUser)
                                                             isLoading = false
-                                                            Toast.makeText(context, "ยินดีต้อนรับเพื่อนตัวน้อย สมัครสมาชิกสำเร็จแล้วจ้า! 🎒🎉", Toast.LENGTH_SHORT).show()
+                                                            Toast.makeText(context, "สมัครสมาชิกเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                                                         }
                                                     }
                                             }
@@ -887,9 +882,9 @@ fun AuthLoginViewDual(
                                         // 1. Supabase Sign In
                                         val supabaseResult = supabaseAuthManager.signIn(email, password)
                                         if (supabaseResult.isFailure) {
-                                            val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลหรือรหัสผ่าน"
+                                            val err = supabaseResult.exceptionOrNull()?.localizedMessage ?: "เข้าสู่ระบบไม่สำเร็จ"
                                             errorMessage = if (err.contains("invalid", ignoreCase = true) || err.contains("credentials", ignoreCase = true)) {
-                                                "อีเมลหรือรหัสผ่านไม่ถูกต้องจ้ะ ลองตรวจสอบดูอีกครั้งนะ 🎈"
+                                                "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
                                             } else {
                                                 err
                                             }
@@ -900,12 +895,11 @@ fun AuthLoginViewDual(
                                         val spUser = supabaseResult.getOrThrow()
                                         val dataMgr = SupabaseDataManager.getInstance(context)
 
-                                        // Register device upon login
                                         val androidId = try {
                                             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
                                         } catch (e: Exception) {
                                             null
-                                        } ?: java.util.UUID.randomUUID().toString()
+                                        } ?: UUID.randomUUID().toString()
 
                                         val appVersion = try {
                                             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
@@ -926,13 +920,13 @@ fun AuthLoginViewDual(
                                             .addOnSuccessListener {
                                                 onSupabaseSuccess(spUser)
                                                 isLoading = false
-                                                Toast.makeText(context, "ยินดีต้อนรับกลับมาจ้า เข้าสู่ระบบสำเร็จแล้ว! 🚀⭐", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, "เข้าสู่ระบบเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                                             }
-                                            .addOnFailureListener { e ->
+                                            .addOnFailureListener {
                                                 firebaseAuth.signInAnonymously().addOnCompleteListener {
                                                     onSupabaseSuccess(spUser)
                                                     isLoading = false
-                                                    Toast.makeText(context, "ยินดีต้อนรับกลับมาจ้า เข้าสู่ระบบสำเร็จแล้ว! 🚀⭐", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "เข้าสู่ระบบเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
                                     }
@@ -940,21 +934,18 @@ fun AuthLoginViewDual(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(26.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSignUpMode) Color(0xFFFF7675) else KidTheme.Primary
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp),
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = dailyTheme.accentColor),
                             enabled = !isLoading
                         ) {
                             if (isLoading) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
                                 Text(
-                                    text = if (isSignUpMode) "เริ่มการผจญภัยกันเลย! 🎒🎉" else "เข้าสู่ห้องเรียนแสนสนุก 🚀⭐",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    text = if (isSignUpMode) "สมัครสมาชิก" else "เข้าสู่ระบบ",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = Color.White
                                 )
                             }
@@ -962,41 +953,29 @@ fun AuthLoginViewDual(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Divider: หรือ 🌟
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(1.dp)
-                                    .background(Color(0xFFE2E8F0))
-                            )
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = KidTheme.DividerColor)
                             Text(
-                                text = "หรือ 🌟",
+                                text = "หรือ",
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
                                 color = KidTheme.TextMuted,
-                                modifier = Modifier.padding(horizontal = 10.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp)
                             )
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(1.dp)
-                                    .background(Color(0xFFE2E8F0))
-                            )
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = KidTheme.DividerColor)
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Google (Gmail) Sign-In Button
+                        // Google Sign-In Button
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
+                                .height(48.dp)
                                 .clickable(enabled = !isLoading) {
                                     isLoading = true
                                     errorMessage = null
@@ -1009,10 +988,9 @@ fun AuthLoginViewDual(
                                         Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                                     }
                                 },
-                            shape = RoundedCornerShape(25.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = Color.White,
-                            border = BorderStroke(1.5.dp, Color(0xFFD8E2EC)),
-                            shadowElevation = 2.dp
+                            border = BorderStroke(1.dp, Color(0xFFD5DCE6))
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxSize(),
@@ -1021,106 +999,97 @@ fun AuthLoginViewDual(
                             ) {
                                 Image(
                                     painter = painterResource(id = com.pongploydev.profilefeature.R.drawable.ic_google_logo),
-                                    contentDescription = "Google Logo",
-                                    modifier = Modifier.size(22.dp)
+                                    contentDescription = "Google",
+                                    modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = if (isSignUpMode) "สมัครด้วยบัญชี Google (Gmail) 🌐" else "เข้าสู่ระบบด้วย Google (Gmail) 🌐",
+                                    text = if (isSignUpMode) "ดำเนินการต่อด้วย Google" else "เข้าสู่ระบบด้วย Google",
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF374151)
+                                    fontWeight = FontWeight.Medium,
+                                    color = KidTheme.TextDark
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .clickable {
-                                    isLoading = true
-                                    errorMessage = null
+                        TextButton(
+                            enabled = !isLoading,
+                            onClick = {
+                                isLoading = true
+                                errorMessage = null
 
-                                    scope.launch {
-                                        val guestName = supabaseAuthManager.getOrCreateGuestDisplayName()
-                                        val dataMgr = SupabaseDataManager.getInstance(context)
-                                        dataMgr.saveUserProgress(
-                                            stars = dataMgr.getUserTotalStars(),
-                                            level = dataMgr.getUserCurrentLevel(),
-                                            displayName = guestName
-                                        )
+                                scope.launch {
+                                    val guestName = supabaseAuthManager.getOrCreateGuestDisplayName()
+                                    val dataMgr = SupabaseDataManager.getInstance(context)
+                                    dataMgr.saveUserProgress(
+                                        stars = dataMgr.getUserTotalStars(),
+                                        level = dataMgr.getUserCurrentLevel(),
+                                        displayName = guestName
+                                    )
 
-                                        // Supabase Guest Sign In
-                                        val supabaseResult = supabaseAuthManager.signInAnonymously()
-                                        supabaseResult.onSuccess { spUser ->
-                                            val androidId = try {
-                                                Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-                                            } catch (e: Exception) {
-                                                null
-                                            } ?: java.util.UUID.randomUUID().toString()
+                                    val supabaseResult = supabaseAuthManager.signInAnonymously()
+                                    supabaseResult.onSuccess { spUser ->
+                                        val androidId = try {
+                                            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                                        } catch (e: Exception) {
+                                            null
+                                        } ?: UUID.randomUUID().toString()
 
-                                            val appVersion = try {
-                                                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-                                            } catch (e: Exception) {
-                                                "1.0.0"
-                                            }
-                                            dataMgr.upsertUserProfile(
-                                                UserProfile(
-                                                    id = spUser.id,
-                                                    email = null,
-                                                    displayName = guestName,
-                                                    avatarUrl = dataMgr.getLocalAvatarUrl() ?: "",
-                                                    role = "student",
-                                                    totalStars = dataMgr.getUserTotalStars(),
-                                                    totalCoins = 0,
-                                                    currentLevel = dataMgr.getUserCurrentLevel(),
-                                                    streakDays = dataMgr.getUserStreakDays()
-                                                )
-                                            )
-                                            dataMgr.registerUserDevice(
-                                                userId = spUser.id,
-                                                deviceId = androidId,
-                                                appVersion = appVersion
-                                            )
-                                            onSupabaseSuccess(spUser)
+                                        val appVersion = try {
+                                            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+                                        } catch (e: Exception) {
+                                            "1.0.0"
                                         }
-
-                                        // Firebase Guest Sign In
-                                        firebaseAuth.signInAnonymously()
-                                            .addOnSuccessListener { authRes ->
-                                                authRes.user?.updateProfile(
-                                                    UserProfileChangeRequest.Builder()
-                                                        .setDisplayName(guestName)
-                                                        .build()
-                                                )
-                                                isLoading = false
-                                                Toast.makeText(context, "เข้าเล่นในชื่อ $guestName เรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
-                                            }
-                                            .addOnFailureListener { e ->
-                                                isLoading = false
-                                                if (supabaseResult.isSuccess) {
-                                                    Toast.makeText(context, "เข้าเล่นในชื่อ $guestName เรียบร้อย สนุกกับการเรียนรู้นะจ๊ะ 🎈", Toast.LENGTH_SHORT).show()
-                                                } else {
-                                                    errorMessage = e.localizedMessage ?: "เข้าใช้งานแบบ Guest ไม่สำเร็จ"
-                                                }
-                                            }
+                                        dataMgr.upsertUserProfile(
+                                            UserProfile(
+                                                id = spUser.id,
+                                                email = null,
+                                                displayName = guestName,
+                                                avatarUrl = dataMgr.getLocalAvatarUrl() ?: "",
+                                                role = "student",
+                                                totalStars = dataMgr.getUserTotalStars(),
+                                                totalCoins = 0,
+                                                currentLevel = dataMgr.getUserCurrentLevel(),
+                                                streakDays = dataMgr.getUserStreakDays()
+                                            )
+                                        )
+                                        dataMgr.registerUserDevice(
+                                            userId = spUser.id,
+                                            deviceId = androidId,
+                                            appVersion = appVersion
+                                        )
+                                        onSupabaseSuccess(spUser)
                                     }
-                                },
-                            shape = RoundedCornerShape(24.dp),
-                            color = Color(0xFFF1FDF5),
-                            border = BorderStroke(1.5.dp, Color(0xFFA5D6A7))
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "🎈 เล่นแบบไม่ลงทะเบียน (ทดลองเล่นฟรี)",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32)
-                                )
+
+                                    firebaseAuth.signInAnonymously()
+                                        .addOnSuccessListener { authRes ->
+                                            authRes.user?.updateProfile(
+                                                UserProfileChangeRequest.Builder()
+                                                    .setDisplayName(guestName)
+                                                    .build()
+                                            )
+                                            isLoading = false
+                                            Toast.makeText(context, "เข้าใช้งานแบบทดลองเล่นแล้ว", Toast.LENGTH_SHORT).show()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isLoading = false
+                                            if (supabaseResult.isSuccess) {
+                                                Toast.makeText(context, "เข้าใช้งานแบบทดลองเล่นแล้ว", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                errorMessage = e.localizedMessage ?: "เข้าใช้งานแบบทดลองเล่นไม่สำเร็จ"
+                                            }
+                                        }
+                                }
                             }
+                        ) {
+                            Text(
+                                text = "ใช้งานแบบไม่ลงทะเบียน",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = KidTheme.TextMuted
+                            )
                         }
                     }
                 }
@@ -1132,9 +1101,10 @@ fun AuthLoginViewDual(
             val debugSha1 = "36:50:D3:6C:9C:B3:41:EB:FC:19:2B:F5:49:AC:99:BD:CA:88:39:8B"
             AlertDialog(
                 onDismissRequest = { showSha1Dialog = false },
+                shape = RoundedCornerShape(20.dp),
                 title = {
                     Text(
-                        text = "⚙️ ต้องการเพิ่ม SHA-1 ใน Firebase",
+                        text = "ต้องเพิ่ม SHA-1 ใน Firebase",
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         color = KidTheme.TextDark
@@ -1143,7 +1113,7 @@ fun AuthLoginViewDual(
                 text = {
                     Column {
                         Text(
-                            text = "Google Play Services แจ้งเตือน Developer Error (Code 10) เนื่องจากยังไม่ได้บันทึกค่า Fingerprint SHA-1 ของแอปใน Firebase Console:",
+                            text = "Google Play Services แจ้งเตือน Developer Error (Code 10) เนื่องจากยังไม่ได้บันทึก SHA-1 ของแอปใน Firebase Console:",
                             fontSize = 13.sp,
                             color = KidTheme.TextMuted
                         )
@@ -1163,7 +1133,7 @@ fun AuthLoginViewDual(
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "วิธีแก้:\n1. ไปที่ Firebase Console > Project Settings > General > Your apps (${context.packageName})\n2. กดปุ่ม 'Add fingerprint' แล้ววาง SHA-1 นี้\n3. เปิดใช้งาน Google ในเมนู Authentication > Sign-in method",
+                            text = "วิธีแก้:\n1. ไปที่ Firebase Console > Project Settings > General > Your apps (${context.packageName})\n2. กด 'Add fingerprint' แล้ววาง SHA-1 นี้\n3. เปิดใช้งาน Google ในเมนู Authentication > Sign-in method",
                             fontSize = 12.sp,
                             color = KidTheme.TextMuted,
                             lineHeight = 17.sp
@@ -1174,11 +1144,11 @@ fun AuthLoginViewDual(
                     Button(
                         onClick = {
                             clipboard.setText(AnnotatedString(debugSha1))
-                            Toast.makeText(context, "คัดลอก SHA-1 เรียบร้อยแล้ว! 📋", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "คัดลอก SHA-1 แล้ว", Toast.LENGTH_SHORT).show()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = KidTheme.Primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = dailyTheme.accentColor)
                     ) {
-                        Text("คัดลอก SHA-1 📋", color = Color.White)
+                        Text("คัดลอก SHA-1", color = Color.White)
                     }
                 },
                 dismissButton = {
@@ -1209,9 +1179,17 @@ fun ProfileDetailsViewDual(
 
     val userId = supabaseUser?.id ?: firebaseUser?.uid ?: supabaseAuthManager.getGuestUserId()
 
+    var currentDayOfWeek by remember {
+        mutableIntStateOf(Calendar.getInstance()[Calendar.DAY_OF_WEEK])
+    }
+    val dailyTheme = remember(currentDayOfWeek) {
+        profileDailyHeaderThemeForDay(currentDayOfWeek)
+    }
+
     var profileData by remember { mutableStateOf<UserProfile?>(null) }
     var quizResults by remember { mutableStateOf<List<UserQuizResult>>(emptyList()) }
     var achievements by remember { mutableStateOf<List<UserAchievement>>(emptyList()) }
+    var localNameOverride by remember { mutableStateOf<String?>(null) }
 
     var isDataLoading by remember { mutableStateOf(false) }
     var isUploadingAvatar by remember { mutableStateOf(false) }
@@ -1221,7 +1199,19 @@ fun ProfileDetailsViewDual(
     var showSubscriptionDialog by remember { mutableStateOf(false) }
     var appSettings by remember { mutableStateOf(dataManager.getCachedAppSettings()) }
 
-    // Load Live Data from Supabase
+    val isGuestAccount = (firebaseUser == null || firebaseUser.isAnonymous) &&
+        (supabaseUser == null || supabaseUser.isAnonymous == true || supabaseUser.email.isNullOrBlank())
+    val isVip = dataManager.isVipSubscriber()
+    val vipTier = dataManager.getSubscriptionTier()
+
+    val appVersionName = remember {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+        } catch (e: Exception) {
+            "1.0.0"
+        }
+    }
+
     fun loadSupabaseLiveData() {
         if (userId.isBlank()) return
         isDataLoading = true
@@ -1242,24 +1232,20 @@ fun ProfileDetailsViewDual(
         }
     }
 
-    // Image Picker Launcher for Supabase Storage Upload
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        Log.d("ProfileComposeScreen", "Selected photo Uri: $uri")
         if (uri != null) {
             scope.launch {
                 isUploadingAvatar = true
-                Toast.makeText(context, "กำลังอัปโหลดรูปโปรไฟล์เข้า Supabase... ☁️", Toast.LENGTH_SHORT).show()
                 try {
                     val inputStream = context.contentResolver.openInputStream(uri)
                     val originalBitmap = BitmapFactory.decodeStream(inputStream)
                     inputStream?.close()
 
                     if (originalBitmap != null) {
-                        Log.d("ProfileComposeScreen", "Loaded bitmap size: ${originalBitmap.width}x${originalBitmap.height}")
                         val maxDimension = 512
-                        val scale = Math.min(
+                        val scale = minOf(
                             maxDimension.toFloat() / originalBitmap.width,
                             maxDimension.toFloat() / originalBitmap.height
                         ).coerceAtMost(1.0f)
@@ -1271,50 +1257,74 @@ fun ProfileDetailsViewDual(
                         val outputStream = java.io.ByteArrayOutputStream()
                         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
                         val imageBytes = outputStream.toByteArray()
-                        Log.d("ProfileComposeScreen", "Compressed image bytes: ${imageBytes.size} bytes. Calling uploadAvatarImage...")
 
-                        val uploadResult = dataManager.uploadAvatarImage(userId, imageBytes)
-                        uploadResult.onSuccess { newUrl ->
-                            Log.d("ProfileComposeScreen", "uploadAvatarImage succeeded! New URL: $newUrl")
-                            profileData = (profileData ?: UserProfile(id = userId)).copy(avatarUrl = newUrl)
-                            loadSupabaseLiveData()
-                            Toast.makeText(context, "อัปโหลดรูปโปรไฟล์เข้า Supabase สำเร็จแล้ว! 📸", Toast.LENGTH_SHORT).show()
-                        }.onFailure { e ->
-                            Log.e("ProfileComposeScreen", "uploadAvatarImage failed: ${e.localizedMessage}", e)
-                            Toast.makeText(context, "อัปโหลดรูปไม่สำเร็จ: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                        }
-                    } else {
-                        Log.e("ProfileComposeScreen", "Failed to decode bitmap from Uri: $uri")
+                        dataManager.uploadAvatarImage(userId, imageBytes)
+                            .onSuccess { newUrl ->
+                                profileData = (profileData ?: UserProfile(id = userId)).copy(avatarUrl = newUrl)
+                                loadSupabaseLiveData()
+                                Toast.makeText(context, "อัปเดตรูปโปรไฟล์แล้ว", Toast.LENGTH_SHORT).show()
+                            }
+                            .onFailure { e ->
+                                Log.e("ProfileComposeScreen", "uploadAvatarImage failed: ${e.localizedMessage}", e)
+                                Toast.makeText(context, "อัปโหลดรูปไม่สำเร็จ", Toast.LENGTH_SHORT).show()
+                            }
                     }
                 } catch (e: Exception) {
                     Log.e("ProfileComposeScreen", "Error reading image file: ${e.localizedMessage}", e)
-                    Toast.makeText(context, "เกิดข้อผิดพลาดในการอ่านไฟล์รูป", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "ไม่สามารถอ่านไฟล์รูปได้", Toast.LENGTH_SHORT).show()
                 } finally {
                     isUploadingAvatar = false
                 }
             }
-        } else {
-            Log.d("ProfileComposeScreen", "Photo selection cancelled by user.")
         }
     }
 
-    val guestDefaultName = remember { supabaseAuthManager.getOrCreateGuestDisplayName() }
-
-    val initialName = profileData?.displayName?.takeIf { it.isNotBlank() && it != "นักอ่านตัวน้อย" && !it.startsWith("ผู้ใช้ชั่วคราว") }
+    val rawDisplayName = localNameOverride
+        ?: profileData?.displayName?.takeIf { it.isNotBlank() && it != "นักอ่านตัวน้อย" && !it.startsWith("ผู้ใช้ชั่วคราว") }
+        ?: dataManager.getLocalDisplayName()?.takeIf { it.isNotBlank() && !it.startsWith("guest", ignoreCase = true) }
         ?: supabaseUser?.userMetadata?.displayName?.takeIf { it.isNotBlank() && !it.startsWith("ผู้ใช้ชั่วคราว") }
         ?: firebaseUser?.displayName?.takeIf { it.isNotBlank() }
-        ?: guestDefaultName
 
-    var newName by remember(initialName) { mutableStateOf(initialName) }
+    val displayName = remember(rawDisplayName) { formatProfileDisplayName(rawDisplayName) }
+    var newName by remember(displayName) { mutableStateOf(if (displayName == "น้องคนเก่ง") "" else displayName) }
 
-    val displayName = initialName
+    val emailText = firebaseUser?.email ?: supabaseUser?.email ?: profileData?.email ?: "ยังไม่ได้เชื่อมต่อบัญชี"
 
-    val emailText = firebaseUser?.email ?: supabaseUser?.email ?: profileData?.email ?: "ยังไม่ได้เชื่อมต่ออีเมล"
+    val localStars = dataManager.getUserTotalStars()
+    val localLevel = dataManager.getUserCurrentLevel()
+    val localStreak = dataManager.getUserStreakDays()
+    val cloudStars = profileData?.totalStars ?: 0
+    val cloudLevel = profileData?.currentLevel ?: 1
+    val cloudStreak = profileData?.streakDays ?: 0
+
+    val totalStars = maxOf(localStars, cloudStars)
+    val currentLevel = maxOf(localLevel, cloudLevel, 1 + (totalStars / 50))
+    val streakDays = maxOf(localStreak, cloudStreak)
+    val totalQuizzes = quizResults.size
+    val totalAchievements = achievements.size
+
+    val starsInLevel = totalStars % 50
+    val starsNeeded = 50 - starsInLevel
+    val levelProgress = (starsInLevel.toFloat() / 50f).coerceIn(0f, 1f)
+    val animatedLevelProgress by animateFloatAsState(
+        targetValue = levelProgress,
+        animationSpec = tween(durationMillis = 600),
+        label = "profileLevelProgress"
+    )
+    val levelTitle = when (currentLevel) {
+        1 -> "นักอ่านตัวน้อย"
+        2 -> "นักสะสมดาว"
+        3 -> "ยอดนักอ่าน"
+        4 -> "ผู้พิชิตคำศัพท์"
+        5 -> "ยอดอัจฉริยะตัวน้อย"
+        else -> "ปรมาจารย์ตัวน้อย"
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, userId) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
+                currentDayOfWeek = Calendar.getInstance()[Calendar.DAY_OF_WEEK]
                 loadSupabaseLiveData()
             }
         }
@@ -1340,65 +1350,73 @@ fun ProfileDetailsViewDual(
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 96.dp)
+            contentPadding = PaddingValues(bottom = 118.dp)
         ) {
+            // ==================== HEADER ====================
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(bottomStart = 38.dp, bottomEnd = 38.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF536DFE),
-                                    Color(0xFF7C4DFF),
-                                    Color(0xFF00B0FF)
-                                )
-                            )
-                        )
-                        .padding(top = 32.dp, bottom = 36.dp, start = 20.dp, end = 20.dp)
+                        .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                        .background(dailyTheme.headerGradient)
+                        .padding(top = 12.dp, bottom = 26.dp, start = 20.dp, end = 20.dp)
                 ) {
-                    // Floating decorative circles for glassmorphic depth
-                    Box(
-                        modifier = Modifier
-                            .size(160.dp)
-                            .align(Alignment.TopEnd)
-                            .graphicsLayer { translationX = 50f; translationY = -50f }
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.12f))
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .align(Alignment.BottomStart)
-                            .graphicsLayer { translationX = -30f; translationY = 30f }
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.1f))
-                    )
+                    IconButton(
+                        onClick = { loadSupabaseLiveData() },
+                        enabled = !isDataLoading,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        if (isDataLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "รีเฟรชข้อมูล",
+                                tint = Color.White.copy(alpha = 0.9f),
+                                modifier = Modifier.size(21.dp)
+                            )
+                        }
+                    }
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
                     ) {
-                        // Avatar Container with Photo Picker & Camera Overlay
+                        // Avatar
                         Box(contentAlignment = Alignment.BottomEnd) {
                             Surface(
                                 modifier = Modifier
-                                    .size(96.dp)
+                                    .size(88.dp)
                                     .clickable { imagePickerLauncher.launch("image/*") },
                                 shape = CircleShape,
                                 color = Color.White,
-                                border = BorderStroke(4.dp, Color(0xFFFFD166)),
-                                shadowElevation = 12.dp
+                                border = BorderStroke(3.dp, Color.White.copy(alpha = 0.9f)),
+                                shadowElevation = 4.dp
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    val avatarUrl = profileData?.avatarUrl
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color(0xFFF1F4F9)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val avatarUrl = profileData?.avatarUrl?.takeIf { it.isNotBlank() }
+                                        ?: dataManager.getLocalAvatarUrl()?.takeIf { it.isNotBlank() }
                                     if (isUploadingAvatar) {
-                                        CircularProgressIndicator(modifier = Modifier.size(36.dp), strokeWidth = 3.dp, color = Color(0xFF536DFE))
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(28.dp),
+                                            strokeWidth = 2.5.dp,
+                                            color = dailyTheme.accentColor
+                                        )
                                     } else if (!avatarUrl.isNullOrBlank()) {
                                         AsyncImage(
                                             model = avatarUrl,
-                                            contentDescription = "Profile Avatar",
+                                            contentDescription = "รูปโปรไฟล์",
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .clip(CircleShape),
@@ -1406,23 +1424,21 @@ fun ProfileDetailsViewDual(
                                         )
                                     } else {
                                         Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = "Profile Avatar",
-                                            tint = Color(0xFF536DFE),
-                                            modifier = Modifier.size(60.dp)
+                                            imageVector = Icons.Rounded.Person,
+                                            contentDescription = "รูปโปรไฟล์",
+                                            tint = dailyTheme.accentColor.copy(alpha = 0.8f),
+                                            modifier = Modifier.size(48.dp)
                                         )
                                     }
                                 }
                             }
 
-                            // Camera Upload Icon Overlay
                             Surface(
                                 shape = CircleShape,
-                                color = Color(0xFF536DFE),
+                                color = dailyTheme.accentColor,
                                 border = BorderStroke(2.dp, Color.White),
-                                shadowElevation = 6.dp,
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(28.dp)
                                     .clickable { imagePickerLauncher.launch("image/*") }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -1430,556 +1446,623 @@ fun ProfileDetailsViewDual(
                                         imageVector = Icons.Default.PhotoCamera,
                                         contentDescription = "เปลี่ยนรูปโปรไฟล์",
                                         tint = Color.White,
-                                        modifier = Modifier.size(17.dp)
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // User Display Name & Edit Button
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Display name + edit button
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             Text(
                                 text = displayName,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White
+                                fontSize = 21.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            if (firebaseUser?.isAnonymous != true) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color.White.copy(alpha = 0.25f),
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "แก้ไขชื่อ",
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier
+                                    .size(17.dp)
+                                    .clickable {
+                                        newName = if (displayName == "น้องคนเก่ง") "" else displayName
+                                        showEditNameDialog = true
+                                    }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Single clean subtitle line
+                        val subtitleText = buildString {
+                            append("ระดับ $currentLevel · $levelTitle")
+                            if (isVip) {
+                                append(" · VIP")
+                            } else if (streakDays > 0) {
+                                append(" · ต่อเนื่อง $streakDays วัน")
+                            }
+                        }
+                        Text(
+                            text = subtitleText,
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.88f)
+                        )
+                    }
+                }
+            }
+
+            // ==================== MAIN CONTENT ====================
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Unified Learning Summary Card (Stats + Level Progress)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, KidTheme.CardBorder),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ProfileStatColumn(
+                                    value = "$totalStars",
+                                    label = "ดาวสะสม",
+                                    valueColor = Color(0xFFE67E00),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { switchToAppTab(context, 0) }
+                                )
+                                VerticalDivider(
+                                    modifier = Modifier.height(32.dp),
+                                    color = KidTheme.DividerColor
+                                )
+                                ProfileStatColumn(
+                                    value = "Lv.$currentLevel",
+                                    label = "เลเวล",
+                                    valueColor = Color(0xFF1F8A5B),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { switchToAppTab(context, 0) }
+                                )
+                                VerticalDivider(
+                                    modifier = Modifier.height(32.dp),
+                                    color = KidTheme.DividerColor
+                                )
+                                ProfileStatColumn(
+                                    value = "$totalQuizzes",
+                                    label = "ควิซที่ผ่าน",
+                                    valueColor = Color(0xFF1976D2),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { showQuizHistoryDetail = true }
+                                )
+                                VerticalDivider(
+                                    modifier = Modifier.height(32.dp),
+                                    color = KidTheme.DividerColor
+                                )
+                                ProfileStatColumn(
+                                    value = "$totalAchievements",
+                                    label = "เหรียญตรา",
+                                    valueColor = Color(0xFF7B1FA2),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(
+                                color = KidTheme.DividerColor,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "อีก $starsNeeded ดาว ขึ้นระดับ ${currentLevel + 1}",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = KidTheme.TextDark
+                                    )
+                                    Text(
+                                        text = "$starsInLevel / 50",
+                                        fontSize = 12.sp,
+                                        color = KidTheme.TextMuted
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Box(
                                     modifier = Modifier
-                                        .size(28.dp)
-                                        .clickable { showEditNameDialog = true }
+                                        .fillMaxWidth()
+                                        .height(7.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFECEFF4))
+                                ) {
+                                    if (animatedLevelProgress > 0f) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(animatedLevelProgress.coerceAtLeast(0.04f))
+                                                .fillMaxHeight()
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(KidTheme.GoldGradient)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Guest Sign-In Prompt (subtle & clean)
+                    if (isGuestAccount) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenAuth() },
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, KidTheme.CardBorder),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 13.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = dailyTheme.accentColor.copy(alpha = 0.10f),
+                                    modifier = Modifier.size(40.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "แก้ไขชื่อ",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(15.dp)
+                                            imageVector = Icons.Rounded.CloudUpload,
+                                            contentDescription = null,
+                                            tint = dailyTheme.accentColor,
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "เข้าสู่ระบบเพื่อสำรองข้อมูล",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = KidTheme.TextDark
+                                    )
+                                    Text(
+                                        text = "เก็บดาวและประวัติการเรียนไว้ใช้ได้ทุกเครื่อง",
+                                        fontSize = 12.sp,
+                                        color = KidTheme.TextMuted
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = Color(0xFF9CA3AF)
+                                )
+                            }
+                        }
+                    }
+
+                    // VIP Membership Row (only when enabled)
+                    if (appSettings?.isSubscriptionEnabled == true) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showSubscriptionDialog = true },
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(
+                                1.dp,
+                                if (isVip) Color(0xFFFFD54F) else KidTheme.CardBorder
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 13.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isVip) Color(0xFFFFF3CD) else Color(0xFFF3E8FF),
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.WorkspacePremium,
+                                            contentDescription = null,
+                                            tint = if (isVip) Color(0xFFD97706) else Color(0xFF7C3AED),
+                                            modifier = Modifier.size(21.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (isVip) "สมาชิก VIP ($vipTier)" else "สมาชิก VIP",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = KidTheme.TextDark
+                                    )
+                                    Text(
+                                        text = if (isVip) "ไร้โฆษณาและรับดาวโบนัส x2" else "ไม่มีโฆษณา พร้อมโบนัสดาว x2",
+                                        fontSize = 12.sp,
+                                        color = KidTheme.TextMuted
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = Color(0xFF9CA3AF)
+                                )
+                            }
+                        }
+                    }
+
+                    // ==================== QUICK SHORTCUTS (2x2 COMPACT GRID) ====================
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "กิจกรรมการเรียนรู้",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = KidTheme.TextDark,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            QuickShortcutTile(
+                                icon = Icons.Rounded.Quiz,
+                                iconTint = Color(0xFFE65100),
+                                iconBg = Color(0xFFFFF0E6),
+                                title = "แบบทดสอบ",
+                                subtitle = "ทำควิซสะสมดาว",
+                                modifier = Modifier.weight(1f),
+                                onClick = { switchToAppTab(context, 3) }
+                            )
+                            QuickShortcutTile(
+                                icon = Icons.AutoMirrored.Rounded.MenuBook,
+                                iconTint = Color(0xFF1F8A5B),
+                                iconBg = Color(0xFFEAF7F0),
+                                title = "ก-ฮ / A-Z",
+                                subtitle = "ฝึกอ่านและคัดเขียน",
+                                modifier = Modifier.weight(1f),
+                                onClick = { switchToAppTab(context, 0) }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            QuickShortcutTile(
+                                icon = Icons.Rounded.SportsEsports,
+                                iconTint = Color(0xFF6D28D9),
+                                iconBg = Color(0xFFF3EEFF),
+                                title = "เกมฝึกสมอง",
+                                subtitle = "เล่นเกมและระบายสี",
+                                modifier = Modifier.weight(1f),
+                                onClick = { switchToAppTab(context, 4) }
+                            )
+                            QuickShortcutTile(
+                                icon = Icons.Rounded.PlayCircleOutline,
+                                iconTint = Color(0xFF0284C7),
+                                iconBg = Color(0xFFEBF6FE),
+                                title = "วิดีโอเรียนรู้",
+                                subtitle = "การ์ตูนและบทเรียน",
+                                modifier = Modifier.weight(1f),
+                                onClick = { switchToAppTab(context, 2) }
+                            )
+                        }
+                    }
+
+                    // ==================== REAL ACHIEVEMENTS (HONEST, NO FAKE CHIPS) ====================
+                    if (achievements.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text(
+                                text = "เหรียญรางวัล (${achievements.size})",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = KidTheme.TextDark,
+                                modifier = Modifier.padding(horizontal = 2.dp)
+                            )
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                border = BorderStroke(1.dp, KidTheme.CardBorder),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            ) {
+                                FlowRow(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    achievements.forEach { ach ->
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = Color(0xFFFFFBF0),
+                                            border = BorderStroke(1.dp, Color(0xFFFFE082))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(text = ach.badgeIcon, fontSize = 16.sp)
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = ach.badgeName,
+                                                    fontSize = 12.5.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = KidTheme.TextDark
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ==================== ACCOUNT & SETTINGS ====================
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "บัญชีและการตั้งค่า",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = KidTheme.TextDark,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        )
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, KidTheme.CardBorder),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                ProfileOptionItem(
+                                    icon = Icons.Rounded.History,
+                                    title = "ประวัติการทำควิซ",
+                                    subtitle = if (totalQuizzes > 0) "ผ่านแล้ว $totalQuizzes รายการ" else "ยังไม่มีประวัติการทำควิซ",
+                                    onClick = { showQuizHistoryDetail = true }
+                                )
+
+                                HorizontalDivider(
+                                    color = KidTheme.DividerColor,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                ProfileOptionItem(
+                                    icon = Icons.Rounded.MailOutline,
+                                    title = "บัญชีอีเมล",
+                                    subtitle = emailText,
+                                    onClick = {
+                                        if (isGuestAccount) onOpenAuth()
+                                    }
+                                )
+
+                                if (achievements.isEmpty()) {
+                                    HorizontalDivider(
+                                        color = KidTheme.DividerColor,
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                    ProfileOptionItem(
+                                        icon = Icons.Rounded.EmojiEvents,
+                                        title = "เหรียญรางวัล",
+                                        subtitle = "ทำแบบทดสอบเพื่อปลดล็อกเหรียญรางวัล",
+                                        onClick = { switchToAppTab(context, 3) }
+                                    )
+                                }
+
+                                HorizontalDivider(
+                                    color = KidTheme.DividerColor,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                ProfileOptionItem(
+                                    icon = Icons.Rounded.Share,
+                                    title = "แชร์แอปให้เพื่อน",
+                                    subtitle = "ก ไก่ ABC หรรษา",
+                                    onClick = {
+                                        try {
+                                            val appPackageName = context.packageName
+                                            val playStoreUrl = "https://play.google.com/store/apps/details?id=$appPackageName"
+                                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_SUBJECT, "ก ไก่ ABC หรรษา - ฝึกเขียนอ่านระบายสี")
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    "มาเรียนรู้และฝึกเขียน ก ไก่ / A-Z กับแอป ก ไก่ ABC หรรษา กันเถอะ\n$playStoreUrl"
+                                                )
+                                            }
+                                            context.startActivity(Intent.createChooser(shareIntent, "แชร์แอป"))
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "ไม่สามารถเปิดเมนูแชร์ได้", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+
+                                HorizontalDivider(
+                                    color = KidTheme.DividerColor,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                ProfileOptionItem(
+                                    icon = Icons.Rounded.PrivacyTip,
+                                    title = "นโยบายความเป็นส่วนตัว",
+                                    subtitle = "Privacy Policy",
+                                    onClick = {
+                                        val url = appSettings?.privacyPolicyUrl?.takeIf { it.isNotBlank() }
+                                            ?: "https://pongploydev.github.io/privacy-policy/"
+                                        try {
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "ไม่สามารถเปิดลิงก์ได้", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+
+                                HorizontalDivider(
+                                    color = KidTheme.DividerColor,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                ProfileOptionItem(
+                                    icon = Icons.Rounded.Description,
+                                    title = "เงื่อนไขการใช้งาน",
+                                    subtitle = "Terms of Service",
+                                    onClick = {
+                                        val url = appSettings?.termsOfServiceUrl?.takeIf { it.isNotBlank() }
+                                            ?: "https://pongploydev.github.io/terms/"
+                                        try {
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "ไม่สามารถเปิดลิงก์ได้", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // ==================== BOTTOM ACTION ====================
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (isGuestAccount) {
+                            Button(
+                                onClick = { onOpenAuth() },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = dailyTheme.accentColor)
+                            ) {
+                                Text(
+                                    text = "เข้าสู่ระบบ / สมัครสมาชิก",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            TextButton(onClick = { showLogoutDialog = true }) {
+                                Text(
+                                    text = "รีเซ็ตข้อมูลทดลองเล่น",
+                                    fontSize = 13.sp,
+                                    color = KidTheme.TextMuted
+                                )
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .clickable { showLogoutDialog = true },
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFFFF1F2),
+                                border = BorderStroke(1.dp, Color(0xFFFFCDD2))
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                        contentDescription = null,
+                                        tint = Color(0xFFD32F2F),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "ออกจากระบบ",
+                                        fontSize = 14.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFD32F2F)
+                                    )
                                 }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Status Pills (Firebase & Supabase)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val isFirebaseActive = firebaseUser != null || firebaseAuth.currentUser != null
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = if (isFirebaseActive) Color.White.copy(alpha = 0.22f) else Color(0xFFFF5252).copy(alpha = 0.4f),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
-                            ) {
-                                Text(
-                                    text = if (isFirebaseActive) "🔥 Firebase Active" else "🔥 Firebase Off",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                )
-                            }
-
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = if (supabaseUser != null) Color(0xFF00E676).copy(alpha = 0.35f) else Color(0xFFFF5252).copy(alpha = 0.4f),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
-                            ) {
-                                Text(
-                                    text = if (supabaseUser != null) "⚡ Supabase Active" else "⚡ Supabase Off",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-                    // Guest / Supabase Off Call-to-Action Banner
-                    if (firebaseUser?.isAnonymous == true || supabaseUser == null) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                                .clickable { onOpenAuth() },
-                            shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
-                            border = BorderStroke(1.5.dp, Color(0xFFFFCA28)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("🚀", fontSize = 28.sp)
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "เข้าสู่ระบบ / ลงทะเบียน Supabase",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF5D4037)
-                                    )
-                                    Text(
-                                        text = "บันทึกผลการเรียนรู้, ดาว และเหรียญตราไว้บนคลาวด์ถาวร",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF795548)
-                                    )
-                                }
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "ไปหน้าลงทะเบียน",
-                                    tint = Color(0xFF5D4037)
-                                )
-                            }
-                        }
-                    }
-
-                    // VIP MEMBER / SUBSCRIPTION BANNER CARD
-                    if (appSettings?.isSubscriptionEnabled == true) {
-                        val isVip = dataManager.isVipSubscriber()
-                        val vipTier = dataManager.getSubscriptionTier()
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                                .clickable { showSubscriptionDialog = true },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isVip) Color(0xFFFFF8E1) else Color(0xFFF3E5F5)
-                            ),
-                            border = BorderStroke(
-                                1.5.dp,
-                                if (isVip) Color(0xFFFFB300) else Color(0xFFAB47BC)
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(46.dp)
-                                            .background(
-                                                if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD),
-                                                CircleShape
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(text = if (isVip) "👑" else "💎", fontSize = 22.sp)
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = if (isVip) "สมาชิก VIP: $vipTier" else "สนับสนุน สมาชิก (Subscriptions)",
-                                                fontWeight = FontWeight.ExtraBold,
-                                                fontSize = 13.5.sp,
-                                                color = if (isVip) Color(0xFFE65100) else Color(0xFF4A148C)
-                                            )
-                                            if (isVip) {
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(text = "👑", fontSize = 12.sp)
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = if (isVip) "สิทธิพิเศษ VIP ทำงานอยู่ • ไร้โฆษณา • ดาว x2" else "ปลดล็อก VIP ไร้โฆษณา • ดาวโบนัส x2 • ครบทุกเกม",
-                                            fontSize = 11.sp,
-                                            color = if (isVip) Color(0xFF795548) else Color(0xFF6A1B9A)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = if (isVip) Color(0xFFFFB300) else Color(0xFF8E44AD)
-                                ) {
-                                    Text(
-                                        text = if (isVip) "ดูสิทธิ VIP" else "สนับสนุน 💎",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Header with refresh button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
                         Text(
-                            text = "ความก้าวหน้าการเรียนรู้ 🏆",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = KidTheme.TextDark
+                            text = "เวอร์ชัน $appVersionName",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF9CA3AF)
                         )
-                        if (isDataLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = KidTheme.Primary)
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "รีเฟรชข้อมูล",
-                                tint = KidTheme.Primary,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable { loadSupabaseLiveData() }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val localStars = dataManager.getUserTotalStars()
-                    val localLevel = dataManager.getUserCurrentLevel()
-                    val cloudStars = profileData?.totalStars ?: 0
-                    val cloudLevel = profileData?.currentLevel ?: 1
-
-                    val totalStars = maxOf(localStars, cloudStars)
-                    val currentLevel = maxOf(localLevel, cloudLevel, 1 + (totalStars / 50))
-                    val totalQuizzes = quizResults.size
-                    val totalAchievements = achievements.size
-
-                    val starsInLevel = totalStars % 50
-                    val starsNeeded = 50 - starsInLevel
-                    val levelProgress = (starsInLevel.toFloat() / 50f).coerceIn(0f, 1f)
-                    val levelTitle = when (currentLevel) {
-                        1 -> "นักอ่านตัวน้อย"
-                        2 -> "นักสะสมดาว"
-                        3 -> "ยอดนักอ่าน"
-                        4 -> "ผู้พิชิตคำศัพท์"
-                        5 -> "ยอดอัจฉริยะตัวน้อย"
-                        else -> "ปรมาจารย์ตัวน้อย"
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ProfileStatCard("ดาวสะสม", "$totalStars ⭐", Color(0xFFFFF9E6), Color(0xFFFFD166), Color(0xFFFF9800), Modifier.weight(1f)) {
-                            switchToAppTab(context, 0)
-                        }
-                        ProfileStatCard("เลเวล", "Lv.$currentLevel 🏆", Color(0xFFE8F5E9), Color(0xFF81C784), Color(0xFF2E7D32), Modifier.weight(1f)) {
-                            switchToAppTab(context, 0)
-                        }
-                        ProfileStatCard("ควิซที่ผ่าน", "$totalQuizzes 📚", Color(0xFFE3F2FD), Color(0xFF64B5F6), Color(0xFF1976D2), Modifier.weight(1f)) {
-                            showQuizHistoryDetail = true
-                        }
-                        ProfileStatCard("เหรียญตรา", "$totalAchievements 🎖️", Color(0xFFF3E5F5), Color(0xFFBA68C8), Color(0xFF7B1FA2), Modifier.weight(1f)) {
-                            Toast.makeText(context, "เหรียญตราทั้งหมดที่ปลดล็อกแล้ว 🏆", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // LEVEL PROGRESS BAR (Direct reference matching Home screen)
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "🎖️", fontSize = 16.sp)
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "ระดับ $currentLevel • $levelTitle",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = KidTheme.TextDark
-                                    )
-                                }
-                                Text(
-                                    text = "อีก $starsNeeded ดาว จะขึ้นระดับ ${currentLevel + 1} 🚀",
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = KidTheme.Primary
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0xFFF1F5F9))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth(levelProgress)
-                                        .fillMaxHeight()
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(KidTheme.GoldGradient)
-                                    )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // BUTTON TO VIEW QUIZ HISTORY CARD LISTVIEW
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showQuizHistoryDetail = true },
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFE3F2FD),
-                        border = BorderStroke(1.dp, Color(0xFF90CAF9))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "📚", fontSize = 20.sp)
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(text = "ดูรายละเอียดควิซที่ผ่านทั้งหมด ($totalQuizzes รายการ)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1565C0))
-                                    Text(text = "แสดงคะแนน เวลาที่ใช้ และสถานะผ่านเกณฑ์แบบ Card List", fontSize = 11.sp, color = KidTheme.TextMuted)
-                                }
-                            }
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color(0xFF1565C0), modifier = Modifier.size(18.dp))
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // SECTION: QUICK LEARNING LINKS (ทางลัดสะสมคะแนน)
-                    Text(
-                        text = "กิจกรรมเรียนรู้สะสมคะแนน & ดาว 🎯",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KidTheme.TextDark,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // LINK 1: QUIZ (แบบทดสอบ)
-                        QuickEarnScoreCard(
-                            icon = "🎯",
-                            title = "ทำแบบทดสอบวัดความรู้ (Quiz)",
-                            subtitle = "ทำควิซ 10 ข้อ รับดาวสูงสุด +10 ⭐ พร้อมเหรียญเกียรติบัตร 🏆",
-                            tagText = "รับดาวเยอะสุด 🔥",
-                            tagBgColor = Color(0xFFFFE0B2),
-                            tagTextColor = Color(0xFFE65100),
-                            onClick = {
-                                Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! 🎯 กำลังพาไปหน้าแบบทดสอบ (Quiz)", Toast.LENGTH_SHORT).show()
-                                switchToAppTab(context, 3) // Tab 3: Quiz
-                            }
-                        )
-
-                        // LINK 2: LEARNING CATEGORIES (ฝึกเขียน/ท่อง ก-ฮ)
-                        QuickEarnScoreCard(
-                            icon = "✍️",
-                            title = "หมวดเรียนรู้ ก-ฮ / A-Z / 1-10",
-                            subtitle = "ฝึกเขียนคัดลายมือ และฟังเสียงคำอ่าน รับดาวสะสม +1 ⭐ ทุกตัวอักษร",
-                            tagText = "สะสมดาวฟรี 🌟",
-                            tagBgColor = Color(0xFFE8F5E9),
-                            tagTextColor = Color(0xFF2E7D32),
-                            onClick = {
-                                Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! ✍️ กำลังพาไปหน้าหมวดเรียนรู้", Toast.LENGTH_SHORT).show()
-                                switchToAppTab(context, 0) // Tab 0: Home Learning
-                            }
-                        )
-
-                        // LINK 3: VIDEO LEARNING (วิดีโอสร้างทักษะ)
-                        QuickEarnScoreCard(
-                            icon = "🎬",
-                            title = "วิดีโอเสริมสร้างทักษะเด็ก",
-                            subtitle = "ชมคลิปการ์ตูนและบทเรียนวิดีโอเพื่อความเพลิดเพลิน",
-                            tagText = "วิดีโอความรู้ 📺",
-                            tagBgColor = Color(0xFFE3F2FD),
-                            tagTextColor = Color(0xFF1565C0),
-                            onClick = {
-                                Toast.makeText(context, "บันทึกคะแนนสำเร็จแล้ว! 🎬 กำลังพาไปหน้าวิดีโอเสริมสร้างทักษะ", Toast.LENGTH_SHORT).show()
-                                switchToAppTab(context, 2) // Tab 2: Video List
-                            }
-                        )
-                    }
-
-
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // UNLOCKED ACHIEVEMENTS BADGES DISPLAY
-                    Text(
-                        text = "เหรียญรางวัลความสำเร็จ 🎖️",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KidTheme.TextDark,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    if (achievements.isEmpty()) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color.White,
-                            border = BorderStroke(1.dp, Color(0xFFE0E0E0))
-                        ) {
-                            Text(
-                                text = "ยังไม่มีเหรียญรางวัล ลองกดทำควิซเพื่อปลดล็อกเหรียญแรกได้เลย!",
-                                fontSize = 13.sp,
-                                color = KidTheme.TextMuted,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    } else {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            achievements.forEach { ach ->
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = Color.White,
-                                    border = BorderStroke(1.dp, KidTheme.Accent),
-                                    shadowElevation = 2.dp
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(text = ach.badgeIcon, fontSize = 20.sp)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = ach.badgeName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = KidTheme.TextDark)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text(
-                        text = "ข้อมูลบัญชีและไอดีระบบ ⚙️",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KidTheme.TextDark,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(8.dp)) {
-                            ProfileOptionItem(Icons.Default.Email, "อีเมล", emailText) {}
-                            if (firebaseUser != null) {
-                                ProfileOptionItem(Icons.Default.Security, "🔥 Firebase UID", firebaseUser.uid.take(16) + "...") {}
-                            }
-                            if (supabaseUser != null) {
-                                ProfileOptionItem(Icons.Default.Security, "⚡ Supabase User ID", supabaseUser.id.take(16) + "...") {}
-                            }
-                            ProfileOptionItem(Icons.Default.Share, "แชร์แอป ก ไก่ ABC หรรษา", "บอกต่อเพื่อนๆ ให้มาเรียนรู้ด้วยกัน") {
-                                try {
-                                    val appPackageName = context.packageName
-                                    val playStoreUrl = "https://play.google.com/store/apps/details?id=$appPackageName"
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "ก ไก่ ABC หรรษา - ฝึกเขียนอ่านระบายสี")
-                                        putExtra(
-                                            Intent.EXTRA_TEXT,
-                                            "มาเรียนรู้และฝึกเขียน ก ไก่ / A-Z กับแอป ก ไก่ ABC หรรษา - ฝึกเขียนอ่านระบายสี กันเถอะ! 🎨\nดาวน์โหลดได้ที่: $playStoreUrl"
-                                        )
-                                    }
-                                    val chooserIntent = Intent.createChooser(shareIntent, "แชร์แอปไปที่")
-                                    context.startActivity(chooserIntent)
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "ไม่สามารถเปิดเมนูแชร์ได้", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                            ProfileOptionItem(Icons.Default.Security, "นโยบายความเป็นส่วนตัว", "อ่าน Privacy Policy ของแอป") {
-                                val url = appSettings?.privacyPolicyUrl?.takeIf { it.isNotBlank() }
-                                    ?: "https://pongploydev.github.io/privacy-policy/"
-                                try {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "ไม่สามารถเปิดลิงก์ได้", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                            ProfileOptionItem(Icons.Default.List, "เงื่อนไขการใช้งาน", "อ่าน Terms of Service") {
-                                val url = appSettings?.termsOfServiceUrl?.takeIf { it.isNotBlank() }
-                                    ?: "https://pongploydev.github.io/terms/"
-                                try {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "ไม่สามารถเปิดลิงก์ได้", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = { showLogoutDialog = true },
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(26.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("ออกจากระบบทั้งหมด", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
                     }
                 }
             }
         }
     }
 
+    // ==================== DIALOGS ====================
+
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("ยืนยันการออกจากระบบ", fontWeight = FontWeight.Bold) },
-            text = { Text("คุณต้องการออกจากระบบทั้ง Firebase Auth และ Supabase Auth ใช่หรือไม่?") },
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = if (isGuestAccount) "รีเซ็ตข้อมูลทดลองเล่น" else "ออกจากระบบ",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = if (isGuestAccount) {
+                        "ข้อมูลที่ยังไม่ได้ผูกบัญชีจะถูกล้างออก ต้องการดำเนินการต่อหรือไม่?"
+                    } else {
+                        "คุณต้องการออกจากระบบใช่หรือไม่?"
+                    }
+                )
+            },
             confirmButton = {
                 Button(
                     onClick = {
                         showLogoutDialog = false
                         onSignOut()
-                        Toast.makeText(context, "ออกจากระบบทั้งหมดแล้ว", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            if (isGuestAccount) "รีเซ็ตข้อมูลเรียบร้อยแล้ว" else "ออกจากระบบแล้ว",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
                 ) {
-                    Text("ออกจากระบบ")
+                    Text(if (isGuestAccount) "รีเซ็ต" else "ออกจากระบบ")
                 }
             },
             dismissButton = {
@@ -1991,12 +2074,13 @@ fun ProfileDetailsViewDual(
     if (showEditNameDialog) {
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
+            shape = RoundedCornerShape(20.dp),
             title = { Text("แก้ไขชื่อแสดงผล", fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text("ชื่อใหม่") },
+                    label = { Text("ชื่อเล่น") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -2005,23 +2089,32 @@ fun ProfileDetailsViewDual(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newName.isNotBlank()) {
+                        val trimmed = newName.trim()
+                        if (trimmed.isNotBlank()) {
+                            localNameOverride = trimmed
+                            dataManager.saveUserProgress(
+                                stars = totalStars,
+                                level = currentLevel,
+                                streakDays = streakDays,
+                                displayName = trimmed
+                            )
                             scope.launch {
-                                // 1. Update Supabase Profile
-                                dataManager.updateUserProfile(userId, com.pongploydev.profilefeature.data.UserProfileUpdate(displayName = newName))
+                                dataManager.updateUserProfile(
+                                    userId,
+                                    com.pongploydev.profilefeature.data.UserProfileUpdate(displayName = trimmed)
+                                )
                                 loadSupabaseLiveData()
 
-                                // 2. Update Firebase User Profile
                                 firebaseUser?.let { fbUser ->
-                                    val updates = UserProfileChangeRequest.Builder().setDisplayName(newName).build()
+                                    val updates = UserProfileChangeRequest.Builder().setDisplayName(trimmed).build()
                                     fbUser.updateProfile(updates)
                                 }
                                 showEditNameDialog = false
-                                Toast.makeText(context, "อัปเดตชื่อสำเร็จทั้งในระบบ!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "บันทึกชื่อเรียบร้อยแล้ว", Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = KidTheme.Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = dailyTheme.accentColor)
                 ) { Text("บันทึก") }
             },
             dismissButton = {
@@ -2040,135 +2133,91 @@ fun ProfileDetailsViewDual(
     }
 }
 
-// ==================== QUIZ HISTORY CARD LISTVIEW SCREEN ====================
+// ==================== CLEAN PROFILE SUB-COMPONENTS ====================
 
-// Quick Learning Card Component
 @Composable
-fun QuickEarnScoreCard(
-    icon: String,
-    accentColor: Color = KidTheme.Primary,
-    title: String,
-    subtitle: String,
-    tagText: String,
-    tagBgColor: Color,
-    tagTextColor: Color,
-    onClick: () -> Unit
+private fun ProfileStatColumn(
+    value: String,
+    label: String,
+    valueColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
+    Column(
+        modifier = modifier
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .padding(horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = accentColor.copy(alpha = 0.12f),
-                modifier = Modifier.size(52.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = icon, fontSize = 26.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KidTheme.TextDark,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = tagBgColor
-                    ) {
-                        Text(
-                            text = tagText,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = tagTextColor,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = subtitle,
-                    fontSize = 12.sp,
-                    color = KidTheme.TextMuted
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Surface(
-                shape = CircleShape,
-                color = KidTheme.Primary.copy(alpha = 0.08f),
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "ไปยังหน้ากิจกรรม",
-                        tint = KidTheme.Primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
+        Text(
+            text = value,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = valueColor,
+            maxLines = 1
+        )
+        Spacer(modifier = Modifier.height(3.dp))
+        Text(
+            text = label,
+            fontSize = 11.5.sp,
+            color = KidTheme.TextMuted,
+            maxLines = 1
+        )
     }
 }
 
-// Helpers
 @Composable
-fun ProfileStatCard(
+private fun QuickShortcutTile(
+    icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color,
     title: String,
-    value: String,
-    bgColor: Color,
-    borderColor: Color,
-    textColor: Color,
+    subtitle: String,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit
 ) {
-    Surface(
+    Card(
         modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        color = bgColor,
-        border = BorderStroke(1.5.dp, borderColor),
-        shadowElevation = 3.dp
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, KidTheme.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
         ) {
-            Text(
-                text = value,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = textColor,
-                maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = iconBg,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = title,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = KidTheme.TextDark,
-                textAlign = TextAlign.Center,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                fontSize = 11.5.sp,
+                color = KidTheme.TextMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -2185,26 +2234,39 @@ fun ProfileOptionItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(14.dp),
+            .padding(horizontal = 16.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            shape = CircleShape,
-            color = KidTheme.Primary.copy(alpha = 0.1f),
-            modifier = Modifier.size(44.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = KidTheme.Primary, modifier = Modifier.size(22.dp))
-            }
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF4B5563),
+            modifier = Modifier.size(22.dp)
+        )
 
         Spacer(modifier = Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = KidTheme.TextDark)
-            Text(text = subtitle, fontSize = 12.sp, color = KidTheme.TextMuted)
+            Text(
+                text = title,
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = KidTheme.TextDark
+            )
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = KidTheme.TextMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
-        Text(text = "›", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.LightGray)
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color(0xFFD1D5DB),
+            modifier = Modifier.size(20.dp)
+        )
     }
 }

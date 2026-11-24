@@ -234,7 +234,7 @@ fun KidsColoringStudioScreen(
     val dataManager = remember { SupabaseDataManager.getInstance(context) }
     val authManager = remember { SupabaseAuthManager.getInstance(context) }
     val storedUser = remember { authManager.getStoredUser() }
-    val userId = storedUser?.id ?: FirebaseAuth.getInstance().currentUser?.uid ?: "guest_user"
+    val userId = storedUser?.id ?: FirebaseAuth.getInstance().currentUser?.uid ?: authManager.getGuestUserId()
 
     // Initial load
     LaunchedEffect(Unit) {

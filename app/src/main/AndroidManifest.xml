@@ -36,7 +36,7 @@
 
     <application
         android:name=".utils.AppControl"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -50,7 +50,8 @@
             android:name=".SplashScreen"
             android:exported="true"
             android:label="@string/app_name"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -157,6 +158,11 @@
             android:name=".activity.learning.FullScreenActivity"
             android:exported="false"
             android:label="VDO" />
+        <activity
+            android:name=".activity.learning.TracingMenuActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
         <activity
             android:name=".activity.learning.FunTracingActivity"
             android:exported="false"

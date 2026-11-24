@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,23 +24,28 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.rounded.PlayCircleOutline
+import androidx.compose.material.icons.rounded.Quiz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -91,7 +97,7 @@ private fun formatThaiDateTime(isoTimestamp: String?): String {
         val nowStr = SimpleDateFormat("HH:mm", Locale("th", "TH")).apply {
             timeZone = thaiZone
         }.format(Date())
-        return "ล่าสุดวันนี้ • $nowStr น. (UTC+7)"
+        return "วันนี้ · $nowStr น."
     }
 
     return try {
@@ -100,27 +106,27 @@ private fun formatThaiDateTime(isoTimestamp: String?): String {
             timeZone = utcZone
         }
         val date = sdfInput.parse(cleanIso.substringBefore("+").replace("Z", "")) ?: Date()
-        val sdfOutput = SimpleDateFormat("dd MMM yyyy • HH:mm 'น.'", Locale("th", "TH")).apply {
+        val sdfOutput = SimpleDateFormat("dd MMM yyyy · HH:mm 'น.'", Locale("th", "TH")).apply {
             timeZone = thaiZone
         }
-        "${sdfOutput.format(date)} (UTC+7)"
+        sdfOutput.format(date)
     } catch (e: Exception) {
         try {
             val sdfInput2 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US).apply {
                 timeZone = utcZone
             }
             val date2 = sdfInput2.parse(isoTimestamp) ?: Date()
-            val sdfOutput2 = SimpleDateFormat("dd MMM yyyy • HH:mm 'น.'", Locale("th", "TH")).apply {
+            val sdfOutput2 = SimpleDateFormat("dd MMM yyyy · HH:mm 'น.'", Locale("th", "TH")).apply {
                 timeZone = thaiZone
             }
-            "${sdfOutput2.format(date2)} (UTC+7)"
+            sdfOutput2.format(date2)
         } catch (e2: Exception) {
-            "$isoTimestamp (UTC+7)"
+            isoTimestamp
         }
     }
 }
 
-// ==================== QUIZ HISTORY CARD LISTVIEW SCREEN ====================
+// ==================== QUIZ HISTORY SCREEN ====================
 
 @Composable
 fun QuizHistoryListViewScreen(
@@ -130,127 +136,142 @@ fun QuizHistoryListViewScreen(
 ) {
     val context = LocalContext.current
     val totalScore = quizResults.sumOf { it.score }
-    val totalQuestions = quizResults.sumOf { it.totalQuestions }
-    val avgScore = if (totalQuestions > 0) (totalScore.toFloat() / totalQuestions * 100).toInt() else 0
 
-    // Group results by quiz topic name (card ซ้ำ จะถูกรวมเป็น group ย่อยๆ)
     val groupedResults = remember(quizResults) {
         quizResults.groupBy { result ->
             result.quizTopicName.ifBlank { "แบบทดสอบวัดความรู้ทั่วไป" }
         }
     }
 
-    // Map to keep track of expanded/collapsed state for each topic group
     val expandedGroupsState = remember { mutableStateMapOf<String, Boolean>() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F9FC))
+            .background(KidTheme.Background)
     ) {
-        // Top Bar
+        // Clean Top Bar
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = KidTheme.Primary,
-            shadowElevation = 4.dp
+            color = Color.White
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "กลับ",
-                        tint = Color.White
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "กลับ",
+                            tint = KidTheme.TextDark
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "ประวัติการทำควิซ",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KidTheme.TextDark
                     )
                 }
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "ประวัติและรายละเอียดควิซ 📚",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                HorizontalDivider(color = KidTheme.DividerColor)
             }
         }
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 112.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Summary Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                    border = BorderStroke(1.dp, KidTheme.CardBorder),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceAround,
+                            .padding(vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "${quizResults.size} ครั้ง", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = KidTheme.Primary)
-                            Text(text = "ควิซที่ทำแล้ว", fontSize = 12.sp, color = KidTheme.TextMuted)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "${quizResults.size}",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = KidTheme.Primary
+                            )
+                            Text(text = "ครั้งที่ทำ", fontSize = 12.sp, color = KidTheme.TextMuted)
                         }
-                        Box(modifier = Modifier.width(1.dp).height(36.dp).background(Color.LightGray))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "$totalScore คะแนน", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00B894))
-                            Text(text = "คะแนนรวมที่ได้", fontSize = 12.sp, color = KidTheme.TextMuted)
+                        VerticalDivider(modifier = Modifier.height(30.dp), color = KidTheme.DividerColor)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "$totalScore",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1F8A5B)
+                            )
+                            Text(text = "คะแนนรวม", fontSize = 12.sp, color = KidTheme.TextMuted)
                         }
-                        Box(modifier = Modifier.width(1.dp).height(36.dp).background(Color.LightGray))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "${groupedResults.size} หมวด", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
-                            Text(text = "หมวดหมู่ทั้งหมด", fontSize = 12.sp, color = KidTheme.TextMuted)
+                        VerticalDivider(modifier = Modifier.height(30.dp), color = KidTheme.DividerColor)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "${groupedResults.size}",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE67E00)
+                            )
+                            Text(text = "หมวดหมู่", fontSize = 12.sp, color = KidTheme.TextMuted)
                         }
                     }
                 }
             }
 
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "ประวัติแยกตามหมวดหมู่ 🔽",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = KidTheme.TextDark,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFE3F2FD),
-                        modifier = Modifier.clickable {
-                            val allExpanded = groupedResults.keys.all { expandedGroupsState[it] == true }
-                            groupedResults.keys.forEach { expandedGroupsState[it] = !allExpanded }
-                        }
+            if (quizResults.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "ย่อ/ขยาย ทั้งหมด",
-                            fontSize = 12.sp,
+                            text = "แยกตามหมวดหมู่",
+                            fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1565C0),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            color = KidTheme.TextDark
                         )
+                        val allExpanded = groupedResults.keys.all { expandedGroupsState[it] ?: true }
+                        TextButton(
+                            onClick = {
+                                groupedResults.keys.forEach { expandedGroupsState[it] = !allExpanded }
+                            }
+                        ) {
+                            Text(
+                                text = if (allExpanded) "ย่อทั้งหมด" else "ขยายทั้งหมด",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = KidTheme.Primary
+                            )
+                        }
                     }
                 }
             }
@@ -260,25 +281,45 @@ fun QuizHistoryListViewScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 20.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, KidTheme.CardBorder),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(32.dp),
+                                .padding(horizontal = 24.dp, vertical = 32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = "📚", fontSize = 48.sp)
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFF1F3F7),
+                                modifier = Modifier.size(52.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Quiz,
+                                        contentDescription = null,
+                                        tint = KidTheme.TextMuted,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text(text = "ยังไม่มีประวัติการทำแบบทดสอบ", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = KidTheme.TextDark)
                             Text(
-                                text = "ลองกด 'ทำแบบทดสอบเพิ่ม' ด้านล่างเพื่อวัดความรู้และสะสมดาวคะแนน!",
-                                fontSize = 13.sp,
+                                text = "ยังไม่มีประวัติการทำแบบทดสอบ",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = KidTheme.TextDark
+                            )
+                            Text(
+                                text = "เริ่มทำแบบทดสอบเพื่อดูคะแนนและสถิติของคุณที่นี่",
+                                fontSize = 12.5.sp,
                                 color = KidTheme.TextMuted,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 6.dp)
+                                modifier = Modifier.padding(top = 4.dp)
                             )
                         }
                     }
@@ -305,7 +346,7 @@ fun QuizHistoryListViewScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Button(
                     onClick = {
                         if (onTakeMoreQuiz != null) {
@@ -316,13 +357,17 @@ fun QuizHistoryListViewScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(26.dp),
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = KidTheme.Primary)
                 ) {
-                    Text(text = "ทำแบบทดสอบเพิ่ม 🚀", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        text = "ทำแบบทดสอบเพิ่ม",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
@@ -339,89 +384,65 @@ fun QuizTopicGroupCard(
     totalTopicQuestions: Int,
     onToggleExpand: () -> Unit
 ) {
+    val topicIcon = when {
+        topicName.contains("วิดีโอ") -> Icons.Rounded.PlayCircleOutline
+        topicName.contains("ก-ฮ") || topicName.contains("A-Z") -> Icons.AutoMirrored.Rounded.MenuBook
+        else -> Icons.Rounded.Quiz
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, KidTheme.CardBorder)
     ) {
         Column {
-            // Group Header (Clickable to Expand / Collapse)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onToggleExpand() }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 14.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF1F3F9),
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFFEEF2FF),
-                        modifier = Modifier.size(42.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = when {
-                                    topicName.contains("ก-ฮ") -> "🎯"
-                                    topicName.contains("วิดีโอ") -> "🎬"
-                                    topicName.contains("A-Z") -> "🔤"
-                                    else -> "📚"
-                                },
-                                fontSize = 22.sp
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = topicName,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = KidTheme.TextDark
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = topicIcon,
+                            contentDescription = null,
+                            tint = KidTheme.Primary,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFE0F2FE)
-                            ) {
-                                Text(
-                                    text = "${items.size} รายการ",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0369A1),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "รวม $totalTopicScore/$totalTopicQuestions คะแนน",
-                                fontSize = 11.sp,
-                                color = KidTheme.TextMuted
-                            )
-                        }
                     }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = topicName,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = KidTheme.TextDark
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${items.size} ครั้ง · รวม $totalTopicScore/$totalTopicQuestions คะแนน",
+                        fontSize = 12.sp,
+                        color = KidTheme.TextMuted
+                    )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onToggleExpand) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isExpanded) "ย่อ" else "ขยาย",
-                            tint = KidTheme.Primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "ย่อ" else "ขยาย",
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
-            // Expandable Items Container
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = expandVertically() + fadeIn(),
@@ -433,12 +454,7 @@ fun QuizTopicGroupCard(
                         .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color(0xFFF1F5F9))
-                    )
+                    HorizontalDivider(color = KidTheme.DividerColor)
 
                     items.forEachIndexed { index, result ->
                         QuizResultCardItem(result = result, itemIndex = index + 1)
@@ -449,7 +465,7 @@ fun QuizTopicGroupCard(
     }
 }
 
-// ==================== QUIZ RESULT CARD ITEM WITH DATE & TIME ====================
+// ==================== QUIZ RESULT CARD ITEM ====================
 
 @Composable
 fun QuizResultCardItem(result: UserQuizResult, itemIndex: Int = 1) {
@@ -457,14 +473,13 @@ fun QuizResultCardItem(result: UserQuizResult, itemIndex: Int = 1) {
     val isHighScore = percentage >= 80
     val formattedDateTime = remember(result.createdAt) { formatThaiDateTime(result.createdAt) }
 
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = BorderStroke(1.dp, if (isHighScore) Color(0xFFDCFCE7) else Color(0xFFF1F5F9))
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF8FAFC),
+        border = BorderStroke(1.dp, KidTheme.DividerColor)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Header Row: Item Number + Date & Time + Score Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -476,37 +491,28 @@ fun QuizResultCardItem(result: UserQuizResult, itemIndex: Int = 1) {
                 ) {
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "วันที่และเวลา",
-                        tint = KidTheme.Primary,
-                        modifier = Modifier.size(14.dp)
+                        contentDescription = null,
+                        tint = KidTheme.TextMuted,
+                        modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = formattedDateTime,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = KidTheme.TextDark
+                        color = KidTheme.TextMuted
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (isHighScore) Color(0xFFDCFCE7) else Color(0xFFFEF3C7),
-                    border = BorderStroke(1.dp, if (isHighScore) Color(0xFF86EFAC) else Color(0xFFFDE68A))
-                ) {
-                    Text(
-                        text = "${result.score}/${result.totalQuestions} คะแนน (+${result.score} ⭐)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isHighScore) Color(0xFF166534) else Color(0xFF92400E),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
+                Text(
+                    text = "${result.score}/${result.totalQuestions} คะแนน",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isHighScore) Color(0xFF1F8A5B) else Color(0xFFD97706)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Score Progress Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -518,20 +524,19 @@ fun QuizResultCardItem(result: UserQuizResult, itemIndex: Int = 1) {
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
                     color = if (isHighScore) Color(0xFF10B981) else Color(0xFFF59E0B),
-                    trackColor = Color(0xFFE2E8F0)
+                    trackColor = Color(0xFFE5E7EB)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "$percentage%",
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isHighScore) Color(0xFF10B981) else Color(0xFFF59E0B)
+                    fontWeight = FontWeight.SemiBold,
+                    color = KidTheme.TextDark
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Footer Details (Time spent + Status badge)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -540,30 +545,24 @@ fun QuizResultCardItem(result: UserQuizResult, itemIndex: Int = 1) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Timer,
-                        contentDescription = "เวลาที่ใช้",
+                        contentDescription = null,
                         tint = KidTheme.TextMuted,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "ใช้เวลา: ${if (result.timeSpentSeconds > 0) "${result.timeSpentSeconds} วินาที" else "ไม่ระบุ"}",
-                        fontSize = 11.sp,
+                        text = if (result.timeSpentSeconds > 0) "ใช้เวลา ${result.timeSpentSeconds} วินาที" else "ไม่ระบุเวลา",
+                        fontSize = 11.5.sp,
                         color = KidTheme.TextMuted
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (isHighScore) Color(0xFFF0FDF4) else Color(0xFFF8FAFC)
-                ) {
-                    Text(
-                        text = if (isHighScore) "🎉 ผ่านเกณฑ์ระดับดีเยี่ยม" else "👍 ผ่านการทำแบบทดสอบ",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isHighScore) Color(0xFF15803D) else KidTheme.TextMuted,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
+                Text(
+                    text = if (isHighScore) "ผ่านเกณฑ์ดีเยี่ยม" else "เสร็จสิ้น",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isHighScore) Color(0xFF1F8A5B) else KidTheme.TextMuted
+                )
             }
         }
     }

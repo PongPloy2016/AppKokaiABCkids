@@ -133,7 +133,7 @@ fun GameHubApp(
     val dataManager = remember { SupabaseDataManager.getInstance(context) }
     val firebaseAuth = remember { FirebaseAuth.getInstance() }
     val storedUser = remember { supabaseAuth.getStoredUser() }
-    val userId = storedUser?.id ?: firebaseAuth.currentUser?.uid ?: "guest_user"
+    val userId = storedUser?.id ?: firebaseAuth.currentUser?.uid ?: supabaseAuth.getGuestUserId()
     var userName by remember { mutableStateOf(storedUser?.userMetadata?.displayName ?: "คนเก่ง") }
     var userStars by remember { mutableIntStateOf(dataManager.getUserTotalStars()) }
     var userLevel by remember { mutableIntStateOf(dataManager.getUserCurrentLevel()) }
